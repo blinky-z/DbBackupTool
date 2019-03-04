@@ -1,74 +1,99 @@
 package com.example.demo;
 
+import org.postgresql.copy.CopyManager;
+import org.postgresql.core.BaseConnection;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
+@Component
 public class DbBackup {
     @Autowired
-    JdbcTemplate jdbcTemplate;
+    private JdbcTemplate jdbcTemplate;
 
-    @Value("${userConfig.database-name}")
-    private String databaseName;
-    @Value("${spring.datasource.username}")
-    private String databaseUser;
-    @Value("${spring.datasource.password}")
-    private String databasePassword;
+    private Connection conn;
+    private DatabaseMetaData metadata;
+    private CopyManager copyManager;
+
+    private final int COLUMN_NAME = 4;
+    private final int TABLE_NAME = 3;
+
+    DbBackup() {
+        try {
+            conn = jdbcTemplate.getDataSource().getConnection();
+            metadata = conn.getMetaData();
+            copyManager = new CopyManager((BaseConnection)conn);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private List<String> getColumnNames(String tableName) {
+        List<String> columnNames = new ArrayList<>();
+        try {
+            ResultSet columns = metadata.getColumns(null, null, tableName, null);
+            while (columns.next()) {
+                columnNames.add(columns.getString(TABLE_NAME));
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        return columnNames;
+    }
+
+    private void copyCurrentTable(String tableName, PrintWriter out) {
+        out.print("COPY " + tableName + " (");
+        List<String> columnNames = getColumnNames(tableName);
+        for (int currentColumn = 0; currentColumn < columnNames.size(); currentColumn++) {
+            out.print(columnNames.get(currentColumn));
+            if (currentColumn + 1 < columnNames.size()) {
+                out.print(", ");
+            }
+        }
+        out.println(") FROM stdin");
+        try {
+            copyManager.copyOut("COPY " + tableName + " TO STDOUT", out);
+        } catch (java.sql.SQLException | java.io.IOException ex) {
+            ex.printStackTrace();
+        }
+        out.println("\\.");
+        out.println();
+    }
 
     public void backupDB() {
-        SimpleDateFormat date = new SimpleDateFormat("dd-MM-yyyy_HH:mm:ss");
+        SimpleDateFormat date = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
         String dateAsString = date.format(new Date());
         File backupFilePath = new File(System.getProperty("user.dir") + File.separator + "backup_" +
                 dateAsString + ".sql");
 
         try {
-            Process process;
-            ProcessBuilder pb;
-            pb = new ProcessBuilder(getBackupCommand(backupFilePath));
-            pb.environment().put("PGUSER", databaseUser);
-            pb.environment().put("PGPASSWORD", databasePassword);
-            process = pb.start();
+            PrintWriter out = new PrintWriter(backupFilePath);
 
-            BufferedReader errorStreamReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-            String error;
-            while ((error = errorStreamReader.readLine()) != null) {
-                System.out.println(error);
+            ResultSet tables = metadata.getTables(null, null, "%", null);
+            while (tables.next()) {
+                copyCurrentTable(tables.getString(COLUMN_NAME), out);
             }
 
-            process.waitFor();
-            process.destroy();
-
-            System.out.println("Backup of database " + databaseName + "with timestamp: (" + dateAsString + ") " +
+            System.out.println("Backup of database with timestamp: (" + dateAsString + ") " +
                     "successfully created");
-        } catch (IOException | InterruptedException ex) {
-            System.err.println("Error creating backup of database " + databaseName + "with timestamp: (" + dateAsString + ")");
+        } catch (IOException | SQLException ex) {
+            System.err.println("Error creating backup of database");
             System.err.println("Error: " + ex);
             ex.printStackTrace(System.err);
         }
-    }
-
-    private List<String> getBackupCommand(File backupFilePath) {
-        ArrayList<String> command = new ArrayList<>();
-        command.add("pg_dump");
-        command = addCommandParam(command, "-h", "localhost");
-        command = addCommandParam(command, "-p", "5432");
-        command = addCommandParam(command, "-F", "custom");
-        command = addCommandParam(command, "-d", databaseName);
-        command = addCommandParam(command, "-f", backupFilePath.getAbsolutePath());
-        return command;
-    }
-
-    private ArrayList<String> addCommandParam(ArrayList<String> command, String paramName, String paramValue) {
-        command.add(paramName);
-        if (!paramValue.equals("")) {
-            command.add(paramValue);
-        }
-        return command;
     }
 }
