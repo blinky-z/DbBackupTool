@@ -1,6 +1,5 @@
 package com.example.demo;
 
-import com.fasterxml.jackson.databind.ser.Serializers;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.core.BaseConnection;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +20,8 @@ import java.util.List;
 
 @Service
 public class DbBackup {
+    public static final String TABLE_TYPE = "TABLE";
+    public static final String SEQUENCE_TYPE = "SEQUENCE";
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
@@ -31,15 +32,19 @@ public class DbBackup {
     private DatabaseMetaData metadata;
     private CopyManager copyManager;
 
-    private final int COLUMN_NAME = 4;
-    private final int TABLE_NAME = 3;
+    // columns ResultSet
+    private final int COLUMNS_COLUMN_NAME = 4;
 
-    private List<String> getColumnNames(String tableName) {
+    // tables ResultSet
+    private final int TABLES_TABLE_NAME = 3;
+    private final int TABLES_SCHEME_NAME = 2;
+
+    private List<String> getColumnNames(String tableName, String scheme) {
         List<String> columnNames = new ArrayList<>();
         try {
-            ResultSet columns = metadata.getColumns(null, null, tableName, null);
+            ResultSet columns = metadata.getColumns(null, scheme, tableName, null);
             while (columns.next()) {
-                columnNames.add(columns.getString(COLUMN_NAME));
+                columnNames.add(columns.getString(COLUMNS_COLUMN_NAME));
             }
         } catch (SQLException ex) {
             System.err.println(ex.toString());
@@ -48,18 +53,28 @@ public class DbBackup {
         return columnNames;
     }
 
-    private void copyCurrentTable(String tableName, PrintWriter out) {
-        out.print("COPY " + tableName + " (");
-        List<String> columnNames = getColumnNames(tableName);
+    private void copyCurrentSequence(String sequenceName, String scheme, PrintWriter out) {
+
+    }
+
+    private void copyCurrentTable(String tableName, String scheme, PrintWriter out) {
+        String tableNameWithScheme;
+        if (scheme != null) {
+            tableNameWithScheme = scheme + "." + tableName;
+        } else {
+            tableNameWithScheme = tableName;
+        }
+        out.print("COPY " + tableNameWithScheme + " (");
+        List<String> columnNames = getColumnNames(tableName, scheme);
         for (int currentColumn = 0; currentColumn < columnNames.size(); currentColumn++) {
             out.print(columnNames.get(currentColumn));
             if (currentColumn + 1 < columnNames.size()) {
                 out.print(", ");
             }
         }
-        out.println(") FROM stdin");
+        out.println(") FROM stdin;");
         try {
-            copyManager.copyOut("COPY " + tableName + " TO STDOUT", out);
+            copyManager.copyOut("COPY " + tableNameWithScheme + " TO STDOUT", out);
         } catch (java.sql.SQLException | java.io.IOException ex) {
             System.err.println(ex.toString());
         }
@@ -67,7 +82,7 @@ public class DbBackup {
         out.println();
     }
 
-    public void backupDB() {
+    public void backup() {
         try {
             Connection conn = jdbcTemplate.getDataSource().getConnection();
             metadata = conn.getMetaData();
@@ -78,15 +93,19 @@ public class DbBackup {
 
         SimpleDateFormat date = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
         String dateAsString = date.format(new Date());
-        File backupFilePath = new File(System.getProperty("user.dir") + File.separator + "backup_" +
-                dateAsString + ".sql");
+        File backupFilePath = new File(System.getProperty("user.dir") + File.separator + "backup_" + dateAsString + ".sql");
 
         try {
             PrintWriter out = new PrintWriter(backupFilePath);
 
             ResultSet tables = metadata.getTables(null, null, "%", new String[]{"TABLE"});
             while (tables.next()) {
-                copyCurrentTable(tables.getString(TABLE_NAME), out);
+                String currentTableType = tables.getString(4);
+                if (currentTableType.equals(TABLE_TYPE)) {
+                    copyCurrentTable(tables.getString(TABLES_TABLE_NAME), tables.getString(TABLES_SCHEME_NAME), out);
+                } else if (currentTableType.equals(SEQUENCE_TYPE)) {
+                    copyCurrentSequence(tables.getString(TABLES_TABLE_NAME), tables.getString(TABLES_SCHEME_NAME), out);
+                }
             }
 
             out.close();

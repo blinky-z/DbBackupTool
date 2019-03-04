@@ -22,6 +22,6 @@ public class DemoApplication implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        dbBackup.backupDB();
+        dbBackup.backup();
     }
 }
