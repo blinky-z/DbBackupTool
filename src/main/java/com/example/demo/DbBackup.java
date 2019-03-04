@@ -84,7 +84,7 @@ public class DbBackup {
         try {
             PrintWriter out = new PrintWriter(backupFilePath);
 
-            ResultSet tables = metadata.getTables(null, "public", "%", new String[]{"TABLE"});
+            ResultSet tables = metadata.getTables(null, null, "%", new String[]{"TABLE"});
             while (tables.next()) {
                 copyCurrentTable(tables.getString(TABLE_NAME), out);
             }
