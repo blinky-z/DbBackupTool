@@ -22,15 +22,19 @@ import java.util.List;
 public class DbBackup {
     private JdbcTemplate jdbcTemplate;
 
-    private static final Logger infoLogger = LoggerFactory.getLogger(DbBackup.class);
-    private static final Logger errorLogger = LoggerFactory.getLogger(DbBackup.class);
+    private Logger infoLogger;
+    private Logger errorLogger;
+
+    DbBackup() {
+        infoLogger = LoggerFactory.getLogger(DbBackup.class);
+        errorLogger = LoggerFactory.getLogger(DbBackup.class);
+    }
 
     @Autowired
     public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private String databaseName;
     @Value("${spring.datasource.username}")
     private String databaseUser;
     @Value("${spring.datasource.password}")
@@ -39,14 +43,14 @@ public class DbBackup {
     public void backup() throws IOException, SQLException, InterruptedException {
         SimpleDateFormat date = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
         String dateAsString = date.format(new Date());
-        databaseName = jdbcTemplate.queryForObject("SELECT current_database()", String.class);
+        String databaseName = jdbcTemplate.queryForObject("SELECT current_database()", String.class);
         File backupFilePath = new File(System.getProperty("user.dir") + File.separator + "backup_" + databaseName + "_" +
                 dateAsString + ".sql");
 
         try {
             Process process;
             ProcessBuilder pb;
-            List<String> backupCommand = getBackupCommand(backupFilePath);
+            List<String> backupCommand = getBackupCommand(backupFilePath, databaseName);
             infoLogger.info("Executing backup command: " + backupCommand.toString());
             pb = new ProcessBuilder(backupCommand);
             pb.environment().put("PGUSER", databaseUser);
@@ -71,7 +75,7 @@ public class DbBackup {
         }
     }
 
-    private List<String> getBackupCommand(File backupFilePath) throws SQLException {
+    private List<String> getBackupCommand(File backupFilePath, String databaseName) throws SQLException {
         ArrayList<String> command = new ArrayList<>();
         command.add("pg_dump");
 
@@ -83,6 +87,7 @@ public class DbBackup {
         command = addCommandParam(command, "-h", parsedConnUrl.getHost());
         command = addCommandParam(command, "-p", Integer.toString(parsedConnUrl.getPort()));
         command = addCommandParam(command, "-d", databaseName);
+        command = addCommandParam(command, "-F", "c");
         command = addCommandParam(command, "-f", backupFilePath.getAbsolutePath());
         return command;
     }
