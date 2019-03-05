@@ -63,6 +63,12 @@ public class DbBackup {
                 errorLogger.error(error);
             }
 
+            BufferedReader dumpStreamReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String currentLine;
+            while ((currentLine = dumpStreamReader.readLine()) != null) {
+                infoLogger.info(currentLine);
+            }
+
             process.waitFor();
             process.destroy();
 
@@ -87,8 +93,6 @@ public class DbBackup {
         command = addCommandParam(command, "-h", parsedConnUrl.getHost());
         command = addCommandParam(command, "-p", Integer.toString(parsedConnUrl.getPort()));
         command = addCommandParam(command, "-d", databaseName);
-        command = addCommandParam(command, "-F", "c");
-        command = addCommandParam(command, "-f", backupFilePath.getAbsolutePath());
         return command;
     }
 
