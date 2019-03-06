@@ -50,20 +50,26 @@ public class DbBackup {
             pb.redirectErrorStream(true);
             process = pb.start();
 
-            BufferedReader errorStreamReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-            String error;
-            while ((error = errorStreamReader.readLine()) != null) {
-                errorLogger.error(error);
+            try (
+                    BufferedReader errorStreamReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))
+            ) {
+                String error;
+                while ((error = errorStreamReader.readLine()) != null) {
+                    errorLogger.error(error);
+                }
             }
 
             BackupWriter backupWriter = new BackupWriter(databaseName, maxFileSizeInBytes);
 
-            BufferedReader dumpStreamReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String currentLine;
-            while ((currentLine = dumpStreamReader.readLine()) != null) {
-                backupWriter.write(currentLine);
+            try (
+                    BufferedReader dumpStreamReader = new BufferedReader(new InputStreamReader(process.getInputStream()))
+            ) {
+                String currentLine;
+                while ((currentLine = dumpStreamReader.readLine()) != null) {
+                    backupWriter.write(currentLine);
+                }
+                backupWriter.close();
             }
-            backupWriter.close();
 
             process.waitFor();
             process.destroy();
@@ -105,7 +111,7 @@ public class DbBackup {
 
     private ArrayList<String> addCommandParam(ArrayList<String> command, String paramName, String paramValue) {
         command.add(paramName);
-        if (paramValue != null) {
+        if (paramValue != null && !paramValue.isEmpty()) {
             command.add(paramValue);
         }
         return command;
