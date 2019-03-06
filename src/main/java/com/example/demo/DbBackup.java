@@ -8,7 +8,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -22,13 +21,8 @@ import java.util.List;
 public class DbBackup {
     private JdbcTemplate jdbcTemplate;
 
-    private Logger infoLogger;
-    private Logger errorLogger;
-
-    DbBackup() {
-        infoLogger = LoggerFactory.getLogger(DbBackup.class);
-        errorLogger = LoggerFactory.getLogger(DbBackup.class);
-    }
+    private static final Logger infoLogger = LoggerFactory.getLogger(DbBackup.class);
+    private static final Logger errorLogger = LoggerFactory.getLogger(DbBackup.class);
 
     @Autowired
     public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
@@ -40,21 +34,20 @@ public class DbBackup {
     @Value("${spring.datasource.password}")
     private String databasePassword;
 
-    public void backup() throws IOException, SQLException, InterruptedException {
+    public void backup(boolean compressData, long maxFileSizeInBytes) throws IOException, SQLException, InterruptedException {
         SimpleDateFormat date = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
         String dateAsString = date.format(new Date());
         String databaseName = jdbcTemplate.queryForObject("SELECT current_database()", String.class);
-        File backupFilePath = new File(System.getProperty("user.dir") + File.separator + "backup_" + databaseName + "_" +
-                dateAsString + ".sql");
 
         try {
             Process process;
             ProcessBuilder pb;
-            List<String> backupCommand = getBackupCommand(backupFilePath, databaseName);
-            infoLogger.info("Executing backup command: " + backupCommand.toString());
+            List<String> backupCommand = getBackupCommand(databaseName, compressData);
+            infoLogger.info("Executing backup command: {}", backupCommand.toString());
             pb = new ProcessBuilder(backupCommand);
             pb.environment().put("PGUSER", databaseUser);
             pb.environment().put("PGPASSWORD", databasePassword);
+            pb.redirectErrorStream(true);
             process = pb.start();
 
             BufferedReader errorStreamReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
@@ -63,42 +56,56 @@ public class DbBackup {
                 errorLogger.error(error);
             }
 
+            BackupWriter backupWriter = new BackupWriter(databaseName, maxFileSizeInBytes);
+
             BufferedReader dumpStreamReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String currentLine;
             while ((currentLine = dumpStreamReader.readLine()) != null) {
-                infoLogger.info(currentLine);
+                backupWriter.write(currentLine);
             }
+            backupWriter.close();
 
             process.waitFor();
             process.destroy();
 
-            infoLogger.info("Backup of database " + databaseName + "with timestamp: (" + dateAsString + ") " +
-                    "successfully created");
+            infoLogger.info("Backup of database {} with timestamp: ({}) successfully created", databaseName, dateAsString);
+            infoLogger.info("Created files list: {}", backupWriter.getCreatedFiles());
         } catch (IOException | InterruptedException | SQLException ex) {
-            errorLogger.error("Error creating backup of database " + databaseName + "with timestamp: (" + dateAsString + "). " +
-                    "Error: " + ex.toString());
+            errorLogger.error("Error creating backup of database {} with timestamp: ({}). Error: {}", databaseName, dateAsString,
+                    ex.toString());
             throw ex;
         }
     }
 
-    private List<String> getBackupCommand(File backupFilePath, String databaseName) throws SQLException {
+    private List<String> getBackupCommand(String databaseName, boolean compressData) throws SQLException {
         ArrayList<String> command = new ArrayList<>();
-        command.add("pg_dump");
+
+        String compressLevel;
+        if (compressData) {
+            compressLevel = "6";
+        } else {
+            compressLevel = "0";
+        }
 
         String connUrl = jdbcTemplate.getDataSource().getConnection().getMetaData().getURL();
         String jdbcPrefix = "jdbc:";
         connUrl = connUrl.substring(jdbcPrefix.length());
 
         URI parsedConnUrl = URI.create(connUrl);
+
+        command.add("pg_dump");
         command = addCommandParam(command, "-h", parsedConnUrl.getHost());
         command = addCommandParam(command, "-p", Integer.toString(parsedConnUrl.getPort()));
+        command = addCommandParam(command, "-F", "p");
+        command = addCommandParam(command, "-Z", compressLevel);
         command = addCommandParam(command, "-d", databaseName);
+
         return command;
     }
 
     private ArrayList<String> addCommandParam(ArrayList<String> command, String paramName, String paramValue) {
         command.add(paramName);
-        if (!paramValue.equals("")) {
+        if (paramValue != null) {
             command.add(paramValue);
         }
         return command;
