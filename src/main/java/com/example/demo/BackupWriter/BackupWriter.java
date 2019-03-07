@@ -1,11 +1,11 @@
-package com.example.demo;
+package com.example.demo.BackupWriter;
 
 import java.io.IOException;
 
 public abstract class BackupWriter {
-    protected String databaseName;
+    String databaseName;
     // maxChunkSize - max file size in bytes. If 0, then write to single file
-    protected long maxChunkSize;
+    long maxChunkSize;
 
     BackupWriter(String databaseName, long maxFileSizeInBytes) {
         this.databaseName = databaseName;

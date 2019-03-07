@@ -1,15 +1,13 @@
-package com.example.demo;
+package com.example.demo.DbDumpHandler;
 
 import models.Env;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.sql.SQLException;
 
 public abstract class DbDumpHandler {
     Env env;
 
-    protected InputStream dataStream;
+    InputStream dataStream;
 
     DbDumpHandler(Env env) {
         this.env = env;

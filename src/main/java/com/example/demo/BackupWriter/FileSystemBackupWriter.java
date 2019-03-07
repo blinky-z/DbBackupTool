@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.example.demo.BackupWriter;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
@@ -10,7 +10,7 @@ public class FileSystemBackupWriter extends BackupWriter {
     private long currentFileSize;
     private final boolean enableZip;
 
-    FileSystemBackupWriter(String databaseName, long maxFileSizeInBytes, boolean enableZip) {
+    public FileSystemBackupWriter(String databaseName, long maxFileSizeInBytes, boolean enableZip) {
         super(databaseName, maxFileSizeInBytes);
         this.enableZip = enableZip;
     }

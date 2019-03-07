@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.example.demo.DbDumpHandler;
 
 import models.Env;
 
@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PostgresDumpHandler extends DbDumpHandler {
-    PostgresDumpHandler(Env env) {
+    public PostgresDumpHandler(Env env) {
         super(env);
     }
 
