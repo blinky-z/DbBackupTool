@@ -15,9 +15,9 @@ public abstract class DbDumpHandler {
         this.env = env;
     }
 
-    public abstract void createDbDump() throws SQLException, IOException;
+    public abstract void createDbDump();
 
-    public abstract void restoreDbDump(InputStream dumpData) throws IOException;
+    public abstract void restoreDbDump(InputStream dumpData);
 
     // getDataStream - stream for reading raw database backup data
     public InputStream getDataStream() {
