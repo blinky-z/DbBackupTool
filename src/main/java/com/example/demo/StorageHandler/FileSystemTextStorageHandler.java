@@ -1,9 +1,11 @@
 package com.example.demo.StorageHandler;
 
+import com.example.demo.DbBackup;
+import com.example.demo.settings.DatabaseSettings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import settings.DatabaseSettings;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
@@ -13,10 +15,9 @@ import java.util.List;
 
 @Service
 public class FileSystemTextStorageHandler implements TextStorageHandler {
-    @Value("userConfig.backup-dir")
-    private String backupDir;
-
     private DatabaseSettings dbSettings;
+
+    private static final Logger logger = LoggerFactory.getLogger(DbBackup.class);
 
     private BufferedWriter fileWriter;
 
@@ -29,10 +30,12 @@ public class FileSystemTextStorageHandler implements TextStorageHandler {
     }
 
     private void createNewFile() throws IOException {
-        SimpleDateFormat date = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
+        SimpleDateFormat date = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss-SS");
         String dateAsString = date.format(new Date());
-        File currentFile = new File(backupDir + File.separator + "backup_" + dbSettings.getDatabaseName() + "_"
+        File currentFile = new File(dbSettings.getBackupDir() + File.separator + "backup_" +
+                dbSettings.getDatabaseName() + "_"
                 + dateAsString + ".data");
+        logger.info("New created file: {}", currentFile.getAbsolutePath());
         createdBackupFiles.add(currentFile);
         fileWriter = new BufferedWriter(new FileWriter(currentFile));
     }

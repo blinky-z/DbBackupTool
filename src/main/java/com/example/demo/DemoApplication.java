@@ -21,6 +21,6 @@ public class DemoApplication implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        dbBackup.backup(false, 1024L * 1024);
+        dbBackup.backup(false, 1024L * 1024L);
     }
 }

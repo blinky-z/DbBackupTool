@@ -4,8 +4,9 @@ import com.example.demo.DbBackup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import settings.DatabaseSettings;
+import com.example.demo.settings.DatabaseSettings;
 
 import java.io.*;
 import java.net.URI;
@@ -14,6 +15,15 @@ import java.util.List;
 
 @Component
 public class PostgresDumpHandler implements DbDumpHandler {
+    @Value("${spring.datasource.url}")
+    private String connectionUrl;
+
+    @Value("${spring.datasource.username}")
+    private String databaseUser;
+
+    @Value("${spring.datasource.password}")
+    private String databasePassword;
+
     private DatabaseSettings dbSettings;
 
     @Autowired
@@ -25,7 +35,7 @@ public class PostgresDumpHandler implements DbDumpHandler {
 
     private URI getParsedConnUrl() {
         String jdbcPrefix = "jdbc:";
-        String cleanConnUrl = dbSettings.getConnectionUrl().substring(jdbcPrefix.length());
+        String cleanConnUrl = connectionUrl.substring(jdbcPrefix.length());
 
         return URI.create(cleanConnUrl);
     }
@@ -43,15 +53,15 @@ public class PostgresDumpHandler implements DbDumpHandler {
         ProcessBuilder pb;
 
         pb = new ProcessBuilder(command);
-        pb.environment().put("PGUSER", dbSettings.getDatabaseUser());
-        pb.environment().put("PGPASSWORD", dbSettings.getDatabasePassword());
+        pb.environment().put("PGUSER", databaseUser);
+        pb.environment().put("PGPASSWORD", databasePassword);
         pb.redirectErrorStream(true);
         process = pb.start();
 
         return process;
     }
 
-    private List<String> getBackupCommand(String databaseName) {
+    private List<String> getBackupCommand() {
         ArrayList<String> command = new ArrayList<>();
 
         URI connUrl = getParsedConnUrl();
@@ -60,12 +70,12 @@ public class PostgresDumpHandler implements DbDumpHandler {
         command = addCommandParam(command, "-h", connUrl.getHost());
         command = addCommandParam(command, "-p", Integer.toString(connUrl.getPort()));
         command = addCommandParam(command, "-F", "p");
-        command = addCommandParam(command, "-d", databaseName);
+        command = addCommandParam(command, "-d", dbSettings.getDatabaseName());
 
         return command;
     }
 
-    private List<String> getRestoreCommand(String databaseName) {
+    private List<String> getRestoreCommand() {
         ArrayList<String> command = new ArrayList<>();
 
         URI connUrl = getParsedConnUrl();
@@ -73,26 +83,26 @@ public class PostgresDumpHandler implements DbDumpHandler {
         command.add("pg_restore");
         command = addCommandParam(command, "-h", connUrl.getHost());
         command = addCommandParam(command, "-p", Integer.toString(connUrl.getPort()));
-        command = addCommandParam(command, "-d", databaseName);
+        command = addCommandParam(command, "-d", dbSettings.getDatabaseName());
 
         return command;
     }
 
     public InputStream createDbDump() {
-        List<String> backupCommand = getBackupCommand(dbSettings.getDatabaseName());
+        List<String> backupCommand = getBackupCommand();
         logger.info("Executing backup command: {}", backupCommand.toString());
 
         try {
             Process process = runProcess(backupCommand);
-            try (
-                    BufferedReader errorStreamReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))
-            ) {
-//                String error;
-//                while ((error = errorStreamReader.readLine()) != null) {
-//                    logger.error(error);
-//                    // TODO: выкидывать ошибку, но error стрим объединен с output стримом, так что я не знаю как проверить ошибки
-//                }
-            }
+//            try (
+//                    BufferedReader errorStreamReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))
+//            ) {
+////                String error;
+////                while ((error = errorStreamReader.readLine()) != null) {
+////                    logger.error(error);
+////                    // TODO: выкидывать ошибку, но error стрим объединен с output стримом, так что я не знаю как проверить ошибки
+////                }
+//            }
             return process.getInputStream();
         } catch (IOException ex) {
             throw new RuntimeException("Error occurred while creating postgres database dump", ex);
@@ -100,7 +110,7 @@ public class PostgresDumpHandler implements DbDumpHandler {
     }
 
     public void restoreDbDump(InputStream dump) {
-        List<String> restoreCommand = getRestoreCommand(dbSettings.getDatabaseName());
+        List<String> restoreCommand = getRestoreCommand();
         logger.info("Executing restore command: {}", restoreCommand.toString());
 
         try {
