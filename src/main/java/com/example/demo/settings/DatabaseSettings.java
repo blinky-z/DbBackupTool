@@ -1,28 +1,9 @@
 package com.example.demo.settings;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+public interface DatabaseSettings {
+    String getUrl();
 
-@Component
-@ConfigurationProperties(prefix = "user-config")
-public class DatabaseSettings {
-    private String databaseName;
+    String getUsername();
 
-    private String backupDir;
-
-    public String getDatabaseName() {
-        return databaseName;
-    }
-
-    public void setDatabaseName(String databaseName) {
-        this.databaseName = databaseName;
-    }
-
-    public String getBackupDir() {
-        return backupDir;
-    }
-
-    public void setBackupDir(String backupDir) {
-        this.backupDir = backupDir;
-    }
+    String getPassword();
 }

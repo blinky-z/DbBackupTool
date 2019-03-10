@@ -2,7 +2,7 @@ package com.example.demo;
 
 import com.example.demo.DbDumpHandler.PostgresDumpHandler;
 import com.example.demo.StorageHandler.FileSystemTextStorageHandler;
-import com.example.demo.settings.DatabaseSettings;
+import com.example.demo.settings.UserSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +25,7 @@ public class DbBackup {
     private static final Logger logger = LoggerFactory.getLogger(DbBackup.class);
 
     @Autowired
-    private DatabaseSettings dbSettings;
+    private UserSettings dbSettings;
 
     private long maxDefaultChunkSize = 1024L * 1024 * 2;
 

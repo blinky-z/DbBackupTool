@@ -1,7 +1,7 @@
 package com.example.demo.StorageHandler;
 
 import com.example.demo.DbBackup;
-import com.example.demo.settings.DatabaseSettings;
+import com.example.demo.settings.UserSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +15,7 @@ import java.util.List;
 
 @Service
 public class FileSystemTextStorageHandler implements TextStorageHandler {
-    private DatabaseSettings dbSettings;
+    private UserSettings dbSettings;
 
     private static final Logger logger = LoggerFactory.getLogger(DbBackup.class);
 
@@ -24,7 +24,7 @@ public class FileSystemTextStorageHandler implements TextStorageHandler {
     private List<File> createdBackupFiles;
 
     @Autowired
-    public FileSystemTextStorageHandler(DatabaseSettings dbSettings) {
+    public FileSystemTextStorageHandler(UserSettings dbSettings) {
         this.dbSettings = dbSettings;
         createdBackupFiles = new ArrayList<>();
     }

@@ -17,11 +17,13 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    compileOnly group: 'org.postgresql', name: 'postgresql', version: '42.2.4'
+    compile group: 'org.postgresql', name: 'postgresql', version: '42.2.4'
     // https://mvnrepository.com/artifact/io.zonky.test/embedded-database-spring-test
-    testCompileOnly group: 'io.zonky.test', name: 'embedded-database-spring-test', version: '1.4.1'
+    testCompile group: 'io.zonky.test', name: 'embedded-database-spring-test', version: '1.4.1'
     // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3t
     testCompileOnly group: 'org.apache.commons', name: 'commons-lang3', version: '3.8.1'
     runtime('org.postgresql:postgresql')
     annotationProcessor group: 'org.springframework.boot', name: 'spring-boot-configuration-processor'
+    // https://mvnrepository.com/artifact/junit/junit
+    testCompile group: 'junit', name: 'junit', version: '4.12'
 }

@@ -1,12 +1,13 @@
 package com.example.demo.DbDumpHandler;
 
 import com.example.demo.DbBackup;
+import com.example.demo.settings.DatabaseSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import com.example.demo.settings.DatabaseSettings;
+import com.example.demo.settings.UserSettings;
 
 import java.io.*;
 import java.net.URI;
@@ -15,27 +16,22 @@ import java.util.List;
 
 @Component
 public class PostgresDumpHandler implements DbDumpHandler {
-    @Value("${spring.datasource.url}")
-    private String connectionUrl;
+    @Autowired
+    @Qualifier("db-settings")
+    private DatabaseSettings databaseSettings;
 
-    @Value("${spring.datasource.username}")
-    private String databaseUser;
-
-    @Value("${spring.datasource.password}")
-    private String databasePassword;
-
-    private DatabaseSettings dbSettings;
+    private UserSettings userSettings;
 
     @Autowired
-    public void setDbSettings(DatabaseSettings dbSettings) {
-        this.dbSettings = dbSettings;
+    public void setUserSettings(UserSettings userSettings) {
+        this.userSettings = userSettings;
     }
 
     private static final Logger logger = LoggerFactory.getLogger(DbBackup.class);
 
     private URI getParsedConnUrl() {
         String jdbcPrefix = "jdbc:";
-        String cleanConnUrl = connectionUrl.substring(jdbcPrefix.length());
+        String cleanConnUrl = databaseSettings.getUrl().substring(jdbcPrefix.length());
 
         return URI.create(cleanConnUrl);
     }
@@ -52,9 +48,13 @@ public class PostgresDumpHandler implements DbDumpHandler {
         Process process;
         ProcessBuilder pb;
 
+        System.out.println("Current url: " + databaseSettings.getUrl());
+        System.out.println("Current user: " + databaseSettings.getUsername());
+        System.out.println("Current password: " + databaseSettings.getPassword());
+
         pb = new ProcessBuilder(command);
-        pb.environment().put("PGUSER", databaseUser);
-        pb.environment().put("PGPASSWORD", databasePassword);
+        pb.environment().put("PGUSER", databaseSettings.getUsername());
+        pb.environment().put("PGPASSWORD", databaseSettings.getPassword());
         pb.redirectErrorStream(true);
         process = pb.start();
 
@@ -70,7 +70,7 @@ public class PostgresDumpHandler implements DbDumpHandler {
         command = addCommandParam(command, "-h", connUrl.getHost());
         command = addCommandParam(command, "-p", Integer.toString(connUrl.getPort()));
         command = addCommandParam(command, "-F", "p");
-        command = addCommandParam(command, "-d", dbSettings.getDatabaseName());
+        command = addCommandParam(command, "-d", userSettings.getDatabaseName());
 
         return command;
     }
@@ -83,7 +83,7 @@ public class PostgresDumpHandler implements DbDumpHandler {
         command.add("pg_restore");
         command = addCommandParam(command, "-h", connUrl.getHost());
         command = addCommandParam(command, "-p", Integer.toString(connUrl.getPort()));
-        command = addCommandParam(command, "-d", dbSettings.getDatabaseName());
+        command = addCommandParam(command, "-d", userSettings.getDatabaseName());
 
         return command;
     }
@@ -124,6 +124,8 @@ public class PostgresDumpHandler implements DbDumpHandler {
                     processStreamWriter.write(currentLine);
                 }
             }
+
+            logger.info("Database successfully restored. Database: {}", userSettings.getDatabaseName());
         } catch (IOException ex) {
             throw new RuntimeException("Error occurred while restoring postgres database dump", ex);
         }
