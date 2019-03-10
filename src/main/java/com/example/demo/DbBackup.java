@@ -39,7 +39,7 @@ public class DbBackup {
                 int currentChunkSize = 0;
                 String currentLine;
                 while ((currentLine = dumpStreamReader.readLine()) != null) {
-                    currentChunk.append(currentLine);
+                    currentChunk.append(currentLine + "\n");
                     currentChunkSize += currentLine.getBytes().length;
                     if (currentChunkSize >= maxChunkSizeInBytes) {
                         fileSystemTextStorageHandler.saveBackup(currentChunk.toString());

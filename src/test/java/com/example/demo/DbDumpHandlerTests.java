@@ -6,26 +6,30 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.quartz.QuartzProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import javax.sql.DataSource;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-@AutoConfigureEmbeddedDatabase
+@AutoConfigureEmbeddedDatabase(beanName = "dataSource")
 public class DbDumpHandlerTests {
     @Autowired
     PostgresDumpHandler postgresDumpHandler;
 
     @Autowired
-    JdbcTemplate jdbcTemplate;
+    private DataSource dataSource;
 
     @Test
     public void testCreateAndRestorePgBackup() {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
         jdbcTemplate.execute("CREATE TABLE Сomments" +
                 "(" +
                 "ID        SERIAL PRIMARY KEY," +
