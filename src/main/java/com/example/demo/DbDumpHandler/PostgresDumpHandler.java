@@ -1,20 +1,31 @@
 package com.example.demo.DbDumpHandler;
 
-import models.Env;
+import com.example.demo.DbBackup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import settings.DatabaseSettings;
 
 import java.io.*;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PostgresDumpHandler extends DbDumpHandler {
-    public PostgresDumpHandler(Env env) {
-        super(env);
+@Component
+public class PostgresDumpHandler implements DbDumpHandler {
+    private DatabaseSettings dbSettings;
+
+    @Autowired
+    public void setDbSettings(DatabaseSettings dbSettings) {
+        this.dbSettings = dbSettings;
     }
+
+    private static final Logger logger = LoggerFactory.getLogger(DbBackup.class);
 
     private URI getParsedConnUrl() {
         String jdbcPrefix = "jdbc:";
-        String cleanConnUrl = env.dbSettings.connectionUrl.substring(jdbcPrefix.length());
+        String cleanConnUrl = dbSettings.getConnectionUrl().substring(jdbcPrefix.length());
 
         return URI.create(cleanConnUrl);
     }
@@ -32,8 +43,8 @@ public class PostgresDumpHandler extends DbDumpHandler {
         ProcessBuilder pb;
 
         pb = new ProcessBuilder(command);
-        pb.environment().put("PGUSER", env.dbSettings.databaseUser);
-        pb.environment().put("PGPASSWORD", env.dbSettings.databasePassword);
+        pb.environment().put("PGUSER", dbSettings.getDatabaseUser());
+        pb.environment().put("PGPASSWORD", dbSettings.getDatabasePassword());
         pb.redirectErrorStream(true);
         process = pb.start();
 
@@ -67,10 +78,9 @@ public class PostgresDumpHandler extends DbDumpHandler {
         return command;
     }
 
-    @Override
-    public void createDbDump() {
-        List<String> backupCommand = getBackupCommand(env.dbSettings.databaseName);
-        env.logger.info("Executing backup command: {}", backupCommand.toString());
+    public InputStream createDbDump() {
+        List<String> backupCommand = getBackupCommand(dbSettings.getDatabaseName());
+        logger.info("Executing backup command: {}", backupCommand.toString());
 
         try {
             Process process = runProcess(backupCommand);
@@ -79,20 +89,19 @@ public class PostgresDumpHandler extends DbDumpHandler {
             ) {
 //                String error;
 //                while ((error = errorStreamReader.readLine()) != null) {
-//                    env.logger.error(error);
+//                    logger.error(error);
 //                    // TODO: выкидывать ошибку, но error стрим объединен с output стримом, так что я не знаю как проверить ошибки
 //                }
             }
-            dataStream = process.getInputStream();
+            return process.getInputStream();
         } catch (IOException ex) {
             throw new RuntimeException("Error occurred while creating postgres database dump", ex);
         }
     }
 
-    @Override
     public void restoreDbDump(InputStream dump) {
-        List<String> restoreCommand = getRestoreCommand(env.dbSettings.databaseName);
-        env.logger.info("Executing restore command: {}", restoreCommand.toString());
+        List<String> restoreCommand = getRestoreCommand(dbSettings.getDatabaseName());
+        logger.info("Executing restore command: {}", restoreCommand.toString());
 
         try {
             Process process = runProcess(restoreCommand);

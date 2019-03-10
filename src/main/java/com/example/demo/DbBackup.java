@@ -1,16 +1,13 @@
 package com.example.demo;
 
-import com.example.demo.BackupWriter.BackupWriter;
-import com.example.demo.BackupWriter.FileSystemBackupWriter;
+import com.example.demo.StorageHandler.FileSystemTextStorageHandler;
 import com.example.demo.DbDumpHandler.PostgresDumpHandler;
-import models.Env;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import settings.DatabaseSettings;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -19,6 +16,12 @@ import java.io.InputStreamReader;
 @Service
 public class DbBackup {
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private PostgresDumpHandler postgresDumpHandler;
+
+    @Autowired
+    private FileSystemTextStorageHandler fileSystemTextStorageHandler;
 
     private static final Logger logger = LoggerFactory.getLogger(DbBackup.class);
 
@@ -37,30 +40,20 @@ public class DbBackup {
     private String databaseName;
 
     public void backup(boolean compressData, long maxChunkSizeInBytes) {
-        Env env = new Env();
-        env.jdbcTemplate = jdbcTemplate;
-        env.logger = logger;
-        DatabaseSettings dbSettings = new DatabaseSettings();
-        dbSettings.connectionUrl = connectionUrl;
-        dbSettings.databaseName = databaseName;
-        dbSettings.databasePassword = databasePassword;
-        dbSettings.databaseUser = databaseUser;
-        env.dbSettings = dbSettings;
-
         try {
-            PostgresDumpHandler dumpCreator = new PostgresDumpHandler(env);
-            dumpCreator.createDbDump();
-
-            BackupWriter backupWriter = new FileSystemBackupWriter(databaseName, maxChunkSizeInBytes, compressData);
-
             try (
-                    BufferedReader dumpStreamReader = new BufferedReader(new InputStreamReader(dumpCreator.getDataStream()))
+                    BufferedReader dumpStreamReader = new BufferedReader(new InputStreamReader(postgresDumpHandler.createDbDump()));
             ) {
+                StringBuilder currentChunk = new StringBuilder();
+                int currentChunkSize = 0;
                 String currentLine;
                 while ((currentLine = dumpStreamReader.readLine()) != null) {
-                    backupWriter.write(currentLine);
+                    currentChunk.append(currentLine);
+                    currentChunkSize += currentLine.getBytes().length;
+                    if (currentChunkSize >= maxChunkSizeInBytes) {
+                        fileSystemTextStorageHandler.saveBackup(currentChunk.toString());
+                    }
                 }
-                backupWriter.close();
             }
 
             logger.info("Backup successfully created. Database name: {}", databaseName);
