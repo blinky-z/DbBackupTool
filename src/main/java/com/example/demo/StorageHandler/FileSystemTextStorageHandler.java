@@ -1,6 +1,7 @@
 package com.example.demo.StorageHandler;
 
 import com.example.demo.DbBackup;
+import com.example.demo.settings.DatabaseSettings;
 import com.example.demo.settings.UserSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +16,11 @@ import java.util.List;
 
 @Service
 public class FileSystemTextStorageHandler implements TextStorageHandler {
-    private UserSettings dbSettings;
+    @Autowired
+    private UserSettings userSettings;
+
+    @Autowired
+    private DatabaseSettings databaseSettings;
 
     private static final Logger logger = LoggerFactory.getLogger(DbBackup.class);
 
@@ -23,18 +28,15 @@ public class FileSystemTextStorageHandler implements TextStorageHandler {
 
     private List<File> createdBackupFiles;
 
-    @Autowired
-    public FileSystemTextStorageHandler(UserSettings dbSettings) {
-        this.dbSettings = dbSettings;
+    public FileSystemTextStorageHandler() {
         createdBackupFiles = new ArrayList<>();
     }
 
     private void createNewFile() throws IOException {
         SimpleDateFormat date = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss-SS");
         String dateAsString = date.format(new Date());
-        File currentFile = new File(dbSettings.getBackupDir() + File.separator + "backup_" +
-                dbSettings.getDatabaseName() + "_"
-                + dateAsString + ".data");
+        File currentFile = new File(userSettings.getBackupDir() + File.separator + "backup_" +
+                databaseSettings.getDatabaseName() + "_" + dateAsString + ".data");
         logger.info("New created file: {}", currentFile.getAbsolutePath());
         createdBackupFiles.add(currentFile);
         fileWriter = new BufferedWriter(new FileWriter(currentFile));
@@ -58,7 +60,7 @@ public class FileSystemTextStorageHandler implements TextStorageHandler {
             String dateAsString = date.format(new Date());
 
             File backupAsSingleFile = new File(System.getProperty("java.io.tmpdir") + File.separator + "backup_" +
-                    dbSettings.getDatabaseName() + "_" + dateAsString + ".data");
+                    databaseSettings.getDatabaseName() + "_" + dateAsString + ".data");
             BufferedWriter backupWriter = new BufferedWriter(new FileWriter(backupAsSingleFile));
             for (File currentBackupFile : createdBackupFiles) {
                 BufferedReader fileReader = new BufferedReader(new FileReader(currentBackupFile));

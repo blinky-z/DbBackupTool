@@ -6,4 +6,6 @@ public interface DatabaseSettings {
     String getUsername();
 
     String getPassword();
+
+    String getDatabaseName();
 }

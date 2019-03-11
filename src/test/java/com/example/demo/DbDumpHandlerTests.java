@@ -11,15 +11,19 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.sql.DataSource;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.sql.SQLException;
+import java.sql.Time;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = DemoApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = {DemoApplication.class, TestConfiguration.class}, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureEmbeddedDatabase(beanName = "dataSource")
 public class DbDumpHandlerTests {
     @Autowired
@@ -58,19 +62,23 @@ public class DbDumpHandlerTests {
         InputStream backupStream = postgresDumpHandler.createDbDump();
         jdbcTemplate.execute("DROP TABLE comments");
 
+        System.out.println("Comments table dropped");
+
+//        File createCommentsTableFile = new File("C:\\Users\\User\\IdeaProjects\\DatabaseBackupTool\\test_create_comments.dump");
+//        try {
+//            backupStream = new FileInputStream(createCommentsTableFile);
+//        } catch (FileNotFoundException ex) {
+//            ex.printStackTrace();
+//        }
+
         postgresDumpHandler.restoreDbDump(backupStream);
+
+        System.out.println("Comments table restored");
 
         List<Map<String, Object>> restoredData = jdbcTemplate.queryForList("SELECT * FROM comments");
 
-        assertEquals(oldData, restoredData);
+        System.out.println("Comparing tables");
 
-//        assert (oldData.size() == restoredData.size());
-//        for (int currentRow = 0; currentRow < oldData.size(); currentRow++) {
-//            Map<String, Object> oldDataRow = oldData.get(currentRow);
-//            Map<String, Object> restoredDataRow = oldData.get(currentRow);
-//            if (oldDataRow != restoredDataRow) {
-//
-//            }
-//        }
+        assertEquals(oldData, restoredData);
     }
 }

@@ -1,12 +1,9 @@
 package com.example.demo.settings;
 
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-@Profile("production")
-@Qualifier(value = "db-settings")
 @Component
 @ConfigurationProperties(prefix = "spring.datasource")
 public class DatabaseProductionSettings implements DatabaseSettings {
@@ -15,6 +12,9 @@ public class DatabaseProductionSettings implements DatabaseSettings {
     private String username;
 
     private String password;
+
+    @Value("${user-config.database-name}")
+    private String databaseName;
 
     public void setUrl(String url) {
         this.url = url;
@@ -41,5 +41,10 @@ public class DatabaseProductionSettings implements DatabaseSettings {
     @Override
     public String getPassword() {
         return password;
+    }
+
+    @Override
+    public String getDatabaseName() {
+        return databaseName;
     }
 }

@@ -1,16 +1,8 @@
 package com.example.demo.settings;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Component;
-
 import javax.sql.DataSource;
 import java.sql.SQLException;
 
-@Profile("test")
-@Qualifier(value = "db-settings")
-@Component
 public class DatabaseTestSettings implements DatabaseSettings {
     private String connectionUrl;
 
@@ -18,12 +10,14 @@ public class DatabaseTestSettings implements DatabaseSettings {
 
     private String databasePassword;
 
-    @Autowired
-    DatabaseTestSettings(DataSource dataSource) {
+    private String databaseName;
+
+    public DatabaseTestSettings(DataSource dataSource) {
         try {
             this.connectionUrl = dataSource.getConnection().getMetaData().getURL();
             this.databaseUser = "postgres";
             this.databasePassword = "postgres";
+            this.databaseName = this.connectionUrl.substring(this.connectionUrl.lastIndexOf("/") + 1);
         } catch (SQLException ex) {
             throw new RuntimeException("Error construction database test settings", ex);
         }
@@ -42,5 +36,10 @@ public class DatabaseTestSettings implements DatabaseSettings {
     @Override
     public String getPassword() {
         return databasePassword;
+    }
+
+    @Override
+    public String getDatabaseName() {
+        return databaseName;
     }
 }

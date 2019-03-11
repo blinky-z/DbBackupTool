@@ -26,4 +26,5 @@ dependencies {
     annotationProcessor group: 'org.springframework.boot', name: 'spring-boot-configuration-processor'
     // https://mvnrepository.com/artifact/junit/junit
     testCompile group: 'junit', name: 'junit', version: '4.12'
+    implementation enforcedPlatform('io.zonky.test.postgres:embedded-postgres-binaries-bom:9.6.12')
 }
