@@ -10,9 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class FileSystemTextStorageHandler implements TextStorageHandler {
@@ -56,23 +54,12 @@ public class FileSystemTextStorageHandler implements TextStorageHandler {
     @Override
     public InputStream downloadBackup() {
         try {
-            SimpleDateFormat date = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
-            String dateAsString = date.format(new Date());
-
-            File backupAsSingleFile = new File(System.getProperty("java.io.tmpdir") + File.separator + "backup_" +
-                    databaseSettings.getDatabaseName() + "_" + dateAsString + ".data");
-            BufferedWriter backupWriter = new BufferedWriter(new FileWriter(backupAsSingleFile));
+            List<InputStream> backupFilesStreams = new ArrayList<>();
             for (File currentBackupFile : createdBackupFiles) {
-                BufferedReader fileReader = new BufferedReader(new FileReader(currentBackupFile));
-                String currentLine;
-                while ((currentLine = fileReader.readLine()) != null) {
-                    backupWriter.write(currentLine);
-                }
-                fileReader.close();
+                backupFilesStreams.add(new FileInputStream(currentBackupFile));
             }
-            backupWriter.close();
 
-            return new FileInputStream(backupAsSingleFile);
+            return new SequenceInputStream(Collections.enumeration(backupFilesStreams));
         } catch (IOException ex) {
             throw new RuntimeException("Error occurred while downloading backup", ex);
         }
