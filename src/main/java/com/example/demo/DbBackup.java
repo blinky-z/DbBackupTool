@@ -3,7 +3,6 @@ package com.example.demo;
 import com.example.demo.DbDumpHandler.PostgresDumpHandler;
 import com.example.demo.StorageHandler.FileSystemTextStorageHandler;
 import com.example.demo.settings.DatabaseSettings;
-import com.example.demo.settings.UserSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +33,7 @@ public class DbBackup {
         maxChunkSizeInBytes = min(maxChunkSizeInBytes, maxDefaultChunkSize);
         try {
             try (
-                    BufferedReader dumpStreamReader = new BufferedReader(new InputStreamReader(postgresDumpHandler.createDbDump()));
+                    BufferedReader dumpStreamReader = new BufferedReader(new InputStreamReader(postgresDumpHandler.createDbDump()))
             ) {
                 StringBuilder currentChunk = new StringBuilder();
                 int currentChunkSize = 0;

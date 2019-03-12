@@ -15,6 +15,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * This class allows to work with POSTGRES database backups
+ */
 @Component
 public class PostgresDumpHandler implements DbDumpHandler {
     @Autowired
@@ -52,7 +55,6 @@ public class PostgresDumpHandler implements DbDumpHandler {
         pb = new ProcessBuilder(command);
         pb.environment().put("PGUSER", databaseSettings.getUsername());
         pb.environment().put("PGPASSWORD", databaseSettings.getPassword());
-        pb.environment().put("LC_MESSAGES", "English");
         process = pb.start();
 
         return process;
@@ -71,32 +73,11 @@ public class PostgresDumpHandler implements DbDumpHandler {
         command = addCommandParam(command, "-p", Integer.toString(connUrl.getPort()));
         command = addCommandParam(command, "-F", "p");
         command = addCommandParam(command, "-d", databaseSettings.getDatabaseName());
-        command = addCommandParam(command, "-f", userSettings.getBackupDir() + File.separator +
-                "backup_" + databaseSettings.getDatabaseName() + "_" + dateAsString + ".dump");
 
         return command;
     }
 
     private List<String> getRestoreCommand(InputStream dump) {
-        SimpleDateFormat date = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss-SS");
-        String dateAsString = date.format(new Date());
-
-        File backupFile = new File(userSettings.getBackupDir()/*System.getProperty("java.io.tmpdir")*/ + File.separator +
-                "backup_" + databaseSettings.getDatabaseName() + "_" + dateAsString + ".dump");
-
-        try (
-                BufferedReader dumpStreamReader = new BufferedReader(new InputStreamReader(dump));
-                BufferedWriter backupFileWriter = new BufferedWriter(new FileWriter(backupFile))
-        ) {
-            String currentLine;
-            while ((currentLine = dumpStreamReader.readLine()) != null) {
-                backupFileWriter.write(currentLine);
-                backupFileWriter.write("\n");
-            }
-        } catch (IOException ex) {
-            throw new RuntimeException("Error occurred while creating backup file to restore from psql");
-        }
-
         ArrayList<String> command = new ArrayList<>();
 
         URI connUrl = getParsedConnUrl();
@@ -106,7 +87,6 @@ public class PostgresDumpHandler implements DbDumpHandler {
         command = addCommandParam(command, "-U", databaseSettings.getUsername());
         command = addCommandParam(command, "-p", Integer.toString(connUrl.getPort()));
         command = addCommandParam(command, "-d", databaseSettings.getDatabaseName());
-        command = addCommandParam(command, "-f", backupFile.getAbsolutePath());
 
         return command;
     }
@@ -160,37 +140,36 @@ public class PostgresDumpHandler implements DbDumpHandler {
         }
     }
 
+    /**
+     * Creates POSTGRES database backup.
+     * Backup is creating by <i>pg_dump</i> tool.
+     *
+     * @return input stream, connected to the normal output stream of the process.
+     */
     public InputStream createDbDump() {
         List<String> backupCommand = getBackupCommand();
         logger.info("Executing backup command: {}", backupCommand.toString());
 
         try {
-            File backupFile = new File("");
-            for (int currentParam = 0; currentParam < backupCommand.size(); currentParam++) {
-                if (backupCommand.get(currentParam).equals("-f")) {
-                    backupFile = new File(backupCommand.get(currentParam + 1));
-                    break;
-                }
-            }
             Process process = runProcess(backupCommand);
 
             Thread processErrorStreamReader = new Thread(new ProcessStandartErrorStreamReader(process.getErrorStream()));
             processErrorStreamReader.start();
 
-            Thread processOutputStreamReader = new Thread(new ProcessStandartOutputStreamReader(process.getInputStream()));
-            processOutputStreamReader.start();
+            logger.info("Database backup successfully created. Database: {}", databaseSettings.getDatabaseName());
 
-            process.waitFor();
-            process.destroy();
-
-            logger.info("Backup creation process successfully completed");
-
-            return new FileInputStream(backupFile);
-        } catch (IOException | InterruptedException ex) {
+            return process.getInputStream();
+        } catch (IOException ex) {
             throw new RuntimeException("Error occurred while creating postgres database dump", ex);
         }
     }
 
+    /**
+     * Restores POSTGRES database backup.
+     * Backup is restoring by <i>psql</i> tool.
+     *
+     * @param dump input stream, that contains the plain-text backup.
+     */
     public void restoreDbDump(InputStream dump) {
         try {
             List<String> restoreCommand = getRestoreCommand(dump);
@@ -204,14 +183,23 @@ public class PostgresDumpHandler implements DbDumpHandler {
             Thread processOutputStreamReader = new Thread(new ProcessStandartOutputStreamReader(process.getInputStream()));
             processOutputStreamReader.start();
 
+            try (
+                    BufferedReader dumpStreamReader = new BufferedReader(new InputStreamReader(dump));
+                    BufferedWriter processOutputWriter = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()))
+            ) {
+                String currentLine;
+                while ((currentLine = dumpStreamReader.readLine()) != null) {
+                    processOutputWriter.write(currentLine + System.getProperty("line.separator"));
+                }
+                processOutputWriter.write("\\q\n");
+            }
+
             process.waitFor();
             process.destroy();
 
-            logger.info("Backup restoration process successfully completed");
+            logger.info("Database successfully restored. Database: {}", databaseSettings.getDatabaseName());
         } catch (IOException | InterruptedException ex) {
             throw new RuntimeException("Error occurred while restoring postgres database dump", ex);
         }
-
-        logger.info("Database successfully restored. Database: {}", databaseSettings.getDatabaseName());
     }
 }

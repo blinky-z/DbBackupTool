@@ -10,8 +10,14 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 
+/**
+ * This class is used to write and download plain text backup from local file system.
+ */
 @Service
 public class FileSystemTextStorageHandler implements TextStorageHandler {
     @Autowired
@@ -35,11 +41,16 @@ public class FileSystemTextStorageHandler implements TextStorageHandler {
         String dateAsString = date.format(new Date());
         File currentFile = new File(userSettings.getBackupDir() + File.separator + "backup_" +
                 databaseSettings.getDatabaseName() + "_" + dateAsString + ".data");
-        logger.info("New created file: {}", currentFile.getAbsolutePath());
+        logger.info("New created backup file: {}", currentFile.getAbsolutePath());
         createdBackupFiles.add(currentFile);
         fileWriter = new BufferedWriter(new FileWriter(currentFile));
     }
 
+    /**
+     * Saves backup chunk to the local file system.
+     * Each call creates new file containing backup chunk.
+     * @param data backup chunk to be saved to the file system
+     */
     @Override
     public void saveBackup(String data) {
         try {
@@ -51,6 +62,10 @@ public class FileSystemTextStorageHandler implements TextStorageHandler {
         }
     }
 
+    /**
+     * Downloads backup from the file system.
+     * @return input stream containing the whole backup.
+     */
     @Override
     public InputStream downloadBackup() {
         try {

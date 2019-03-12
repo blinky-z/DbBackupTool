@@ -2,8 +2,12 @@ package com.example.demo.StorageHandler;
 
 import java.io.InputStream;
 
+/**
+ * This interface provides API to handle binary backups, i.e. archive backups.
+ * If you have plain text backup, use TextStorage interface
+ */
 public interface BinaryStorageHandler extends StorageHandler {
-    public void saveBackup(byte[] data);
+    void saveBackup(byte[] data);
 
-    public InputStream downloadBackup();
+    InputStream downloadBackup();
 }
