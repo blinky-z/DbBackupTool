@@ -26,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 @SpringBootTest(classes = {DemoApplication.class, TestConfiguration.class}, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureEmbeddedDatabase(beanName = "masterDataSource")
 @AutoConfigureEmbeddedDatabase(beanName = "copyDataSource")
-public class BackupManagerTests {
+public class FileSystemStoragePostgresBackupManagerTests {
     @Autowired
     PostgresBackupManager postgresBackupManager;
 
