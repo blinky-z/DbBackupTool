@@ -2,7 +2,6 @@ package com.example.demo.DbDumpHandler;
 
 import com.example.demo.DbBackup;
 import com.example.demo.settings.DatabaseSettings;
-import com.example.demo.settings.UserSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,11 +19,12 @@ import java.util.List;
  */
 @Component
 public class PostgresDumpHandler implements DbDumpHandler {
-    @Autowired
     private DatabaseSettings databaseSettings;
 
     @Autowired
-    private UserSettings userSettings;
+    public void setDatabaseSettings(DatabaseSettings databaseSettings) {
+        this.databaseSettings = databaseSettings;
+    }
 
     private static final Logger logger = LoggerFactory.getLogger(DbBackup.class);
 
@@ -144,11 +144,11 @@ public class PostgresDumpHandler implements DbDumpHandler {
      * Creates POSTGRES database backup.
      * Backup is creating by <i>pg_dump</i> tool.
      *
-     * @return input stream, connected to the normal output stream of the process.
+     * @return input stream, connected to the normal output stream of the process, where the backup written into.
      */
     public InputStream createDbDump() {
         List<String> backupCommand = getBackupCommand();
-        logger.info("Executing backup command: {}", backupCommand.toString());
+        logger.info("Executing backup command: {} on database {}", backupCommand.toString(), databaseSettings.getDatabaseName());
 
         try {
             Process process = runProcess(backupCommand);
@@ -168,12 +168,12 @@ public class PostgresDumpHandler implements DbDumpHandler {
      * Restores POSTGRES database backup.
      * Backup is restoring by <i>psql</i> tool.
      *
-     * @param dump input stream, that contains the plain-text backup.
+     * @param dump input stream, that contains the plain text backup.
      */
     public void restoreDbDump(InputStream dump) {
         try {
             List<String> restoreCommand = getRestoreCommand(dump);
-            logger.info("Executing restore command: {}", restoreCommand.toString());
+            logger.info("Executing restore command: {} on database {}", restoreCommand.toString(), databaseSettings.getDatabaseName());
 
             Process process = runProcess(restoreCommand);
 
@@ -184,14 +184,14 @@ public class PostgresDumpHandler implements DbDumpHandler {
             processOutputStreamReader.start();
 
             try (
-                    BufferedReader dumpStreamReader = new BufferedReader(new InputStreamReader(dump));
+                    BufferedReader backupReader = new BufferedReader(new InputStreamReader(dump));
                     BufferedWriter processOutputWriter = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()))
             ) {
                 String currentLine;
-                while ((currentLine = dumpStreamReader.readLine()) != null) {
+                while ((currentLine = backupReader.readLine()) != null) {
                     processOutputWriter.write(currentLine + System.getProperty("line.separator"));
                 }
-                processOutputWriter.write("\\q\n");
+                processOutputWriter.write("\\q" + System.getProperty("line.separator"));
             }
 
             process.waitFor();
