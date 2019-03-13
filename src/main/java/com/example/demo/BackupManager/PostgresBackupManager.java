@@ -1,4 +1,4 @@
-package com.example.demo.DbDumpHandler;
+package com.example.demo.BackupManager;
 
 import com.example.demo.DbBackup;
 import com.example.demo.settings.DatabaseSettings;
@@ -18,7 +18,7 @@ import java.util.List;
  * This class allows to work with POSTGRES database backups
  */
 @Component
-public class PostgresDumpHandler implements DbDumpHandler {
+public class PostgresBackupManager implements BackupManager {
     private DatabaseSettings databaseSettings;
 
     @Autowired
@@ -189,9 +189,9 @@ public class PostgresDumpHandler implements DbDumpHandler {
             ) {
                 String currentLine;
                 while ((currentLine = backupReader.readLine()) != null) {
-                    processOutputWriter.write(currentLine + System.getProperty("line.separator"));
+                    processOutputWriter.write(currentLine + System.lineSeparator());
                 }
-                processOutputWriter.write("\\q" + System.getProperty("line.separator"));
+                processOutputWriter.write("\\q" + System.lineSeparator());
             }
 
             process.waitFor();

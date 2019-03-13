@@ -1,11 +1,11 @@
-package com.example.demo.StorageHandler;
+package com.example.demo.Storage;
 
 import java.io.InputStream;
 
 /**
  * This interface provides API to handle plain text backups.
  */
-public interface TextStorageHandler extends StorageHandler {
+public interface TextStorage extends Storage {
     void saveBackup(String data);
 
     InputStream downloadBackup();

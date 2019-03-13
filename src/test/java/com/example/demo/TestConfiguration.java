@@ -1,7 +1,7 @@
 package com.example.demo;
 
 import com.example.demo.settings.DatabaseSettings;
-import com.example.demo.settings.DatabaseTestSettings;
+import com.example.demo.settings.TestsDatabaseSettings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,13 +16,13 @@ public class TestConfiguration {
     @Primary
     @Autowired
     DatabaseSettings masterDatabaseSettings(DataSource masterDataSource) {
-        return new DatabaseTestSettings(masterDataSource);
+        return new TestsDatabaseSettings(masterDataSource);
     }
 
     @Bean(name = "copyDatabaseSettings")
     @Autowired
     DatabaseSettings copyDatabaseSettings(DataSource copyDataSource) {
-        return new DatabaseTestSettings(copyDataSource);
+        return new TestsDatabaseSettings(copyDataSource);
     }
 
     @Bean(name = "jdbcMaster")

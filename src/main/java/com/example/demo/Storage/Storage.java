@@ -1,7 +1,7 @@
-package com.example.demo.StorageHandler;
+package com.example.demo.Storage;
 
 /**
  * General Storage interface which TextStorage and BinaryStorage extends
  */
-public interface StorageHandler {
+public interface Storage {
 }

@@ -1,4 +1,4 @@
-package com.example.demo.StorageHandler;
+package com.example.demo.Storage;
 
 import com.example.demo.DbBackup;
 import com.example.demo.settings.DatabaseSettings;
@@ -19,7 +19,7 @@ import java.util.List;
  * This class is used to write and download plain text backup from local file system.
  */
 @Service
-public class FileSystemTextStorageHandler implements TextStorageHandler {
+public class FileSystemTextStorage implements TextStorage {
     @Autowired
     private UserSettings userSettings;
 
@@ -32,7 +32,7 @@ public class FileSystemTextStorageHandler implements TextStorageHandler {
 
     private List<File> createdBackupFiles;
 
-    public FileSystemTextStorageHandler() {
+    public FileSystemTextStorage() {
         createdBackupFiles = new ArrayList<>();
     }
 

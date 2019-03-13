@@ -3,7 +3,7 @@ package com.example.demo.settings;
 import javax.sql.DataSource;
 import java.sql.SQLException;
 
-public class DatabaseTestSettings implements DatabaseSettings {
+public class TestsDatabaseSettings implements DatabaseSettings {
     private String connectionUrl;
 
     private String databaseUser;
@@ -12,7 +12,7 @@ public class DatabaseTestSettings implements DatabaseSettings {
 
     private String databaseName;
 
-    public DatabaseTestSettings(DataSource dataSource) {
+    public TestsDatabaseSettings(DataSource dataSource) {
         try {
             this.connectionUrl = dataSource.getConnection().getMetaData().getURL();
             this.databaseUser = "postgres";

@@ -1,7 +1,7 @@
 package com.example.demo;
 
-import com.example.demo.DbDumpHandler.PostgresDumpHandler;
-import com.example.demo.StorageHandler.FileSystemTextStorageHandler;
+import com.example.demo.BackupManager.PostgresBackupManager;
+import com.example.demo.Storage.FileSystemTextStorage;
 import com.example.demo.settings.DatabaseSettings;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import org.junit.Test;
@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.BufferedReader;
@@ -27,12 +26,12 @@ import static org.junit.Assert.assertEquals;
 @SpringBootTest(classes = {DemoApplication.class, TestConfiguration.class}, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureEmbeddedDatabase(beanName = "masterDataSource")
 @AutoConfigureEmbeddedDatabase(beanName = "copyDataSource")
-public class DbDumpHandlerTests {
+public class BackupManagerTests {
     @Autowired
-    PostgresDumpHandler postgresDumpHandler;
+    PostgresBackupManager postgresBackupManager;
 
     @Autowired
-    FileSystemTextStorageHandler fileSystemTextStorageHandler;
+    FileSystemTextStorage fileSystemTextStorage;
 
     @Autowired
     @Qualifier("jdbcMaster")
@@ -51,7 +50,7 @@ public class DbDumpHandlerTests {
     private DatabaseSettings copyDatabaseSettings;
 
     @Test
-    public void testCreateAndRestorePgBackup() {
+    public void testCreateAndRestorePgBackupFromFileSystem() {
         System.out.println("Master database settings: ");
         System.out.println(masterDatabaseSettings.getUrl());
         System.out.println("Copy database settings: ");
@@ -81,7 +80,7 @@ public class DbDumpHandlerTests {
                 "from generate_series(0, ?) s(i)", databaseRows);
 
 
-        InputStream backupStream = postgresDumpHandler.createDbDump();
+        InputStream backupStream = postgresBackupManager.createDbDump();
 
         BufferedReader backupStreamReader = new BufferedReader(new InputStreamReader(backupStream));
         try {
@@ -94,20 +93,20 @@ public class DbDumpHandlerTests {
                 backupChunk.append("\n");
                 currentChunkSize += currentLine.getBytes().length;
                 if (currentChunkSize >= maxChunkSize) {
-                    fileSystemTextStorageHandler.saveBackup(backupChunk.toString());
+                    fileSystemTextStorage.saveBackup(backupChunk.toString());
                     currentChunkSize = 0;
                     backupChunk.setLength(0);
                 }
             }
             if (currentChunkSize != 0) {
-                fileSystemTextStorageHandler.saveBackup(backupChunk.toString());
+                fileSystemTextStorage.saveBackup(backupChunk.toString());
             }
         } catch (IOException ex) {
             ex.printStackTrace();
         }
 
-        postgresDumpHandler.setDatabaseSettings(copyDatabaseSettings);
-        postgresDumpHandler.restoreDbDump(fileSystemTextStorageHandler.downloadBackup());
+        postgresBackupManager.setDatabaseSettings(copyDatabaseSettings);
+        postgresBackupManager.restoreDbDump(fileSystemTextStorage.downloadBackup());
 
         System.out.println("Database restored");
 

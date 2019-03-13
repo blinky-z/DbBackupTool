@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @ConfigurationProperties(prefix = "spring.datasource")
-public class DatabaseProductionSettings implements DatabaseSettings {
+public class ApplicationPropertiesDatabaseSettings implements DatabaseSettings {
     private String url;
 
     private String username;
