@@ -27,4 +27,5 @@ dependencies {
     // https://mvnrepository.com/artifact/junit/junit
     testCompile group: 'junit', name: 'junit', version: '4.12'
     implementation enforcedPlatform('io.zonky.test.postgres:embedded-postgres-binaries-bom:9.6.12')
+    compile 'com.dropbox.core:dropbox-core-sdk:3.0.10'
 }
