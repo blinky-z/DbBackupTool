@@ -10,10 +10,14 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class ApiController {
-    @Autowired
-    UserSettings userSettings;
+    private UserSettings userSettings;
 
-    private static final String INVALID_Credentials = "Invalid credentials";
+    @Autowired
+    public void setUserSettings(UserSettings userSettings) {
+        this.userSettings = userSettings;
+    }
+
+    private static final String INVALID_CREDENTIALS = "Invalid credentials";
 
     private boolean checkCrendetials(LoginRequest loginRequest) {
         String login = loginRequest.getLogin();
@@ -26,15 +30,12 @@ public class ApiController {
     }
 
     @RequestMapping(value = "/api/login", method = RequestMethod.POST)
-    @ResponseBody
     public ResponseEntity login(@RequestBody LoginRequest loginRequest) {
-        System.out.println("Got login request");
-
         if (!checkCrendetials(loginRequest)) {
             ResponseTransfer response = new ResponseTransfer();
-            response.setBody(INVALID_Credentials);
+            response.setError(INVALID_CREDENTIALS);
 
-            return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
         }
 
         return new ResponseEntity(HttpStatus.OK);

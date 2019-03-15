@@ -14,7 +14,6 @@ $('#signInButton').click(function (e) {
             contentType: 'application/json',
             data: jsonCredentials,
             success: function () {
-                alert("Success");
                 localStorage.setItem('login', login);
                 window.location.replace('/dashboard');
             },

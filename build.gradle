@@ -16,6 +16,7 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    compile("org.springframework.boot:spring-boot-starter-security")
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     compile group: 'org.postgresql', name: 'postgresql', version: '42.2.4'
     // https://mvnrepository.com/artifact/io.zonky.test/embedded-database-spring-test
