@@ -1,19 +1,17 @@
 package com.example.demo.controllers;
 
 import com.example.demo.DbBackup;
-import com.example.demo.webUi.WebUiSettings.CreateBackupSettings;
-import com.example.demo.webUi.WebUiSettings.CreateDatabaseSettings;
-import com.example.demo.webUi.WebUiSettings.CreateStorageSettings;
 import com.example.demo.repositories.database.PostgresSettingsDatabaseRepository;
 import com.example.demo.repositories.storage.DropboxSettingsStorageRepository;
 import com.example.demo.repositories.storage.LocalFileSystemSettingsStorageRepository;
-import com.example.demo.settings.UserSettings;
+import com.example.demo.webUi.WebUiSettings.CreateBackupSettings;
+import com.example.demo.webUi.WebUiSettings.CreateDatabaseSettings;
+import com.example.demo.webUi.WebUiSettings.CreateStorageSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -51,15 +49,10 @@ public class ApiController {
         this.postgresSettingsDatabaseRepository = postgresSettingsDatabaseRepository;
     }
 
-    @Autowired
-    public void setUserSettings(UserSettings userSettings) {
-        this.userSettings = userSettings;
-    }
+//    TODO: сделать проверку типа стореджа или типа базы данных на основании enum (констант), а не строки.
+//     Заменить в thymeleaf все использования типов на такие же константы, чтобы в хандлере я мог принимать сразу константу.
 
-    @Autowired
-    public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
+//    TODO: добавить нормальную валидацию всех форм.
 
     @DeleteMapping(value = "/database")
     public String deleteDatabase(@RequestParam(value = "databaseType", required = true) String databaseType,

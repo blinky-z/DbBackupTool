@@ -49,6 +49,7 @@ public class WebController {
         return "login.html";
     }
 
+//    TODO: сделать добавление всех стореджей в одном цикле, и добавление всех баз данных в одном цикле. Сейчас есть дупликация кода
     @RequestMapping("/dashboard")
     public String dashboard(Model model) {
         List<StorageItem> storageList = new ArrayList<>();
