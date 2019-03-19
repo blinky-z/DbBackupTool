@@ -22,10 +22,6 @@ import javax.validation.Valid;
 
 @Controller
 public class ApiController {
-    private UserSettings userSettings;
-
-    private JdbcTemplate jdbcTemplate;
-
     private static final Logger logger = LoggerFactory.getLogger(DbBackup.class);
 
     private LocalFileSystemSettingsStorageRepository localFileSystemSettingsStorageRepository;

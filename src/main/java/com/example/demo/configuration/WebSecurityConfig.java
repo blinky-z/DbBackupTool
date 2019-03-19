@@ -50,7 +50,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     public UserDetailsService userDetailsService() {
         UserDetails user =
-                User.builder().username(userSettings.getLogin()).password(passwordEncoder().encode(userSettings.getPassword()))
+                User.builder().username(userSettings.getWebUILogin()).password(passwordEncoder().encode(userSettings.getWebUIPassword()))
                         .roles("USER").build();
 
         return new InMemoryUserDetailsManager(user);

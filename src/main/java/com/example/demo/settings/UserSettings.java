@@ -10,9 +10,9 @@ public class UserSettings {
 
     private String dropboxAccessToken;
 
-    private String login;
+    private String webUILogin;
 
-    private String password;
+    private String webUIPassword;
 
     public String getBackupDir() {
         return backupDir;
@@ -30,19 +30,19 @@ public class UserSettings {
         this.dropboxAccessToken = dropboxAccessToken;
     }
 
-    public String getLogin() {
-        return login;
+    public String getWebUILogin() {
+        return webUILogin;
     }
 
-    public void setLogin(String login) {
-        this.login = login;
+    public void setWebUILogin(String webUILogin) {
+        this.webUILogin = webUILogin;
     }
 
-    public String getPassword() {
-        return password;
+    public String getWebUIPassword() {
+        return webUIPassword;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setWebUIPassword(String webUIPassword) {
+        this.webUIPassword = webUIPassword;
     }
 }

@@ -3,12 +3,7 @@ package com.example.demo.webUi.WebUiSettings;
 import com.example.demo.models.storage.DropboxSettings;
 import com.example.demo.models.storage.LocalFileSystemSettings;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
-
 public class CreateStorageSettings {
-    @Valid
-    @NotEmpty
     private String storageType;
 
     private DropboxSettings dropboxSettings;
