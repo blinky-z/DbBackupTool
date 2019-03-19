@@ -29,4 +29,8 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     implementation enforcedPlatform('io.zonky.test.postgres:embedded-postgres-binaries-bom:9.6.12')
     compile 'com.dropbox.core:dropbox-core-sdk:3.0.10'
+    // https://mvnrepository.com/artifact/org.thymeleaf/thymeleaf
+    compile group: 'org.thymeleaf', name: 'thymeleaf', version: '3.0.11.RELEASE'
+// https://mvnrepository.com/artifact/org.thymeleaf/thymeleaf-spring5
+    compile group: 'org.thymeleaf', name: 'thymeleaf-spring5', version: '3.0.11.RELEASE'
 }

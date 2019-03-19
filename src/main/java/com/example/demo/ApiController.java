@@ -109,20 +109,12 @@ public class ApiController {
         return "redirect:/dashboard";
     }
 
-    @PostMapping(value = "/api/create-backup")
+    @PostMapping(value = "/create-backup")
     public ResponseEntity createBackup(@Valid CreateBackupSettings createBackupSettings, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             logger.info("Has errors");
             logger.info(bindingResult.getAllErrors().toString());
         }
-
-        logger.info("{}", createBackupSettings.getDatabaseType());
-
-        logger.info("{}", createBackupSettings.getDatabaseSettings().getHost());
-        logger.info("{}", createBackupSettings.getDatabaseSettings().getPort());
-        logger.info("{}", createBackupSettings.getDatabaseSettings().getName());
-        logger.info("{}", createBackupSettings.getDatabaseSettings().getLogin());
-        logger.info("{}", createBackupSettings.getDatabaseSettings().getPassword());
 
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }
