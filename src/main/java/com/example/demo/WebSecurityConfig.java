@@ -1,7 +1,6 @@
 package com.example.demo;
 
 import com.example.demo.settings.UserSettings;
-import org.apache.catalina.startup.UserConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,10 +33,16 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
-                .antMatchers("/dashboard").permitAll()
+                .antMatchers("/", "/css/**", "/js/**", "/images/**").permitAll()
                 .anyRequest().authenticated()
+
                 .and()
-                .formLogin().disable()
+                .formLogin().loginPage("/login").loginProcessingUrl("/api/login").permitAll()
+
+                .and()
+                .logout().logoutSuccessUrl("/").logoutUrl("/api/logout")
+
+                .and()
                 .csrf().disable();
     }
 

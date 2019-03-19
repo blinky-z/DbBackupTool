@@ -1,53 +1,43 @@
-/* globals Chart:false, feather:false */
+function removeDatabase(databaseItemRemoveButton) {
+    var databaseItem = $(databaseItemRemoveButton).closest(".databaseItem");
+    var databaseId = databaseItem.attr("data-id");
+    var databaseType = databaseItem.attr("data-database-type");
 
-(function () {
-  'use strict'
+    $.ajax({
+        url: "/database",
+        type: "delete",
+        data: {
+            id: databaseId,
+            databaseType: databaseType
+        },
+        success: function (response) {
+            alert("Database was successfully deleted");
+            location.reload();
+        },
+        error: function (xhr) {
+            alert("Database deletion error");
+        }
+    });
+}
 
-  feather.replace()
+function removeStorage(storageItemRemoveButton) {
+    var storageItem = $(storageItemRemoveButton).closest(".storageItem");
+    var storageId = storageItem.attr("data-id");
+    var storageType = storageItem.attr("data-storage-type");
 
-  // Graphs
-  var ctx = document.getElementById('myChart')
-  // eslint-disable-next-line no-unused-vars
-  var myChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: [
-        'Sunday',
-        'Monday',
-        'Tuesday',
-        'Wednesday',
-        'Thursday',
-        'Friday',
-        'Saturday'
-      ],
-      datasets: [{
-        data: [
-          15339,
-          21345,
-          18483,
-          24003,
-          23489,
-          24092,
-          12034
-        ],
-        lineTension: 0,
-        backgroundColor: 'transparent',
-        borderColor: '#007bff',
-        borderWidth: 4,
-        pointBackgroundColor: '#007bff'
-      }]
-    },
-    options: {
-      scales: {
-        yAxes: [{
-          ticks: {
-            beginAtZero: false
-          }
-        }]
-      },
-      legend: {
-        display: false
-      }
-    }
-  })
-}())
+    $.ajax({
+        url: "/storage",
+        type: "delete",
+        data: {
+            id: storageId,
+            storageType: storageType
+        },
+        success: function (response) {
+            alert("Storage was successfully deleted");
+            location.reload();
+        },
+        error: function (xhr) {
+            alert("Storage deletion error");
+        }
+    });
+}

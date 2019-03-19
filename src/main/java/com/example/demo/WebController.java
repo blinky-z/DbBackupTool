@@ -7,8 +7,8 @@ import org.springframework.web.servlet.view.RedirectView;
 @Controller
 public class WebController {
     @RequestMapping("/")
-    public RedirectView index() {
-        return new RedirectView("/dashboard");
+    public String index() {
+        return "index.html";
     }
 
     @RequestMapping("/login")
