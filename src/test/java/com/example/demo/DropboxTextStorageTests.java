@@ -88,7 +88,7 @@ public class DropboxTextStorageTests {
                 "CONTENT   CHARACTER VARYING(2048) not null" +
                 ")");
 
-        long databaseRows = 10000000; // 1 Gb
+        long databaseRows = 1000; // 1 Gb
         jdbcMasterTemplate.update("insert into comments (author, content)" +
                 " select " +
                 "    left(md5(i::text), 36)," +
