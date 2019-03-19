@@ -1,4 +1,7 @@
-package com.example.demo.WebUiSettings;
+package com.example.demo.webUi.WebUiSettings;
+
+import com.example.demo.models.storage.DropboxSettings;
+import com.example.demo.models.storage.LocalFileSystemSettings;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;

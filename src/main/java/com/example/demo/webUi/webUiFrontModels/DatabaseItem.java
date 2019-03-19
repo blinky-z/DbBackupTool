@@ -1,34 +1,36 @@
-package com.example.demo.models;
+package com.example.demo.webUi.webUiFrontModels;
 
-public class StorageItem {
-    private String type;
+import com.example.demo.models.database.DatabaseType;
 
-    private String id;
+public class DatabaseItem {
+    private DatabaseType type;
+
+    private int id;
 
     private String desc;
 
     private String time;
 
-    public StorageItem(String type, String id, String desc, String time) {
+    public DatabaseItem(DatabaseType type, int id, String desc, String time) {
         this.type = type;
         this.id = id;
         this.desc = desc;
         this.time = time;
     }
 
-    public String getType() {
+    public DatabaseType getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(DatabaseType type) {
         this.type = type;
     }
 
-    public String getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(int id) {
         this.id = id;
     }
 

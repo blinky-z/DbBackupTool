@@ -165,14 +165,14 @@
                                         <tr>
                                             <th scope="col" class="col-md-2">Storage</th>
                                             <th scope="col" class="col-md-6">Description</th>
-                                            <th scope="col" class="col-md-3">Date</th>
+                                            <th scope="col" class="col-md-3">Creation time</th>
                                             <th scope="col"></th>
                                         </tr>
                                         </thead>
                                         <tbody>
                                         <tr th:each="storage: ${storageList}" th:object="${storage}" class="storageItem"
                                             th:attr="data-storage-type=*{type}, data-id=*{id}">
-                                            <th scope="row" th:text="*{type}"></th>
+                                            <th scope="row" th:text="*{type.toString()}"></th>
                                             <td th:text="*{desc}"></td>
                                             <td th:text="*{time}"></td>
                                             <td>
@@ -264,10 +264,11 @@
                                         </tr>
                                         </thead>
                                         <tbody>
-                                        <tr class="databaseItem" data-database-type="dropbox" data-id="0">
-                                            <th scope="row">Postgres</th>
-                                            <td>Description</td>
-                                            <td>Date</td>
+                                        <tr th:each="database: ${databaseList}" th:object="${database}" class="databaseItem"
+                                            th:attr="data-database-type=*{type}, data-id=*{id}">
+                                            <th scope="row" th:text="*{type.toString()}"></th>
+                                            <td th:text="*{desc}"></td>
+                                            <td th:text="*{time}"></td>
                                             <td>
                                                 <div class="d-flex flex-row-reverse bd-highlight">
                                                     <button type="button" class="btn btn-secondary" onclick="removeDatabase(this)">
@@ -292,29 +293,27 @@
                                     </select>
                                 </div>
 
-                                <div class="form-group" id="inputDatabaseCommonFields">
-                                    <label for="databaseHostInput">Host</label>
-                                    <input type="text" class="form-control form-control-sm" id="databaseHostInput"
-                                           name="databaseSettings.host" placeholder="" required>
-                                    <label for="databasePortInput">Port</label>
-                                    <input type="text" class="form-control form-control-sm" id="databasePortInput"
-                                           name="databaseSettings.port" placeholder="" required>
-                                    <label for="databaseNameInput">Database name</label>
-                                    <input type="text" class="form-control form-control-sm" id="databaseNameInput"
-                                           name="databaseSettings.name" placeholder="" required>
-                                    <label for="databaseLoginInput">Database login</label>
-                                    <input type="text" class="form-control form-control-sm" id="databaseLoginInput"
-                                           name="databaseSettings.login" placeholder="" required>
-                                    <label for="databasePasswordInput">Database password</label>
-                                    <input type="password" class="form-control form-control-sm" id="databasePasswordInput"
-                                           name="databaseSettings.password"
-                                           placeholder="" required>
-                                </div>
-
                                 <!--Database select based content-->
                                 <div id="selectDatabaseContent">
                                     <div class="postgresDatabaseSelect box">
-
+                                        <div class="form-group">
+                                            <label for="postgresDatabaseHostInput">Host</label>
+                                            <input type="text" class="form-control form-control-sm" id="postgresDatabaseHostInput"
+                                                   name="postgresSettings.host" placeholder="" required>
+                                            <label for="postgresDatabasePortInput">Port</label>
+                                            <input type="text" class="form-control form-control-sm" id="postgresDatabasePortInput"
+                                                   name="postgresSettings.port" placeholder="" required>
+                                            <label for="postgresDatabaseNameInput">Database name</label>
+                                            <input type="text" class="form-control form-control-sm" id="postgresDatabaseNameInput"
+                                                   name="postgresSettings.name" placeholder="" required>
+                                            <label for="postgresDatabaseLoginInput">Database login</label>
+                                            <input type="text" class="form-control form-control-sm" id="postgresDatabaseLoginInput"
+                                                   name="postgresSettings.login" placeholder="" required>
+                                            <label for="postgresDatabasePasswordInput">Database password</label>
+                                            <input type="text" class="form-control form-control-sm" id="postgresDatabasePasswordInput"
+                                                   name="postgresSettings.password"
+                                                   placeholder="" required>
+                                        </div>
                                     </div>
                                 </div>
                                 <button type="submit" class="btn btn-primary">Create storage</button>

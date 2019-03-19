@@ -1,7 +1,7 @@
 package com.example.demo;
 
 import com.example.demo.BackupManager.PostgresBackupManager;
-import com.example.demo.Storage.DropboxTextStorage;
+import com.example.demo.storage.DropboxTextStorage;
 import com.example.demo.settings.DatabaseSettings;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import org.junit.Test;

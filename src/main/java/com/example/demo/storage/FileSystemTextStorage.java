@@ -1,4 +1,4 @@
-package com.example.demo.Storage;
+package com.example.demo.storage;
 
 import com.example.demo.DbBackup;
 import com.example.demo.settings.DatabaseSettings;

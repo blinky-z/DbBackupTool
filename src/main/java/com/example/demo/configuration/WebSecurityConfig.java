@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.example.demo.configuration;
 
 import com.example.demo.settings.UserSettings;
 import org.springframework.beans.factory.annotation.Autowired;

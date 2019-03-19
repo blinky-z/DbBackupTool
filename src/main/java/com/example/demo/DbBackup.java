@@ -1,7 +1,7 @@
 package com.example.demo;
 
 import com.example.demo.BackupManager.PostgresBackupManager;
-import com.example.demo.Storage.FileSystemTextStorage;
+import com.example.demo.storage.FileSystemTextStorage;
 import com.example.demo.settings.DatabaseSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

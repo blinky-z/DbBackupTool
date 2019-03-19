@@ -1,9 +1,12 @@
-package com.example.demo;
+package com.example.demo.controllers;
 
-import com.example.demo.WebUiSettings.CreateBackupSettings;
-import com.example.demo.WebUiSettings.CreateDatabaseSettings;
-import com.example.demo.WebUiSettings.CreateStorageSettings;
-import com.example.demo.WebUiSettings.DatabaseSettings;
+import com.example.demo.DbBackup;
+import com.example.demo.webUi.WebUiSettings.CreateBackupSettings;
+import com.example.demo.webUi.WebUiSettings.CreateDatabaseSettings;
+import com.example.demo.webUi.WebUiSettings.CreateStorageSettings;
+import com.example.demo.repositories.database.PostgresSettingsDatabaseRepository;
+import com.example.demo.repositories.storage.DropboxSettingsStorageRepository;
+import com.example.demo.repositories.storage.LocalFileSystemSettingsStorageRepository;
 import com.example.demo.settings.UserSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +30,27 @@ public class ApiController {
 
     private static final Logger logger = LoggerFactory.getLogger(DbBackup.class);
 
+    private LocalFileSystemSettingsStorageRepository localFileSystemSettingsStorageRepository;
+
+    private DropboxSettingsStorageRepository dropboxSettingsStorageRepository;
+
+    private PostgresSettingsDatabaseRepository postgresSettingsDatabaseRepository;
+
+    @Autowired
+    public void setLocalFileSystemSettingsStorageRepository(LocalFileSystemSettingsStorageRepository localFileSystemSettingsStorageRepository) {
+        this.localFileSystemSettingsStorageRepository = localFileSystemSettingsStorageRepository;
+    }
+
+    @Autowired
+    public void setDropboxSettingsStorageRepository(DropboxSettingsStorageRepository dropboxSettingsStorageRepository) {
+        this.dropboxSettingsStorageRepository = dropboxSettingsStorageRepository;
+    }
+
+    @Autowired
+    public void setPostgresSettingsDatabaseRepository(PostgresSettingsDatabaseRepository postgresSettingsDatabaseRepository) {
+        this.postgresSettingsDatabaseRepository = postgresSettingsDatabaseRepository;
+    }
+
     @Autowired
     public void setUserSettings(UserSettings userSettings) {
         this.userSettings = userSettings;
@@ -39,10 +63,11 @@ public class ApiController {
 
     @DeleteMapping(value = "/database")
     public String deleteDatabase(@RequestParam(value = "databaseType", required = true) String databaseType,
-                                         @RequestParam(value = "id", required = true) long id) {
+                                 @RequestParam(value = "id", required = true) int id) {
         switch (databaseType) {
-            case "postgres": {
-                jdbcTemplate.update("delete from postgres_settings where id=?", id);
+            case "PostgreSQL": {
+                postgresSettingsDatabaseRepository.deleteById(id);
+                break;
             }
         }
 
@@ -59,10 +84,8 @@ public class ApiController {
         String databaseType = createDatabaseSettings.getDatabaseType();
         switch (databaseType) {
             case "postgres": {
-                DatabaseSettings databaseSettings = createDatabaseSettings.getDatabaseSettings();
-                jdbcTemplate.update("insert into postgres_settings (host, port, name, login, password) values(?, ?, ?, ?, ?)",
-                        databaseSettings.getHost(), databaseSettings.getPort(), databaseSettings.getName(), databaseSettings.getLogin(),
-                        databaseSettings.getPassword());
+                postgresSettingsDatabaseRepository.save(createDatabaseSettings.getPostgresSettings());
+                break;
             }
         }
 
@@ -71,15 +94,17 @@ public class ApiController {
 
     @DeleteMapping(value = "/storage")
     public String deleteStorage(@RequestParam(value = "storageType", required = true) String storageType,
-                                        @RequestParam(value = "id", required = true) long id) {
+                                @RequestParam(value = "id", required = true) int id) {
         logger.info("Deletion of storage: storage type: {}, id: {}", storageType, id);
 
         switch (storageType) {
-            case "dropbox": {
-                jdbcTemplate.update("delete from dropbox_settings where id=?", id);
+            case "Dropbox": {
+                dropboxSettingsStorageRepository.deleteById(id);
+                break;
             }
-            case "localFileSystem": {
-                jdbcTemplate.update("delete from local_file_system_settings where id=?", id);
+            case "Local File System": {
+                localFileSystemSettingsStorageRepository.deleteById(id);
+                break;
             }
         }
 
@@ -87,8 +112,7 @@ public class ApiController {
     }
 
     @PostMapping(value = "/storage")
-    public String createStorage(@Valid CreateStorageSettings createStorageSettings,
-                                        BindingResult bindingResult) {
+    public String createStorage(@Valid CreateStorageSettings createStorageSettings, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             logger.info("Has errors");
             logger.info(bindingResult.getAllErrors().toString());
@@ -97,12 +121,12 @@ public class ApiController {
         String storageType = createStorageSettings.getStorageType();
         switch (storageType) {
             case "dropbox": {
-                jdbcTemplate.update("insert into dropbox_settings (access_token) values(?)",
-                        createStorageSettings.getDropboxSettings().getAccessToken());
+                dropboxSettingsStorageRepository.save(createStorageSettings.getDropboxSettings());
+                break;
             }
             case "localFileSystem": {
-                jdbcTemplate.update("insert into local_file_system_settings (backup_path) values(?)",
-                        createStorageSettings.getLocalFileSystemSettings().getBackupPath());
+                localFileSystemSettingsStorageRepository.save(createStorageSettings.getLocalFileSystemSettings());
+                break;
             }
         }
 

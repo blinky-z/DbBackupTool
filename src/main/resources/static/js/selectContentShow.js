@@ -20,11 +20,9 @@ $(document).ready(function () {
             var optionValue = $(this).attr("id");
             var $selectStorageContent = $("#selectDatabaseContent");
             if (optionValue) {
-                $('#inputDatabaseCommonFields').show();
                 $selectStorageContent.find(".box").not("." + optionValue).hide();
                 $selectStorageContent.find("." + optionValue).show();
             } else {
-                $('#inputDatabaseCommonFields').hide();
                 $selectStorageContent.find(".box").hide();
             }
         });

@@ -1,4 +1,4 @@
-package com.example.demo.Storage;
+package com.example.demo.storage;
 
 import java.io.InputStream;
 
