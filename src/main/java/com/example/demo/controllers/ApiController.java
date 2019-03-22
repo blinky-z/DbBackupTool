@@ -1,12 +1,21 @@
 package com.example.demo.controllers;
 
+import com.example.demo.DatabaseManager.DatabaseManager;
 import com.example.demo.DbBackup;
-import com.example.demo.repositories.database.PostgresSettingsDatabaseRepository;
-import com.example.demo.repositories.storage.DropboxSettingsStorageRepository;
-import com.example.demo.repositories.storage.LocalFileSystemSettingsStorageRepository;
-import com.example.demo.webUi.WebUiSettings.CreateBackupSettings;
-import com.example.demo.webUi.WebUiSettings.CreateDatabaseSettings;
-import com.example.demo.webUi.WebUiSettings.CreateStorageSettings;
+import com.example.demo.StorageManager.StorageManager;
+import com.example.demo.entities.database.Database;
+import com.example.demo.entities.database.DatabaseSettings;
+import com.example.demo.entities.database.PostgresSettings;
+import com.example.demo.entities.storage.DropboxSettings;
+import com.example.demo.entities.storage.LocalFileSystemSettings;
+import com.example.demo.entities.storage.Storage;
+import com.example.demo.entities.storage.StorageSettings;
+import com.example.demo.webUi.WebUiForm.WebCreateBackupRequest;
+import com.example.demo.webUi.WebUiForm.WebCreateDatabaseRequest;
+import com.example.demo.webUi.WebUiForm.WebCreateStorageRequest;
+import com.example.demo.webUi.WebUiForm.database.WebPostgresSettings;
+import com.example.demo.webUi.WebUiForm.storage.WebDropboxSettings;
+import com.example.demo.webUi.WebUiForm.storage.WebLocalFileSystemSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,111 +28,121 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.validation.Valid;
+import java.util.Objects;
+import java.util.Optional;
 
 @Controller
 public class ApiController {
     private static final Logger logger = LoggerFactory.getLogger(DbBackup.class);
 
-    private LocalFileSystemSettingsStorageRepository localFileSystemSettingsStorageRepository;
+    private DatabaseManager databaseManager;
 
-    private DropboxSettingsStorageRepository dropboxSettingsStorageRepository;
-
-    private PostgresSettingsDatabaseRepository postgresSettingsDatabaseRepository;
+    private StorageManager storageManager;
 
     @Autowired
-    public void setLocalFileSystemSettingsStorageRepository(LocalFileSystemSettingsStorageRepository localFileSystemSettingsStorageRepository) {
-        this.localFileSystemSettingsStorageRepository = localFileSystemSettingsStorageRepository;
+    public void setDatabaseManager(DatabaseManager databaseManager) {
+        this.databaseManager = databaseManager;
     }
 
     @Autowired
-    public void setDropboxSettingsStorageRepository(DropboxSettingsStorageRepository dropboxSettingsStorageRepository) {
-        this.dropboxSettingsStorageRepository = dropboxSettingsStorageRepository;
+    public void setStorageManager(StorageManager storageManager) {
+        this.storageManager = storageManager;
     }
-
-    @Autowired
-    public void setPostgresSettingsDatabaseRepository(PostgresSettingsDatabaseRepository postgresSettingsDatabaseRepository) {
-        this.postgresSettingsDatabaseRepository = postgresSettingsDatabaseRepository;
-    }
-
-//    TODO: сделать проверку типа стореджа или типа базы данных на основании enum (констант), а не строки.
-//     Заменить в thymeleaf все использования типов на такие же константы, чтобы в хандлере я мог принимать сразу константу.
 
 //    TODO: добавить нормальную валидацию всех форм.
 
     @DeleteMapping(value = "/database")
-    public String deleteDatabase(@RequestParam(value = "databaseType", required = true) String databaseType,
-                                 @RequestParam(value = "id", required = true) int id) {
-        switch (databaseType) {
-            case "PostgreSQL": {
-                postgresSettingsDatabaseRepository.deleteById(id);
-                break;
-            }
-        }
+    public String deleteDatabase(@RequestParam(value = "id") int id) {
+        logger.info("Deletion of database: id: {}", id);
+
+        databaseManager.deleteDatabaseSettings(id);
 
         return "redirect:/dashboard";
     }
 
     @PostMapping(value = "/database")
-    public String createDatabase(@Valid CreateDatabaseSettings createDatabaseSettings, BindingResult bindingResult) {
+    public String createDatabase(@Valid WebCreateDatabaseRequest createDatabaseRequest, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             logger.info("Has errors");
             logger.info(bindingResult.getAllErrors().toString());
         }
 
-        String databaseType = createDatabaseSettings.getDatabaseType();
-        switch (databaseType) {
-            case "postgres": {
-                postgresSettingsDatabaseRepository.save(createDatabaseSettings.getPostgresSettings());
-                break;
+        Optional<Database> databaseType = Database.of(createDatabaseRequest.getDatabaseType());
+        if (databaseType.isPresent()) {
+            switch (databaseType.get()) {
+                case POSTGRES: {
+                    PostgresSettings postgresSettings = new PostgresSettings();
+                    WebPostgresSettings webPostgresSettings = Objects.requireNonNull(createDatabaseRequest.getPostgresSettings());
+
+                    DatabaseSettings databaseSettings = DatabaseSettings.postgresSettings(postgresSettings)
+                            .withHost(createDatabaseRequest.getHost())
+                            .withPort(createDatabaseRequest.getPort())
+                            .withName(createDatabaseRequest.getName())
+                            .withLogin(createDatabaseRequest.getLogin())
+                            .withPassword(createDatabaseRequest.getPassword())
+                            .build();
+                    databaseManager.saveDatabaseSettings(databaseSettings);
+                    break;
+                }
             }
+        } else {
+            throw new RuntimeException("Can't create database configuration. Error: Unknown database type");
         }
+
 
         return "redirect:/dashboard";
     }
 
     @DeleteMapping(value = "/storage")
-    public String deleteStorage(@RequestParam(value = "storageType", required = true) String storageType,
-                                @RequestParam(value = "id", required = true) int id) {
-        logger.info("Deletion of storage: storage type: {}, id: {}", storageType, id);
+    public String deleteStorage(@RequestParam(value = "id") int id) {
+        logger.info("Deletion of storage: id: {}", id);
 
-        switch (storageType) {
-            case "Dropbox": {
-                dropboxSettingsStorageRepository.deleteById(id);
-                break;
-            }
-            case "Local File System": {
-                localFileSystemSettingsStorageRepository.deleteById(id);
-                break;
-            }
-        }
+        storageManager.deleteStoragesettings(id);
 
         return "redirect:/dashboard";
     }
 
     @PostMapping(value = "/storage")
-    public String createStorage(@Valid CreateStorageSettings createStorageSettings, BindingResult bindingResult) {
+    public String createStorage(@Valid WebCreateStorageRequest createStorageRequest, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             logger.info("Has errors");
             logger.info(bindingResult.getAllErrors().toString());
         }
 
-        String storageType = createStorageSettings.getStorageType();
-        switch (storageType) {
-            case "dropbox": {
-                dropboxSettingsStorageRepository.save(createStorageSettings.getDropboxSettings());
-                break;
+        Optional<Storage> storageType = Storage.of(createStorageRequest.getStorageType());
+        if (storageType.isPresent()) {
+            switch (storageType.get()) {
+                case DROPBOX: {
+                    DropboxSettings dropboxSettings = new DropboxSettings();
+                    WebDropboxSettings webDropboxSettings = Objects.requireNonNull(createStorageRequest.getDropboxSettings());
+
+                    dropboxSettings.setAccessToken(webDropboxSettings.getAccessToken());
+
+                    StorageSettings storageSettings = StorageSettings.dropboxSettings(dropboxSettings).build();
+                    storageManager.saveStorageSettings(storageSettings);
+                    break;
+                }
+                case LOCAL_FILE_SYSTEM: {
+                    LocalFileSystemSettings localFileSystemSettings = new LocalFileSystemSettings();
+                    WebLocalFileSystemSettings webLocalFileSystemSettings = Objects.requireNonNull(
+                            createStorageRequest.getLocalFileSystemSettings());
+
+                    localFileSystemSettings.setBackupPath(webLocalFileSystemSettings.getBackupPath());
+
+                    StorageSettings storageSettings = StorageSettings.localFileSystemSettings(localFileSystemSettings).build();
+                    storageManager.saveStorageSettings(storageSettings);
+                    break;
+                }
             }
-            case "localFileSystem": {
-                localFileSystemSettingsStorageRepository.save(createStorageSettings.getLocalFileSystemSettings());
-                break;
-            }
+        } else {
+            throw new RuntimeException("Can't create storage configuration. Error: Unknown storage type");
         }
 
         return "redirect:/dashboard";
     }
 
     @PostMapping(value = "/create-backup")
-    public ResponseEntity createBackup(@Valid CreateBackupSettings createBackupSettings, BindingResult bindingResult) {
+    public ResponseEntity createBackup(@Valid WebCreateBackupRequest createBackupRequest, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             logger.info("Has errors");
             logger.info(bindingResult.getAllErrors().toString());

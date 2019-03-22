@@ -13,7 +13,7 @@ class AdditionalDatabaseSettings {
         this.type = type;
     }
 
-    public PostgresSettings getPostgresSettings() {
+    PostgresSettings getPostgresSettings() {
         return postgresSettings;
     }
 

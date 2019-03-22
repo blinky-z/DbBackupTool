@@ -1,9 +1,9 @@
 package com.example.demo.webUi.webUiFrontModels;
 
-import com.example.demo.models.database.DatabaseType;
+import com.example.demo.entities.database.Database;
 
 public class DatabaseItem {
-    private DatabaseType type;
+    private Database type;
 
     private int id;
 
@@ -11,18 +11,18 @@ public class DatabaseItem {
 
     private String time;
 
-    public DatabaseItem(DatabaseType type, int id, String desc, String time) {
+    public DatabaseItem(Database type, int id, String desc, String time) {
         this.type = type;
         this.id = id;
         this.desc = desc;
         this.time = time;
     }
 
-    public DatabaseType getType() {
+    public Database getType() {
         return type;
     }
 
-    public void setType(DatabaseType type) {
+    public void setType(Database type) {
         this.type = type;
     }
 

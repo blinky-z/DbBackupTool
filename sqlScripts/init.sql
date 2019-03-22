@@ -16,5 +16,5 @@ create table if not exists storage_settings
   ID                SERIAL PRIMARY KEY,
   TYPE              VARCHAR(64)               not null,
   DATE              TIMESTAMPTZ DEFAULT NOW() not null,
-  ADDITIONAL_FIELDS varchar(8192)             not null /*additional settings saved as json */
+  ADDITIONAL_FIELDS varchar(8192)             not null
 )

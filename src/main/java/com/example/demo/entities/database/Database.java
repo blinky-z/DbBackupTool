@@ -15,7 +15,7 @@ public enum Database {
         this.databaseAsString = databaseAsString;
     }
 
-    public Optional<Database> of(String database) {
+    public static Optional<Database> of(String database) {
         for (Database value : values()) {
             if (value.databaseAsString.equals(database)) {
                 return Optional.of(value);

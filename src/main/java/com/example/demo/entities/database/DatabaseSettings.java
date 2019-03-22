@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.persistence.*;
 import java.util.Date;
+import java.util.Objects;
 import java.util.Optional;
 
 @Entity
@@ -71,14 +72,16 @@ public class DatabaseSettings {
         return Optional.ofNullable(additionalDatabaseSettings.getPostgresSettings());
     }
 
-    private DatabaseSettings(Database type, String host, String port, String name, String login, String password, AdditionalDatabaseSettings additionalDatabaseSettings) {
-        this.type = type;
-        this.host = host;
-        this.port = port;
-        this.name = name;
-        this.login = login;
-        this.password = password;
-        this.additionalDatabaseSettings = additionalDatabaseSettings;
+    private DatabaseSettings(@NotNull Database type, @NotNull String host, @NotNull String port, @NotNull String name,
+                             @NotNull String login, @NotNull String password,
+                             @NotNull AdditionalDatabaseSettings additionalDatabaseSettings) {
+        this.type = Objects.requireNonNull(type);
+        this.host = Objects.requireNonNull(host);
+        this.port = Objects.requireNonNull(port);
+        this.name = Objects.requireNonNull(name);
+        this.login = Objects.requireNonNull(login);
+        this.password = Objects.requireNonNull(password);
+        this.additionalDatabaseSettings = Objects.requireNonNull(additionalDatabaseSettings);
     }
 
     @Override
@@ -95,7 +98,7 @@ public class DatabaseSettings {
                 '}';
     }
 
-    private static final class Builder {
+    public static final class Builder {
         private Database type;
         private String host;
         private String port;
@@ -107,21 +110,41 @@ public class DatabaseSettings {
         private Builder() {
         }
 
+        public Builder withHost(@NotNull String host) {
+            this.host = Objects.requireNonNull(host);
+            return this;
+        }
+
+        public Builder withPort(@NotNull String port) {
+            this.port = Objects.requireNonNull(port);
+            return this;
+        }
+
+        public Builder withName(@NotNull String name) {
+            this.name = Objects.requireNonNull(name);
+            return this;
+        }
+
+        public Builder withLogin(@NotNull String login) {
+            this.login = Objects.requireNonNull(login);
+            return this;
+        }
+
+        public Builder withPassword(@NotNull String password) {
+            this.password = Objects.requireNonNull(password);
+            return this;
+        }
+
         public DatabaseSettings build() {
             AdditionalDatabaseSettings additionalDatabaseSettings = new AdditionalDatabaseSettings(type, postgresSettings);
             return new DatabaseSettings(type, host, port, name, login, password, additionalDatabaseSettings);
         }
     }
 
-    public static Builder postgresSettings(@NotNull PostgresSettings postgresSettings, String host, String port, String name, String login, String password) {
+    public static Builder postgresSettings(@NotNull PostgresSettings postgresSettings) {
         Builder builder = new Builder();
         builder.type = Database.POSTGRES;
-        builder.host = host;
-        builder.port = port;
-        builder.name = name;
-        builder.login = login;
-        builder.password = password;
-        builder.postgresSettings = postgresSettings;
+        builder.postgresSettings = Objects.requireNonNull(postgresSettings);
         return builder;
     }
 }

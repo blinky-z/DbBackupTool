@@ -1,10 +1,13 @@
 package com.example.demo.controllers;
 
-import com.example.demo.models.database.DatabaseSettings;
-import com.example.demo.models.storage.StorageSettings;
-import com.example.demo.repositories.database.PostgresSettingsDatabaseRepository;
-import com.example.demo.repositories.storage.DropboxSettingsStorageRepository;
-import com.example.demo.repositories.storage.LocalFileSystemSettingsStorageRepository;
+import com.example.demo.DatabaseManager.DatabaseManager;
+import com.example.demo.StorageManager.StorageManager;
+import com.example.demo.entities.database.Database;
+import com.example.demo.entities.database.DatabaseSettings;
+import com.example.demo.entities.storage.DropboxSettings;
+import com.example.demo.entities.storage.LocalFileSystemSettings;
+import com.example.demo.entities.storage.Storage;
+import com.example.demo.entities.storage.StorageSettings;
 import com.example.demo.webUi.webUiFrontModels.DatabaseItem;
 import com.example.demo.webUi.webUiFrontModels.StorageItem;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,29 +17,25 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 @Controller
 public class WebController {
-    private LocalFileSystemSettingsStorageRepository localFileSystemSettingsStorageRepository;
+    private static final String TIME_FORMAT = "dd.MM.yyyy HH:mm:ss";
 
-    private DropboxSettingsStorageRepository dropboxSettingsStorageRepository;
+    private DatabaseManager databaseManager;
 
-    private PostgresSettingsDatabaseRepository postgresSettingsDatabaseRepository;
+    private StorageManager storageManager;
 
     @Autowired
-    public void setLocalFileSystemSettingsStorageRepository(LocalFileSystemSettingsStorageRepository localFileSystemSettingsStorageRepository) {
-        this.localFileSystemSettingsStorageRepository = localFileSystemSettingsStorageRepository;
+    public void setDatabaseManager(DatabaseManager databaseManager) {
+        this.databaseManager = databaseManager;
     }
 
     @Autowired
-    public void setDropboxSettingsStorageRepository(DropboxSettingsStorageRepository dropboxSettingsStorageRepository) {
-        this.dropboxSettingsStorageRepository = dropboxSettingsStorageRepository;
-    }
-
-    @Autowired
-    public void setPostgresSettingsDatabaseRepository(PostgresSettingsDatabaseRepository postgresSettingsDatabaseRepository) {
-        this.postgresSettingsDatabaseRepository = postgresSettingsDatabaseRepository;
+    public void setStorageManager(StorageManager storageManager) {
+        this.storageManager = storageManager;
     }
 
     @RequestMapping("/")
@@ -49,27 +48,43 @@ public class WebController {
         return "login.html";
     }
 
-//    TODO: сделать добавление всех стореджей в одном цикле, и добавление всех баз данных в одном цикле. Сейчас есть дупликация кода
+    //    TODO: сделать добавление всех стореджей в одном цикле, и добавление всех баз данных в одном цикле. Сейчас есть дупликация кода
     @RequestMapping("/dashboard")
     public String dashboard(Model model) {
         List<StorageItem> storageList = new ArrayList<>();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+        SimpleDateFormat dateFormat = new SimpleDateFormat(TIME_FORMAT);
 
-        for (StorageSettings currentStorageSettings : localFileSystemSettingsStorageRepository.findAll()) {
-            StorageItem storageItem = new StorageItem(currentStorageSettings.getStorageType(), currentStorageSettings.getId(),
-                    currentStorageSettings.getProperties().toString(), dateFormat.format(currentStorageSettings.getDate()));
+        for (StorageSettings storageSettings : storageManager.getAllByType(Storage.LOCAL_FILE_SYSTEM)) {
+            LocalFileSystemSettings localFileSystemSettings = storageSettings.getLocalFileSystemSettings().get();
+
+            HashMap<String, String> storageProperties = new HashMap<>();
+            storageProperties.put("Backup path", localFileSystemSettings.getBackupPath());
+
+            StorageItem storageItem = new StorageItem(storageSettings.getType(), storageSettings.getId(),
+                    storageProperties.toString(), dateFormat.format(storageSettings.getDate()));
             storageList.add(storageItem);
         }
-        for (StorageSettings currentStorageSettings : dropboxSettingsStorageRepository.findAll()) {
-            StorageItem storageItem = new StorageItem(currentStorageSettings.getStorageType(), currentStorageSettings.getId(),
-                    currentStorageSettings.getProperties().toString(), dateFormat.format(currentStorageSettings.getDate()));
+        for (StorageSettings storageSettings : storageManager.getAllByType(Storage.DROPBOX)) {
+            DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().get();
+
+            HashMap<String, String> storageProperties = new HashMap<>();
+            storageProperties.put("Access token", dropboxSettings.getAccessToken());
+
+            StorageItem storageItem = new StorageItem(storageSettings.getType(), storageSettings.getId(),
+                    storageProperties.toString(), dateFormat.format(storageSettings.getDate()));
             storageList.add(storageItem);
         }
 
         List<DatabaseItem> databaseList = new ArrayList<>();
-        for (DatabaseSettings currentStorageSettings : postgresSettingsDatabaseRepository.findAll()) {
-            DatabaseItem databaseItem = new DatabaseItem(currentStorageSettings.getDatabaseType(), currentStorageSettings.getId(),
-                    currentStorageSettings.getProperties().toString(), dateFormat.format(currentStorageSettings.getDate()));
+        for (DatabaseSettings databaseSettings : databaseManager.getAllByType(Database.POSTGRES)) {
+
+            HashMap<String, String> storageProperties = new HashMap<>();
+            storageProperties.put("Host", databaseSettings.getHost());
+            storageProperties.put("Port", databaseSettings.getPort());
+            storageProperties.put("Database name", databaseSettings.getName());
+
+            DatabaseItem databaseItem = new DatabaseItem(databaseSettings.getType(), databaseSettings.getId(),
+                    storageProperties.toString(), dateFormat.format(databaseSettings.getDate()));
             databaseList.add(databaseItem);
         }
 

@@ -20,7 +20,7 @@ public enum Storage {
         this.storageAsString = storageAsString;
     }
 
-    public Optional<Storage> of(String storage) {
+    public static Optional<Storage> of(String storage) {
         for (Storage value : values()) {
             if (value.storageAsString.equals(storage)) {
                 return Optional.of(value);

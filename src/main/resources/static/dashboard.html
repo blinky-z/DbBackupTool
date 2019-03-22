@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="">
     <title>Dashboard - DatabaseBackupTool</title>
+
+    <link href="css/bootstrap.css" rel="stylesheet">
     <link href="css/dashboard.css" rel="stylesheet">
 </head>
 <body>
@@ -81,15 +83,6 @@
                 <div class="tab-pane fade show active" id="dashboard" role="tabpanel" aria-labelledby="dashboard">
                     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                         <h2>Dashboard</h2>
-                        <div class="btn-toolbar mb-2 mb-md-0">
-                            <div class="btn-group mr-2">
-                                <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle">
-
-                            </button>
-                        </div>
                     </div>
                 </div>
                 <div class="tab-pane fade" id="storage" role="tabpanel" aria-labelledby="storage">
@@ -125,8 +118,8 @@
                                         </thead>
                                         <tbody>
                                         <tr th:each="storage: ${storageList}" th:object="${storage}" class="storageItem"
-                                            th:attr="data-storage-type=*{type}, data-id=*{id}">
-                                            <th scope="row" th:text="*{type.toString()}"></th>
+                                            th:attr="data-id=*{id}">
+                                            <th scope="row" th:text="*{type}"></th>
                                             <td th:text="*{desc}"></td>
                                             <td th:text="*{time}"></td>
                                             <td>
@@ -219,8 +212,8 @@
                                         </thead>
                                         <tbody>
                                         <tr th:each="database: ${databaseList}" th:object="${database}" class="databaseItem"
-                                            th:attr="data-database-type=*{type}, data-id=*{id}">
-                                            <th scope="row" th:text="*{type.toString()}"></th>
+                                            th:attr="data-id=*{id}">
+                                            <th scope="row" th:text="*{type}"></th>
                                             <td th:text="*{desc}"></td>
                                             <td th:text="*{time}"></td>
                                             <td>
@@ -247,27 +240,29 @@
                                     </select>
                                 </div>
 
+                                <div class="form-group">
+                                    <label for="createDatabaseHostInput">Host</label>
+                                    <input type="text" class="form-control form-control-sm" id="createDatabaseHostInput"
+                                           name="host" placeholder="" required>
+                                    <label for="createDatabasePortInput">Port</label>
+                                    <input type="text" class="form-control form-control-sm" id="createDatabasePortInput"
+                                           name="port" placeholder="" required>
+                                    <label for="createDatabaseNameInput">Database name</label>
+                                    <input type="text" class="form-control form-control-sm" id="createDatabaseNameInput"
+                                           name="name" placeholder="" required>
+                                    <label for="createDatabaseLoginInput">Database login</label>
+                                    <input type="text" class="form-control form-control-sm" id="createDatabaseLoginInput"
+                                           name="login" placeholder="" required>
+                                    <label for="createDatabasePasswordInput">Database password</label>
+                                    <input type="text" class="form-control form-control-sm" id="createDatabasePasswordInput"
+                                           name="password"
+                                           placeholder="" required>
+                                </div>
+
                                 <!--Database select based content-->
                                 <div id="selectDatabaseContent">
                                     <div class="postgresDatabaseSelect box">
-                                        <div class="form-group">
-                                            <label for="postgresDatabaseHostInput">Host</label>
-                                            <input type="text" class="form-control form-control-sm" id="postgresDatabaseHostInput"
-                                                   name="postgresSettings.host" placeholder="" required>
-                                            <label for="postgresDatabasePortInput">Port</label>
-                                            <input type="text" class="form-control form-control-sm" id="postgresDatabasePortInput"
-                                                   name="postgresSettings.port" placeholder="" required>
-                                            <label for="postgresDatabaseNameInput">Database name</label>
-                                            <input type="text" class="form-control form-control-sm" id="postgresDatabaseNameInput"
-                                                   name="postgresSettings.name" placeholder="" required>
-                                            <label for="postgresDatabaseLoginInput">Database login</label>
-                                            <input type="text" class="form-control form-control-sm" id="postgresDatabaseLoginInput"
-                                                   name="postgresSettings.login" placeholder="" required>
-                                            <label for="postgresDatabasePasswordInput">Database password</label>
-                                            <input type="text" class="form-control form-control-sm" id="postgresDatabasePasswordInput"
-                                                   name="postgresSettings.password"
-                                                   placeholder="" required>
-                                        </div>
+
                                     </div>
                                 </div>
                                 <button type="submit" class="btn btn-primary">Create storage</button>
@@ -297,7 +292,7 @@
         </main>
     </div>
 </div>
-<script src="http://code.jquery.com/jquery-3.3.1.js"></script>
+<script src="js/jquery-3.3.1.min.js"></script>
 <script src="js/bootstrap.js"></script>
 <script src="js/dashboard.js"></script>
 <script src="js/selectContentShow.js"></script>

@@ -1,9 +1,9 @@
 package com.example.demo.webUi.webUiFrontModels;
 
-import com.example.demo.models.storage.StorageType;
+import com.example.demo.entities.storage.Storage;
 
 public class StorageItem {
-    private StorageType type;
+    private Storage type;
 
     private int id;
 
@@ -11,18 +11,18 @@ public class StorageItem {
 
     private String time;
 
-    public StorageItem(StorageType type, int id, String desc, String time) {
+    public StorageItem(Storage type, int id, String desc, String time) {
         this.type = type;
         this.id = id;
         this.desc = desc;
         this.time = time;
     }
 
-    public StorageType getType() {
+    public Storage getType() {
         return type;
     }
 
-    public void setType(StorageType type) {
+    public void setType(Storage type) {
         this.type = type;
     }
 
