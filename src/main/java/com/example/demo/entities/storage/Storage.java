@@ -1,4 +1,4 @@
-package com.example.demo.models.storage;
+package com.example.demo.entities.storage;
 
 import java.util.Optional;
 

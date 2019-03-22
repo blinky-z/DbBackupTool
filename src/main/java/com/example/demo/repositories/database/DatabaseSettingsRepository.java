@@ -1,0 +1,9 @@
+package com.example.demo.repositories.database;
+
+import com.example.demo.entities.database.Database;
+import com.example.demo.entities.database.DatabaseSettings;
+import org.springframework.data.repository.CrudRepository;
+
+public interface DatabaseSettingsRepository extends CrudRepository<DatabaseSettings, Integer> {
+    public Iterable<DatabaseSettings> getAllByType(Database type);
+}

@@ -1,7 +1,7 @@
 package com.example.demo.repositories.storage;
 
-import com.example.demo.models.storage.Storage;
-import com.example.demo.models.storage.StorageSettings;
+import com.example.demo.entities.storage.Storage;
+import com.example.demo.entities.storage.StorageSettings;
 import org.springframework.data.repository.CrudRepository;
 
 public interface StorageSettingsRepository extends CrudRepository<StorageSettings, Integer> {

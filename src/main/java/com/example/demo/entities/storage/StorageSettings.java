@@ -1,9 +1,10 @@
-package com.example.demo.models.storage;
+package com.example.demo.entities.storage;
 
-import com.example.demo.models.storage.converter.AdditionalStorageSettingsConverter;
+import org.jetbrains.annotations.NotNull;
 
 import javax.persistence.*;
 import java.util.Date;
+import java.util.Objects;
 import java.util.Optional;
 
 @Entity
@@ -21,11 +22,11 @@ public class StorageSettings {
     @Column(insertable = false, updatable = false)
     private Date date;
 
-    @Column(name = "additionalFields", nullable = false)
+    @Column(name = "additionalFields")
     @Convert(converter = AdditionalStorageSettingsConverter.class)
     private final AdditionalStorageSettings additionalStorageSettings;
 
-    public StorageSettings(Storage type, AdditionalStorageSettings additionalStorageSettings) {
+    private StorageSettings(Storage type, AdditionalStorageSettings additionalStorageSettings) {
         this.type = type;
         this.additionalStorageSettings = additionalStorageSettings;
     }
@@ -48,6 +49,37 @@ public class StorageSettings {
 
     public Optional<LocalFileSystemSettings> getLocalFileSystemSettings() {
         return Optional.ofNullable(additionalStorageSettings.getLocalFileSystemSettings());
+    }
+
+    public static final class Builder {
+        private Storage type;
+
+        private LocalFileSystemSettings localFileSystemSettings;
+
+        private DropboxSettings dropboxSettings;
+
+        private Builder() {
+        }
+
+        public StorageSettings build() {
+            AdditionalStorageSettings additionalStorageSettings = new AdditionalStorageSettings(
+                    type, localFileSystemSettings, dropboxSettings);
+            return new StorageSettings(type, additionalStorageSettings);
+        }
+    }
+
+    public static Builder localFileSystemSettings(@NotNull LocalFileSystemSettings localFileSystemSettings) {
+        Builder builder = new Builder();
+        builder.type = Storage.LOCAL_FILE_SYSTEM;
+        builder.localFileSystemSettings = Objects.requireNonNull(localFileSystemSettings);
+        return builder;
+    }
+
+    public static Builder dropboxSettings(@NotNull DropboxSettings dropboxSettings) {
+        Builder builder = new Builder();
+        builder.type = Storage.DROPBOX;
+        builder.dropboxSettings = Objects.requireNonNull(dropboxSettings);
+        return builder;
     }
 
     @Override
