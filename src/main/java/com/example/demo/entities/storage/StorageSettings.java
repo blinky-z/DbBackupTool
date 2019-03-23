@@ -17,18 +17,37 @@ public class StorageSettings {
 
     @Enumerated(EnumType.STRING)
     @Column(updatable = false)
-    private final Storage type;
+    private Storage type;
 
     @Column(insertable = false, updatable = false)
     private Date date;
 
     @Column(name = "additionalFields")
     @Convert(converter = AdditionalStorageSettingsConverter.class)
-    private final AdditionalStorageSettings additionalStorageSettings;
+    private AdditionalStorageSettings additionalStorageSettings;
 
-    private StorageSettings(Storage type, AdditionalStorageSettings additionalStorageSettings) {
+    StorageSettings() {
+    }
+
+    void setId(int id) {
+        this.id = id;
+    }
+
+    void setDate(Date date) {
+        this.date = date;
+    }
+
+    void setType(Storage type) {
         this.type = type;
+    }
+
+    void setAdditionalStorageSettings(AdditionalStorageSettings additionalStorageSettings) {
         this.additionalStorageSettings = additionalStorageSettings;
+    }
+
+    private StorageSettings(@NotNull Storage type, @NotNull AdditionalStorageSettings additionalStorageSettings) {
+        this.type = Objects.requireNonNull(type);
+        this.additionalStorageSettings = Objects.requireNonNull(additionalStorageSettings);
     }
 
     public int getId() {
@@ -88,6 +107,7 @@ public class StorageSettings {
                 "id=" + id +
                 ", type=" + type +
                 ", date=" + date +
+                ", additionalStorageSettings=" + additionalStorageSettings +
                 '}';
     }
 }

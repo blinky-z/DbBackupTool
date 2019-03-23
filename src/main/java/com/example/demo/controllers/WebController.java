@@ -77,7 +77,6 @@ public class WebController {
 
         List<DatabaseItem> databaseList = new ArrayList<>();
         for (DatabaseSettings databaseSettings : databaseManager.getAllByType(Database.POSTGRES)) {
-
             HashMap<String, String> storageProperties = new HashMap<>();
             storageProperties.put("Host", databaseSettings.getHost());
             storageProperties.put("Port", databaseSettings.getPort());

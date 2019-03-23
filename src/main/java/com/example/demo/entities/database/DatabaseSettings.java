@@ -19,15 +19,15 @@ public class DatabaseSettings {
     @Column(updatable = false)
     private Database type;
 
-    private final String host;
+    private String host;
 
-    private final String port;
+    private String port;
 
-    private final String name;
+    private String name;
 
-    private final String login;
+    private String login;
 
-    private final String password;
+    private String password;
 
     @Column(insertable = false, updatable = false)
     private Date date;
@@ -68,6 +68,45 @@ public class DatabaseSettings {
         return date;
     }
 
+    DatabaseSettings() {
+    }
+
+    void setId(int id) {
+        this.id = id;
+    }
+
+    void setType(Database type) {
+        this.type = type;
+    }
+
+    void setHost(String host) {
+        this.host = host;
+    }
+
+    void setPort(String port) {
+        this.port = port;
+    }
+
+    void setName(String name) {
+        this.name = name;
+    }
+
+    void setLogin(String login) {
+        this.login = login;
+    }
+
+    void setPassword(String password) {
+        this.password = password;
+    }
+
+    void setDate(Date date) {
+        this.date = date;
+    }
+
+    void setAdditionalDatabaseSettings(AdditionalDatabaseSettings additionalDatabaseSettings) {
+        this.additionalDatabaseSettings = additionalDatabaseSettings;
+    }
+
     public Optional<PostgresSettings> getPostgresSettings() {
         return Optional.ofNullable(additionalDatabaseSettings.getPostgresSettings());
     }
@@ -82,20 +121,6 @@ public class DatabaseSettings {
         this.login = Objects.requireNonNull(login);
         this.password = Objects.requireNonNull(password);
         this.additionalDatabaseSettings = Objects.requireNonNull(additionalDatabaseSettings);
-    }
-
-    @Override
-    public String toString() {
-        return "DatabaseSettings{" +
-                "id=" + id +
-                ", type=" + type +
-                ", host='" + host + '\'' +
-                ", port='" + port + '\'' +
-                ", name='" + name + '\'' +
-                ", login='" + login + '\'' +
-                ", password='" + password + '\'' +
-                ", date=" + date +
-                '}';
     }
 
     public static final class Builder {
@@ -146,5 +171,20 @@ public class DatabaseSettings {
         builder.type = Database.POSTGRES;
         builder.postgresSettings = Objects.requireNonNull(postgresSettings);
         return builder;
+    }
+
+    @Override
+    public String toString() {
+        return "DatabaseSettings{" +
+                "id=" + id +
+                ", type=" + type +
+                ", host='" + host + '\'' +
+                ", port='" + port + '\'' +
+                ", name='" + name + '\'' +
+                ", login=***'" + '\'' +
+                ", password=***'" + '\'' +
+                ", date=" + date +
+                ", additionalDatabaseSettings=" + additionalDatabaseSettings +
+                '}';
     }
 }

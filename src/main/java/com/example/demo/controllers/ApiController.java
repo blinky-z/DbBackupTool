@@ -13,7 +13,6 @@ import com.example.demo.entities.storage.StorageSettings;
 import com.example.demo.webUi.WebUiForm.WebCreateBackupRequest;
 import com.example.demo.webUi.WebUiForm.WebCreateDatabaseRequest;
 import com.example.demo.webUi.WebUiForm.WebCreateStorageRequest;
-import com.example.demo.webUi.WebUiForm.database.WebPostgresSettings;
 import com.example.demo.webUi.WebUiForm.storage.WebDropboxSettings;
 import com.example.demo.webUi.WebUiForm.storage.WebLocalFileSystemSettings;
 import org.slf4j.Logger;
@@ -72,7 +71,7 @@ public class ApiController {
             switch (databaseType.get()) {
                 case POSTGRES: {
                     PostgresSettings postgresSettings = new PostgresSettings();
-                    WebPostgresSettings webPostgresSettings = Objects.requireNonNull(createDatabaseRequest.getPostgresSettings());
+//                    WebPostgresSettings webPostgresSettings = Objects.requireNonNull(createDatabaseRequest.getPostgresSettings());
 
                     DatabaseSettings databaseSettings = DatabaseSettings.postgresSettings(postgresSettings)
                             .withHost(createDatabaseRequest.getHost())
@@ -97,7 +96,7 @@ public class ApiController {
     public String deleteStorage(@RequestParam(value = "id") int id) {
         logger.info("Deletion of storage: id: {}", id);
 
-        storageManager.deleteStoragesettings(id);
+        storageManager.deleteStorageSettings(id);
 
         return "redirect:/dashboard";
     }

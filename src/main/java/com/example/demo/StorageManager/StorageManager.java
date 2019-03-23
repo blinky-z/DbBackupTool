@@ -9,18 +9,18 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class StorageManager {
-    private static StorageSettingsRepository storageSettingsRepository;
+    private StorageSettingsRepository storageSettingsRepository;
 
     @Autowired
-    public static void setStorageSettingsRepository(StorageSettingsRepository storageSettingsRepository) {
-        StorageManager.storageSettingsRepository = storageSettingsRepository;
+    public void setStorageSettingsRepository(StorageSettingsRepository storageSettingsRepository) {
+        this.storageSettingsRepository = storageSettingsRepository;
     }
 
-    public StorageSettings saveStorageSettings(StorageSettings storageSettings) {
+    public StorageSettings saveStorageSettings(@NotNull StorageSettings storageSettings) {
         return storageSettingsRepository.save(storageSettings);
     }
 
-    public void deleteStoragesettings(@NotNull Integer id) {
+    public void deleteStorageSettings(@NotNull Integer id) {
         storageSettingsRepository.deleteById(id);
     }
 

@@ -9,14 +9,14 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class DatabaseManager {
-    private static DatabaseSettingsRepository databaseSettingsRepository;
+    private DatabaseSettingsRepository databaseSettingsRepository;
 
     @Autowired
-    public static void setDatabaseSettingsRepository(DatabaseSettingsRepository databaseSettingsRepository) {
-        DatabaseManager.databaseSettingsRepository = databaseSettingsRepository;
+    public void setDatabaseSettingsRepository(DatabaseSettingsRepository databaseSettingsRepository) {
+        this.databaseSettingsRepository = databaseSettingsRepository;
     }
 
-    public DatabaseSettings saveDatabaseSettings(DatabaseSettings databaseSettings) {
+    public DatabaseSettings saveDatabaseSettings(@NotNull DatabaseSettings databaseSettings) {
         return databaseSettingsRepository.save(databaseSettings);
     }
 

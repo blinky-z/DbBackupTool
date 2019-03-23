@@ -1,5 +1,8 @@
 package com.example.demo.entities.database;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 class AdditionalDatabaseSettings {
     private Database type;
 
@@ -9,20 +12,22 @@ class AdditionalDatabaseSettings {
         return type;
     }
 
-    public void setType(Database type) {
-        this.type = type;
-    }
-
-    PostgresSettings getPostgresSettings() {
+    public PostgresSettings getPostgresSettings() {
         return postgresSettings;
     }
 
-    public void setPostgresSettings(PostgresSettings postgresSettings) {
+    @JsonCreator
+    AdditionalDatabaseSettings(@JsonProperty("type") Database type,
+                               @JsonProperty("postgresSettings") PostgresSettings postgresSettings) {
+        this.type = type;
         this.postgresSettings = postgresSettings;
     }
 
-    AdditionalDatabaseSettings(Database type, PostgresSettings postgresSettings) {
-        this.type = type;
-        this.postgresSettings = postgresSettings;
+    @Override
+    public String toString() {
+        return "AdditionalDatabaseSettings{" +
+                "type=" + type +
+                ", postgresSettings=" + postgresSettings +
+                '}';
     }
 }
