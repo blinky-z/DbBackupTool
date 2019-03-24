@@ -1,4 +1,4 @@
-package com.example.demo.storage;
+package com.example.demo.service.storage;
 
 /**
  * General Storage interface which TextStorage and BinaryStorage extends

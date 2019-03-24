@@ -1,4 +1,4 @@
-package com.example.demo.storage;
+package com.example.demo.service.storage;
 
 import java.io.InputStream;
 
@@ -6,7 +6,7 @@ import java.io.InputStream;
  * This interface provides API to handle plain text backups.
  */
 public interface TextStorage extends Storage {
-    void saveBackup(String data);
+    void uploadBackup(String data);
 
     InputStream downloadBackup();
 }

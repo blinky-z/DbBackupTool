@@ -1,6 +1,6 @@
-package com.example.demo.webUi.WebUiForm;
+package com.example.demo.webUI.formTransfer;
 
-import com.example.demo.webUi.WebUiForm.database.WebPostgresSettings;
+import com.example.demo.webUI.formTransfer.database.WebPostgresSettings;
 
 public class WebCreateDatabaseRequest {
     private String databaseType;

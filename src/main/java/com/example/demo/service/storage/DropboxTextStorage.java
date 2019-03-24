@@ -1,17 +1,14 @@
-package com.example.demo.storage;
+package com.example.demo.service.storage;
 
 import com.dropbox.core.DbxException;
 import com.dropbox.core.DbxRequestConfig;
 import com.dropbox.core.v2.DbxClientV2;
 import com.dropbox.core.v2.files.ListFolderResult;
 import com.dropbox.core.v2.files.Metadata;
-import com.example.demo.DbBackup;
-import com.example.demo.settings.DatabaseSettings;
-import com.example.demo.settings.UserSettings;
+import com.example.demo.entities.storage.DropboxSettings;
+import com.example.demo.entities.storage.StorageSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -19,17 +16,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-@Component
 public class DropboxTextStorage implements TextStorage {
-    @Autowired
-    private UserSettings userSettings;
+    private DbxClientV2 dbxClient;
 
-    @Autowired
-    private DatabaseSettings databaseSettings;
-
-    private DbxClientV2 client;
-
-    private static final Logger logger = LoggerFactory.getLogger(DbBackup.class);
+    private static final Logger logger = LoggerFactory.getLogger(DropboxTextStorage.class);
 
     private String backupFolder;
 
@@ -37,28 +27,23 @@ public class DropboxTextStorage implements TextStorage {
 
     private long currentBackupPart;
 
-    private void init() {
+    public DropboxTextStorage(StorageSettings storageSettings, String databaseName) {
         SimpleDateFormat date = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
-        String dateAsString = date.format(new Date());
-        backupName = "backup_" +
-                databaseSettings.getDatabaseName() + "_" + dateAsString;
-        backupFolder = backupName;
+        this.backupName = String.format("backup_%s_%s",databaseName, date.format(new Date()));
+        this.backupFolder = backupName;
         currentBackupPart = 0;
+        DbxRequestConfig config = DbxRequestConfig.newBuilder("dbBackup").build();
+        DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(RuntimeException::new);
+        dbxClient = new DbxClientV2(config, dropboxSettings.getAccessToken());
     }
 
     @Override
-    public void saveBackup(String data) {
-        if (backupName == null) {
-            init();
-        }
-        DbxRequestConfig config = DbxRequestConfig.newBuilder("dbBackup").build();
-        client = new DbxClientV2(config, userSettings.getDropboxAccessToken());
-
+    public void uploadBackup(String data) {
         InputStream in = new ByteArrayInputStream(data.getBytes(Charset.defaultCharset()));
         try {
             String currentFile = backupName + "_part" + currentBackupPart + ".data";
             logger.info("Uploading a new file to Dropbox: {}", currentFile);
-            client.files().uploadBuilder("/" + backupFolder + "/" + currentFile).uploadAndFinish(in);
+            dbxClient.files().uploadBuilder("/" + backupFolder + "/" + currentFile).uploadAndFinish(in);
             currentBackupPart++;
         } catch (DbxException | IOException ex) {
             throw new RuntimeException("Error uploading backup file to Dropbox", ex);
@@ -81,7 +66,7 @@ public class DropboxTextStorage implements TextStorage {
                 for (currentFileCount = 0; currentFileCount < filesCount; currentFileCount++) {
                     String currentFile = "/" + backupFolder + "/" + backupName + "_part" + currentFileCount + ".data";
                     logger.info("Downloading backup file: {}", currentFile);
-                    client.files().downloadBuilder(currentFile).download(out);
+                    dbxClient.files().downloadBuilder(currentFile).download(out);
                 }
             } catch (DbxException | IOException ex) {
                 throw new RuntimeException("Error downloading backup from Dropbox", ex);
@@ -97,16 +82,13 @@ public class DropboxTextStorage implements TextStorage {
 
     @Override
     public InputStream downloadBackup() {
-        DbxRequestConfig config = DbxRequestConfig.newBuilder("dbBackup").build();
-        client = new DbxClientV2(config, userSettings.getDropboxAccessToken());
-
         System.out.println("Downloading backup from Dropbox...");
 
         PipedOutputStream out = new PipedOutputStream();
 
         long filesCount = 0;
         try {
-            ListFolderResult listFolderResult = client.files().listFolder("/" + backupFolder);
+            ListFolderResult listFolderResult = dbxClient.files().listFolder("/" + backupFolder);
             List<Metadata> listFolderMetadata = listFolderResult.getEntries();
             filesCount = listFolderMetadata.size();
         } catch (DbxException ex) {

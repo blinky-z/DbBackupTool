@@ -1,12 +1,9 @@
-package com.example.demo.storage;
+package com.example.demo.service.storage;
 
-import com.example.demo.DbBackup;
-import com.example.demo.settings.DatabaseSettings;
-import com.example.demo.settings.UserSettings;
+import com.example.demo.entities.storage.LocalFileSystemSettings;
+import com.example.demo.entities.storage.StorageSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
@@ -18,32 +15,39 @@ import java.util.List;
 /**
  * This class is used to write and download plain text backup from local file system.
  */
-@Service
 public class FileSystemTextStorage implements TextStorage {
-    @Autowired
-    private UserSettings userSettings;
+    StorageSettings storageSettings;
 
-    @Autowired
-    private DatabaseSettings databaseSettings;
+    LocalFileSystemSettings localFileSystemSettings;
 
-    private static final Logger logger = LoggerFactory.getLogger(DbBackup.class);
+    private static final Logger logger = LoggerFactory.getLogger(FileSystemTextStorage.class);
 
     private BufferedWriter fileWriter;
 
+    private String databaseName;
+
     private List<File> createdBackupFiles;
+
+    private SimpleDateFormat date;
 
     public FileSystemTextStorage() {
         createdBackupFiles = new ArrayList<>();
     }
 
     private void createNewFile() throws IOException {
-        SimpleDateFormat date = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss-SS");
         String dateAsString = date.format(new Date());
-        File currentFile = new File(userSettings.getBackupDir() + File.separator + "backup_" +
-                databaseSettings.getDatabaseName() + "_" + dateAsString + ".data");
+        File currentFile = new File(localFileSystemSettings.getBackupPath() + File.separator + "backup_" +
+                databaseName + "_" + dateAsString + ".data");
         logger.info("New created backup file: {}", currentFile.getAbsolutePath());
         createdBackupFiles.add(currentFile);
         fileWriter = new BufferedWriter(new FileWriter(currentFile));
+    }
+
+    public FileSystemTextStorage(StorageSettings storageSettings, String databaseName) {
+        date = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss-SS");
+        this.storageSettings = storageSettings;
+        this.localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(RuntimeException::new);
+        this.databaseName = databaseName;
     }
 
     /**
@@ -52,7 +56,7 @@ public class FileSystemTextStorage implements TextStorage {
      * @param data backup chunk to be saved to the file system
      */
     @Override
-    public void saveBackup(String data) {
+    public void uploadBackup(String data) {
         try {
             createNewFile();
             fileWriter.write(data);

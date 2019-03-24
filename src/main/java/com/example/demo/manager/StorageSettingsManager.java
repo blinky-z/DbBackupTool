@@ -1,18 +1,21 @@
-package com.example.demo.StorageManager;
+package com.example.demo.manager;
 
 import com.example.demo.entities.storage.Storage;
 import com.example.demo.entities.storage.StorageSettings;
-import com.example.demo.repositories.storage.StorageSettingsRepository;
+import com.example.demo.repositories.StorageSettingsRepository;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
-@Service
-public class StorageManager {
+import java.util.Optional;
+
+@Component
+public class StorageSettingsManager {
     private StorageSettingsRepository storageSettingsRepository;
 
     @Autowired
-    public void setStorageSettingsRepository(StorageSettingsRepository storageSettingsRepository) {
+    public void setStorageSettingsRepository(@NotNull StorageSettingsRepository storageSettingsRepository) {
         this.storageSettingsRepository = storageSettingsRepository;
     }
 
@@ -24,11 +27,15 @@ public class StorageManager {
         storageSettingsRepository.deleteById(id);
     }
 
+    public Optional<StorageSettings> getById(@NotNull Integer id) {
+        return storageSettingsRepository.findById(id);
+    }
+
     public Iterable<StorageSettings> getAll() {
         return storageSettingsRepository.findAll();
     }
 
-    public Iterable<StorageSettings> getAllByType(Storage type) {
+    public Iterable<StorageSettings> getAllByType(@NotNull Storage type) {
         return storageSettingsRepository.getAllByType(type);
     }
 }

@@ -1,4 +1,4 @@
-package com.example.demo.webUi.WebUiForm.storage;
+package com.example.demo.webUI.formTransfer.storage;
 
 public class WebDropboxSettings {
     private String accessToken;

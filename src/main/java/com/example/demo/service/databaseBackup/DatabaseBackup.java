@@ -1,11 +1,11 @@
-package com.example.demo.BackupManager;
+package com.example.demo.service.databaseBackup;
 
 import java.io.InputStream;
 
 /**
  * This interface provides API to work with backups of any database.
  */
-public interface BackupManager {
+public interface DatabaseBackup {
     /**
      * Creates database backup.
      * @return input stream contains the plain text database backup

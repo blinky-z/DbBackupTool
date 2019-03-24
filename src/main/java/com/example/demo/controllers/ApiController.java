@@ -1,8 +1,8 @@
 package com.example.demo.controllers;
 
-import com.example.demo.DatabaseManager.DatabaseManager;
-import com.example.demo.DbBackup;
-import com.example.demo.StorageManager.StorageManager;
+import com.example.demo.manager.DatabaseBackupManager;
+import com.example.demo.manager.DatabaseSettingsManager;
+import com.example.demo.manager.StorageSettingsManager;
 import com.example.demo.entities.database.Database;
 import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.entities.database.PostgresSettings;
@@ -10,11 +10,11 @@ import com.example.demo.entities.storage.DropboxSettings;
 import com.example.demo.entities.storage.LocalFileSystemSettings;
 import com.example.demo.entities.storage.Storage;
 import com.example.demo.entities.storage.StorageSettings;
-import com.example.demo.webUi.WebUiForm.WebCreateBackupRequest;
-import com.example.demo.webUi.WebUiForm.WebCreateDatabaseRequest;
-import com.example.demo.webUi.WebUiForm.WebCreateStorageRequest;
-import com.example.demo.webUi.WebUiForm.storage.WebDropboxSettings;
-import com.example.demo.webUi.WebUiForm.storage.WebLocalFileSystemSettings;
+import com.example.demo.webUI.formTransfer.WebCreateBackupRequest;
+import com.example.demo.webUI.formTransfer.WebCreateDatabaseRequest;
+import com.example.demo.webUI.formTransfer.WebCreateStorageRequest;
+import com.example.demo.webUI.formTransfer.storage.WebDropboxSettings;
+import com.example.demo.webUI.formTransfer.storage.WebLocalFileSystemSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,34 +27,44 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.validation.Valid;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 @Controller
 public class ApiController {
-    private static final Logger logger = LoggerFactory.getLogger(DbBackup.class);
+    private static final Logger logger = LoggerFactory.getLogger(ApiController.class);
 
-    private DatabaseManager databaseManager;
+    private DatabaseSettingsManager databaseSettingsManager;
 
-    private StorageManager storageManager;
+    private StorageSettingsManager storageSettingsManager;
+
+    private DatabaseBackupManager databaseBackupManager;
 
     @Autowired
-    public void setDatabaseManager(DatabaseManager databaseManager) {
-        this.databaseManager = databaseManager;
+    public void setDatabaseSettingsManager(DatabaseSettingsManager databaseSettingsManager) {
+        this.databaseSettingsManager = databaseSettingsManager;
     }
 
     @Autowired
-    public void setStorageManager(StorageManager storageManager) {
-        this.storageManager = storageManager;
+    public void setStorageSettingsManager(StorageSettingsManager storageSettingsManager) {
+        this.storageSettingsManager = storageSettingsManager;
     }
 
-//    TODO: добавить нормальную валидацию всех форм.
+    @Autowired
+    public void setDatabaseBackupManager(DatabaseBackupManager databaseBackupManager) {
+        this.databaseBackupManager = databaseBackupManager;
+    }
+
+    //    TODO: добавить нормальную валидацию всех форм.
 
     @DeleteMapping(value = "/database")
     public String deleteDatabase(@RequestParam(value = "id") int id) {
         logger.info("Deletion of database: id: {}", id);
 
-        databaseManager.deleteDatabaseSettings(id);
+        databaseSettingsManager.deleteDatabaseSettings(id);
 
         return "redirect:/dashboard";
     }
@@ -80,7 +90,7 @@ public class ApiController {
                             .withLogin(createDatabaseRequest.getLogin())
                             .withPassword(createDatabaseRequest.getPassword())
                             .build();
-                    databaseManager.saveDatabaseSettings(databaseSettings);
+                    databaseSettingsManager.saveDatabaseSettings(databaseSettings);
                     break;
                 }
             }
@@ -96,7 +106,7 @@ public class ApiController {
     public String deleteStorage(@RequestParam(value = "id") int id) {
         logger.info("Deletion of storage: id: {}", id);
 
-        storageManager.deleteStorageSettings(id);
+        storageSettingsManager.deleteStorageSettings(id);
 
         return "redirect:/dashboard";
     }
@@ -118,7 +128,7 @@ public class ApiController {
                     dropboxSettings.setAccessToken(webDropboxSettings.getAccessToken());
 
                     StorageSettings storageSettings = StorageSettings.dropboxSettings(dropboxSettings).build();
-                    storageManager.saveStorageSettings(storageSettings);
+                    storageSettingsManager.saveStorageSettings(storageSettings);
                     break;
                 }
                 case LOCAL_FILE_SYSTEM: {
@@ -129,7 +139,7 @@ public class ApiController {
                     localFileSystemSettings.setBackupPath(webLocalFileSystemSettings.getBackupPath());
 
                     StorageSettings storageSettings = StorageSettings.localFileSystemSettings(localFileSystemSettings).build();
-                    storageManager.saveStorageSettings(storageSettings);
+                    storageSettingsManager.saveStorageSettings(storageSettings);
                     break;
                 }
             }
@@ -141,11 +151,42 @@ public class ApiController {
     }
 
     @PostMapping(value = "/create-backup")
-    public ResponseEntity createBackup(@Valid WebCreateBackupRequest createBackupRequest, BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            logger.info("Has errors");
-            logger.info(bindingResult.getAllErrors().toString());
+    public ResponseEntity createBackup(WebCreateBackupRequest createBackupRequest) {
+        logger.info("{}", createBackupRequest.getCheckStorageList());
+
+        logger.info("{}", createBackupRequest.getCheckDatabaseList());
+
+        List<DatabaseSettings> databaseSettingsList = new ArrayList<>();
+
+        for (Integer databaseId : createBackupRequest.getCheckDatabaseList()) {
+            Optional<DatabaseSettings> databaseSettings = databaseSettingsManager.getById(databaseId);
+            if (databaseSettings.isPresent()) {
+                databaseSettingsList.add(databaseSettings.get());
+            } else {
+                throw new RuntimeException(String.format("Can't retrieve database settings. Error: no database settings with ID %s",
+                        databaseId));
+            }
         }
+
+        List<InputStream> backupList = new ArrayList<>();
+        for (DatabaseSettings currentDatabaseSettings : databaseSettingsList) {
+            backupList.add(databaseBackupManager.createBackup(currentDatabaseSettings));
+        }
+
+        List<StorageSettings> storageSettingsList = new ArrayList<>();
+
+        for (Integer storageId : createBackupRequest.getCheckStorageList()) {
+            Optional<StorageSettings> storageSettings = storageSettingsManager.getById(storageId);
+            if (storageSettings.isPresent()) {
+                storageSettingsList.add(storageSettings.get());
+            } else {
+                throw new RuntimeException(String.format("Can't retrieve storage settings. Error: no storage settings with ID %s",
+                        storageId));
+            }
+        }
+
+        logger.info("Database settings list: {}", databaseSettingsList);
+        logger.info("Storage settings list: {}", storageSettingsList);
 
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }

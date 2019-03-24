@@ -1,14 +1,10 @@
-package com.example.demo.BackupManager;
+package com.example.demo.service.databaseBackup;
 
-import com.example.demo.DbBackup;
-import com.example.demo.settings.DatabaseSettings;
+import com.example.demo.entities.database.DatabaseSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.io.*;
-import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -17,22 +13,18 @@ import java.util.List;
 /**
  * This class allows to work with POSTGRES database backups
  */
-@Component
-public class PostgresBackupManager implements BackupManager {
+public class PostgresDatabaseBackup implements DatabaseBackup {
     private DatabaseSettings databaseSettings;
 
-    @Autowired
-    public void setDatabaseSettings(DatabaseSettings databaseSettings) {
+    public PostgresDatabaseBackup(DatabaseSettings databaseSettings) {
         this.databaseSettings = databaseSettings;
     }
 
-    private static final Logger logger = LoggerFactory.getLogger(DbBackup.class);
+    private static final Logger logger = LoggerFactory.getLogger(PostgresDatabaseBackup.class);
 
-    private URI getParsedConnUrl() {
-        String jdbcPrefix = "jdbc:";
-        String cleanConnUrl = databaseSettings.getUrl().substring(jdbcPrefix.length());
-
-        return URI.create(cleanConnUrl);
+    private String buildUrl() {
+        return String.format("jdbc:postgresql://%s:%s/%s", databaseSettings.getHost(), databaseSettings.getPort(),
+                databaseSettings.getName());
     }
 
     private ArrayList<String> addCommandParam(ArrayList<String> command, String paramName, String paramValue) {
@@ -47,13 +39,13 @@ public class PostgresBackupManager implements BackupManager {
         Process process;
         ProcessBuilder pb;
 
-        System.out.println("Current url: " + databaseSettings.getUrl());
-        System.out.println("Current user: " + databaseSettings.getUsername());
+        System.out.println("Current url: " + buildUrl());
+        System.out.println("Current user: " + databaseSettings.getLogin());
         System.out.println("Current password: " + databaseSettings.getPassword());
-        System.out.println("Current db name: " + databaseSettings.getDatabaseName());
+        System.out.println("Current db name: " + databaseSettings.getName());
 
         pb = new ProcessBuilder(command);
-        pb.environment().put("PGUSER", databaseSettings.getUsername());
+        pb.environment().put("PGUSER", databaseSettings.getLogin());
         pb.environment().put("PGPASSWORD", databaseSettings.getPassword());
         process = pb.start();
 
@@ -63,16 +55,14 @@ public class PostgresBackupManager implements BackupManager {
     private List<String> getBackupCommand() {
         ArrayList<String> command = new ArrayList<>();
 
-        URI connUrl = getParsedConnUrl();
-
         SimpleDateFormat date = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss-SS");
         String dateAsString = date.format(new Date());
 
         command.add("pg_dump");
-        command = addCommandParam(command, "-h", connUrl.getHost());
-        command = addCommandParam(command, "-p", Integer.toString(connUrl.getPort()));
+        command = addCommandParam(command, "-h", databaseSettings.getHost());
+        command = addCommandParam(command, "-p", databaseSettings.getPort());
         command = addCommandParam(command, "-F", "p");
-        command = addCommandParam(command, "-d", databaseSettings.getDatabaseName());
+        command = addCommandParam(command, "-d", databaseSettings.getName());
 
         return command;
     }
@@ -80,13 +70,11 @@ public class PostgresBackupManager implements BackupManager {
     private List<String> getRestoreCommand(InputStream dump) {
         ArrayList<String> command = new ArrayList<>();
 
-        URI connUrl = getParsedConnUrl();
-
         command.add("psql");
-        command = addCommandParam(command, "-h", connUrl.getHost());
-        command = addCommandParam(command, "-U", databaseSettings.getUsername());
-        command = addCommandParam(command, "-p", Integer.toString(connUrl.getPort()));
-        command = addCommandParam(command, "-d", databaseSettings.getDatabaseName());
+        command = addCommandParam(command, "-h", databaseSettings.getHost());
+        command = addCommandParam(command, "-U", databaseSettings.getLogin());
+        command = addCommandParam(command, "-p", databaseSettings.getPort());
+        command = addCommandParam(command, "-d", databaseSettings.getName());
 
         return command;
     }
@@ -148,7 +136,7 @@ public class PostgresBackupManager implements BackupManager {
      */
     public InputStream createDbDump() {
         List<String> backupCommand = getBackupCommand();
-        logger.info("Executing backup command: {} on database {}", backupCommand.toString(), databaseSettings.getDatabaseName());
+        logger.info("Executing backup command: {} on database {}", backupCommand, databaseSettings.getName());
 
         try {
             Process process = runProcess(backupCommand);
@@ -156,7 +144,7 @@ public class PostgresBackupManager implements BackupManager {
             Thread processErrorStreamReader = new Thread(new ProcessStandartErrorStreamReader(process.getErrorStream()));
             processErrorStreamReader.start();
 
-            logger.info("Database backup successfully created. Database: {}", databaseSettings.getDatabaseName());
+            logger.info("Database backup successfully created. Database: {}", databaseSettings.getName());
 
             return process.getInputStream();
         } catch (IOException ex) {
@@ -173,7 +161,7 @@ public class PostgresBackupManager implements BackupManager {
     public void restoreDbDump(InputStream dump) {
         try {
             List<String> restoreCommand = getRestoreCommand(dump);
-            logger.info("Executing restore command: {} on database {}", restoreCommand.toString(), databaseSettings.getDatabaseName());
+            logger.info("Executing restore command: {} on database {}", restoreCommand.toString(), databaseSettings.getName());
 
             Process process = runProcess(restoreCommand);
 
@@ -197,7 +185,7 @@ public class PostgresBackupManager implements BackupManager {
             process.waitFor();
             process.destroy();
 
-            logger.info("Database successfully restored. Database: {}", databaseSettings.getDatabaseName());
+            logger.info("Database successfully restored. Database: {}", databaseSettings.getName());
         } catch (IOException | InterruptedException ex) {
             throw new RuntimeException("Error occurred while restoring postgres database dump", ex);
         }

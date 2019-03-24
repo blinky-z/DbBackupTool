@@ -1,4 +1,4 @@
-package com.example.demo.webUi.WebUiForm.database;
+package com.example.demo.webUI.formTransfer.database;
 
 public class WebPostgresSettings {
     @Override

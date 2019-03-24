@@ -1,9 +1,7 @@
-package com.example.demo.webUi.WebUiForm;
+package com.example.demo.webUI.formTransfer;
 
-import com.example.demo.entities.storage.DropboxSettings;
-import com.example.demo.entities.storage.LocalFileSystemSettings;
-import com.example.demo.webUi.WebUiForm.storage.WebDropboxSettings;
-import com.example.demo.webUi.WebUiForm.storage.WebLocalFileSystemSettings;
+import com.example.demo.webUI.formTransfer.storage.WebDropboxSettings;
+import com.example.demo.webUI.formTransfer.storage.WebLocalFileSystemSettings;
 
 public class WebCreateStorageRequest {
     private String storageType;

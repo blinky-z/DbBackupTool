@@ -105,34 +105,32 @@
 
                     <div class="tab-content">
                         <div class="tab-pane fade show active" id="storageListWrapper" role="tabpanel">
-                            <div class="container" id="storageContainer">
-                                <div id="storageListTable">
-                                    <table class="table table-hover table-bordered">
-                                        <thead class="thead-dark">
-                                        <tr>
-                                            <th scope="col" class="col-md-2">Storage</th>
-                                            <th scope="col" class="col-md-6">Description</th>
-                                            <th scope="col" class="col-md-3">Creation time</th>
-                                            <th scope="col"></th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        <tr th:each="storage: ${storageList}" th:object="${storage}" class="storageItem"
-                                            th:attr="data-id=*{id}">
-                                            <th scope="row" th:text="*{type}"></th>
-                                            <td th:text="*{desc}"></td>
-                                            <td th:text="*{time}"></td>
-                                            <td>
-                                                <div class="d-flex flex-row-reverse bd-highlight">
-                                                    <button type="button" class="btn btn-secondary" onclick="removeStorage(this)">
-                                                        Remove
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
+                            <div id="storageListTable">
+                                <table class="table table-hover table-bordered">
+                                    <thead class="thead-dark">
+                                    <tr>
+                                        <th scope="col" class="col-md-2">Storage</th>
+                                        <th scope="col" class="col-md-6">Description</th>
+                                        <th scope="col" class="col-md-3">Creation time</th>
+                                        <th scope="col"></th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:each="storage: ${storageList}" th:object="${storage}" class="storageItem"
+                                        th:attr="data-id=*{id}">
+                                        <th scope="row" th:text="*{type}"></th>
+                                        <td th:text="*{desc}"></td>
+                                        <td th:text="*{time}"></td>
+                                        <td>
+                                            <div class="d-flex flex-row-reverse bd-highlight">
+                                                <button type="button" class="btn btn-secondary" onclick="removeStorage(this)">
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 
@@ -199,34 +197,32 @@
 
                     <div class="tab-content">
                         <div class="tab-pane fade show active" id="databaseListWrapper" role="tabpanel">
-                            <div class="container" id="databaseContainer">
-                                <div id="databaseListTable">
-                                    <table class="table table-hover table-bordered">
-                                        <thead class="thead-dark">
-                                        <tr>
-                                            <th scope="col" class="col-md-2">Database</th>
-                                            <th scope="col" class="col-md-6">Description</th>
-                                            <th scope="col" class="col-md-3">Creation time</th>
-                                            <th scope="col"></th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        <tr th:each="database: ${databaseList}" th:object="${database}" class="databaseItem"
-                                            th:attr="data-id=*{id}">
-                                            <th scope="row" th:text="*{type}"></th>
-                                            <td th:text="*{desc}"></td>
-                                            <td th:text="*{time}"></td>
-                                            <td>
-                                                <div class="d-flex flex-row-reverse bd-highlight">
-                                                    <button type="button" class="btn btn-secondary" onclick="removeDatabase(this)">
-                                                        Remove
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
+                            <div id="databaseListTable">
+                                <table class="table table-hover table-bordered">
+                                    <thead class="thead-dark">
+                                    <tr>
+                                        <th scope="col" class="col-md-2">Database</th>
+                                        <th scope="col" class="col-md-6">Description</th>
+                                        <th scope="col" class="col-md-3">Creation time</th>
+                                        <th scope="col"></th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:each="database: ${databaseList}" th:object="${database}" class="databaseItem"
+                                        th:attr="data-id=*{id}">
+                                        <th scope="row" th:text="*{type}"></th>
+                                        <td th:text="*{desc}"></td>
+                                        <td th:text="*{time}"></td>
+                                        <td>
+                                            <div class="d-flex flex-row-reverse bd-highlight">
+                                                <button type="button" class="btn btn-secondary" onclick="removeDatabase(this)">
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 
@@ -275,8 +271,47 @@
                         <h2>Create Backup</h2>
                     </div>
 
-                    <form id="createBackupForm" action="/create-backup" method="post">
+                    <form id="createBackupForm" th:action="@{/create-backup}" method="post">
 
+                        <label for="selectStorageForBackupList">Select storage</label>
+                        <table class="table table-hover table-bordered" id="selectStorageForBackupList">
+                            <thead class="thead-dark">
+                            <tr>
+                                <th scope="col"></th>
+                                <th scope="col" class="col-md-2">Storage</th>
+                                <th scope="col" class="col-md-6">Description</th>
+                                <th scope="col" class="col-md-3">Creation time</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="storage: ${storageList}" class="storageItem">
+                                <td><input type="checkbox" name="checkStorageList" th:value="${storage.id}"></td>
+                                <th scope="row" th:text="${storage.type}"></th>
+                                <td th:text="${storage.desc}"></td>
+                                <td th:text="${storage.time}"></td>
+                            </tr>
+                            </tbody>
+                        </table>
+
+                        <label for="selectDatabaseForBackupList">Select database</label>
+                        <table class="table table-hover table-bordered" id="selectDatabaseForBackupList">
+                            <thead class="thead-dark">
+                            <tr>
+                                <th scope="col"></th>
+                                <th scope="col" class="col-md-2">Database</th>
+                                <th scope="col" class="col-md-6">Description</th>
+                                <th scope="col" class="col-md-3">Creation time</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="database: ${databaseList}" class="databaseItem">
+                                <td><input type="checkbox" name="checkDatabaseList" th:value="${database.id}"></td>
+                                <th scope="row" th:text="${database.type}"></th>
+                                <td th:text="${database.desc}"></td>
+                                <td th:text="${database.time}"></td>
+                            </tr>
+                            </tbody>
+                        </table>
 
                         <button type="submit" class="btn btn-primary">Backup</button>
                     </form>

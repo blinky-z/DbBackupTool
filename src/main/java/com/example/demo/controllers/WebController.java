@@ -1,15 +1,15 @@
 package com.example.demo.controllers;
 
-import com.example.demo.DatabaseManager.DatabaseManager;
-import com.example.demo.StorageManager.StorageManager;
+import com.example.demo.manager.DatabaseSettingsManager;
+import com.example.demo.manager.StorageSettingsManager;
 import com.example.demo.entities.database.Database;
 import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.entities.storage.DropboxSettings;
 import com.example.demo.entities.storage.LocalFileSystemSettings;
 import com.example.demo.entities.storage.Storage;
 import com.example.demo.entities.storage.StorageSettings;
-import com.example.demo.webUi.webUiFrontModels.DatabaseItem;
-import com.example.demo.webUi.webUiFrontModels.StorageItem;
+import com.example.demo.webUI.renderModels.WebDatabaseItem;
+import com.example.demo.webUI.renderModels.WebStorageItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -24,23 +24,23 @@ import java.util.List;
 public class WebController {
     private static final String TIME_FORMAT = "dd.MM.yyyy HH:mm:ss";
 
-    private DatabaseManager databaseManager;
+    private DatabaseSettingsManager databaseSettingsManager;
 
-    private StorageManager storageManager;
+    private StorageSettingsManager storageSettingsManager;
 
     @Autowired
-    public void setDatabaseManager(DatabaseManager databaseManager) {
-        this.databaseManager = databaseManager;
+    public void setDatabaseSettingsManager(DatabaseSettingsManager databaseSettingsManager) {
+        this.databaseSettingsManager = databaseSettingsManager;
     }
 
     @Autowired
-    public void setStorageManager(StorageManager storageManager) {
-        this.storageManager = storageManager;
+    public void setStorageSettingsManager(StorageSettingsManager storageSettingsManager) {
+        this.storageSettingsManager = storageSettingsManager;
     }
 
     @RequestMapping("/")
     public String index() {
-        return "index.html";
+        return "dashboard.html";
     }
 
     @RequestMapping("/login")
@@ -51,38 +51,38 @@ public class WebController {
     //    TODO: сделать добавление всех стореджей в одном цикле, и добавление всех баз данных в одном цикле. Сейчас есть дупликация кода
     @RequestMapping("/dashboard")
     public String dashboard(Model model) {
-        List<StorageItem> storageList = new ArrayList<>();
+        List<WebStorageItem> storageList = new ArrayList<>();
         SimpleDateFormat dateFormat = new SimpleDateFormat(TIME_FORMAT);
 
-        for (StorageSettings storageSettings : storageManager.getAllByType(Storage.LOCAL_FILE_SYSTEM)) {
+        for (StorageSettings storageSettings : storageSettingsManager.getAllByType(Storage.LOCAL_FILE_SYSTEM)) {
             LocalFileSystemSettings localFileSystemSettings = storageSettings.getLocalFileSystemSettings().get();
 
             HashMap<String, String> storageProperties = new HashMap<>();
             storageProperties.put("Backup path", localFileSystemSettings.getBackupPath());
 
-            StorageItem storageItem = new StorageItem(storageSettings.getType(), storageSettings.getId(),
+            WebStorageItem storageItem = new WebStorageItem(storageSettings.getType(), storageSettings.getId(),
                     storageProperties.toString(), dateFormat.format(storageSettings.getDate()));
             storageList.add(storageItem);
         }
-        for (StorageSettings storageSettings : storageManager.getAllByType(Storage.DROPBOX)) {
+        for (StorageSettings storageSettings : storageSettingsManager.getAllByType(Storage.DROPBOX)) {
             DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().get();
 
             HashMap<String, String> storageProperties = new HashMap<>();
             storageProperties.put("Access token", dropboxSettings.getAccessToken());
 
-            StorageItem storageItem = new StorageItem(storageSettings.getType(), storageSettings.getId(),
+            WebStorageItem storageItem = new WebStorageItem(storageSettings.getType(), storageSettings.getId(),
                     storageProperties.toString(), dateFormat.format(storageSettings.getDate()));
             storageList.add(storageItem);
         }
 
-        List<DatabaseItem> databaseList = new ArrayList<>();
-        for (DatabaseSettings databaseSettings : databaseManager.getAllByType(Database.POSTGRES)) {
+        List<WebDatabaseItem> databaseList = new ArrayList<>();
+        for (DatabaseSettings databaseSettings : databaseSettingsManager.getAllByType(Database.POSTGRES)) {
             HashMap<String, String> storageProperties = new HashMap<>();
             storageProperties.put("Host", databaseSettings.getHost());
             storageProperties.put("Port", databaseSettings.getPort());
             storageProperties.put("Database name", databaseSettings.getName());
 
-            DatabaseItem databaseItem = new DatabaseItem(databaseSettings.getType(), databaseSettings.getId(),
+            WebDatabaseItem databaseItem = new WebDatabaseItem(databaseSettings.getType(), databaseSettings.getId(),
                     storageProperties.toString(), dateFormat.format(databaseSettings.getDate()));
             databaseList.add(databaseItem);
         }

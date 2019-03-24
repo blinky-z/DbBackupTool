@@ -1,9 +1,9 @@
-package com.example.demo.webUi.webUiFrontModels;
+package com.example.demo.webUI.renderModels;
 
-import com.example.demo.entities.database.Database;
+import com.example.demo.entities.storage.Storage;
 
-public class DatabaseItem {
-    private Database type;
+public class WebStorageItem {
+    private Storage type;
 
     private int id;
 
@@ -11,18 +11,18 @@ public class DatabaseItem {
 
     private String time;
 
-    public DatabaseItem(Database type, int id, String desc, String time) {
+    public WebStorageItem(Storage type, int id, String desc, String time) {
         this.type = type;
         this.id = id;
         this.desc = desc;
         this.time = time;
     }
 
-    public Database getType() {
+    public Storage getType() {
         return type;
     }
 
-    public void setType(Database type) {
+    public void setType(Storage type) {
         this.type = type;
     }
 
