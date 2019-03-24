@@ -1,9 +1,7 @@
 package com.example.demo.controllers;
 
-import com.example.demo.manager.DatabaseBackupManager;
-import com.example.demo.manager.DatabaseSettingsManager;
-import com.example.demo.manager.StorageBackupLoadManager;
-import com.example.demo.manager.StorageSettingsManager;
+import com.example.demo.entities.backup.BackupProperties;
+import com.example.demo.manager.*;
 import com.example.demo.entities.database.Database;
 import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.entities.database.PostgresSettings;
@@ -12,8 +10,9 @@ import com.example.demo.entities.storage.LocalFileSystemSettings;
 import com.example.demo.entities.storage.Storage;
 import com.example.demo.entities.storage.StorageSettings;
 import com.example.demo.webUI.formTransfer.WebCreateBackupRequest;
-import com.example.demo.webUI.formTransfer.WebCreateDatabaseRequest;
-import com.example.demo.webUI.formTransfer.WebCreateStorageRequest;
+import com.example.demo.webUI.formTransfer.WebAddDatabaseRequest;
+import com.example.demo.webUI.formTransfer.WebAddStorageRequest;
+import com.example.demo.webUI.formTransfer.WebRestoreBackupRequest;
 import com.example.demo.webUI.formTransfer.storage.WebDropboxSettings;
 import com.example.demo.webUI.formTransfer.storage.WebLocalFileSystemSettings;
 import org.slf4j.Logger;
@@ -46,6 +45,8 @@ public class ApiController {
 
     private StorageBackupLoadManager storageBackupLoadManager;
 
+    private BackupPropertiesManager backupPropertiesManager;
+
     @Autowired
     public void setDatabaseSettingsManager(DatabaseSettingsManager databaseSettingsManager) {
         this.databaseSettingsManager = databaseSettingsManager;
@@ -66,6 +67,11 @@ public class ApiController {
         this.storageBackupLoadManager = storageBackupLoadManager;
     }
 
+    @Autowired
+    public void setBackupPropertiesManager(BackupPropertiesManager backupPropertiesManager) {
+        this.backupPropertiesManager = backupPropertiesManager;
+    }
+
     //    TODO: добавить нормальную валидацию всех форм.
 
     @DeleteMapping(value = "/database")
@@ -78,7 +84,7 @@ public class ApiController {
     }
 
     @PostMapping(value = "/database")
-    public String createDatabase(@Valid WebCreateDatabaseRequest createDatabaseRequest, BindingResult bindingResult) {
+    public String createDatabase(@Valid WebAddDatabaseRequest createDatabaseRequest, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             logger.info("Has errors");
             logger.info(bindingResult.getAllErrors().toString());
@@ -120,7 +126,7 @@ public class ApiController {
     }
 
     @PostMapping(value = "/storage")
-    public String createStorage(@Valid WebCreateStorageRequest createStorageRequest, BindingResult bindingResult) {
+    public String createStorage(@Valid WebAddStorageRequest createStorageRequest, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             logger.info("Has errors");
             logger.info(bindingResult.getAllErrors().toString());
@@ -183,6 +189,30 @@ public class ApiController {
             storageBackupLoadManager.uploadBackup(currentBackup, currentDatabaseSettings, storageSettingsList,
                     currentDatabaseSettings.getName(), false, createBackupRequest.getMaxChunkSize());
         }
+
+        return ResponseEntity.status(HttpStatus.OK).body(null);
+    }
+
+    @PostMapping(value = "/restore-backup")
+    public ResponseEntity restoreBackup(WebRestoreBackupRequest restoreBackupRequest) {
+        logger.info("Backup list: {}", restoreBackupRequest.getCheckBackupList());
+        logger.info("Database list: {}", restoreBackupRequest.getCheckDatabaseList());
+
+        List<BackupProperties> backupPropertiesList = new ArrayList<>();
+        for (Integer backupId : restoreBackupRequest.getCheckBackupList()) {
+            backupPropertiesList.add(backupPropertiesManager.getById(backupId).orElseThrow(() ->
+                    new RuntimeException(String.format(
+                            "Can't retrieve backup properties. Error: no backup properties with ID %d", backupId))));
+        }
+
+        List<DatabaseSettings> databaseSettingsList = new ArrayList<>();
+        for (Integer databaseId : restoreBackupRequest.getCheckDatabaseList()) {
+            databaseSettingsList.add(databaseSettingsManager.getById(databaseId).orElseThrow(() -> new RuntimeException(
+                    String.format("Can't retrieve database settings. Error: no database settings with ID %d", databaseId))));
+        }
+
+        logger.info("Backup properties list: {}", backupPropertiesList);
+        logger.info("Database settings list: {}", databaseSettingsList);
 
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }

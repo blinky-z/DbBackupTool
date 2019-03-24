@@ -3,7 +3,7 @@ package com.example.demo.webUI.formTransfer;
 import com.example.demo.webUI.formTransfer.storage.WebDropboxSettings;
 import com.example.demo.webUI.formTransfer.storage.WebLocalFileSystemSettings;
 
-public class WebCreateStorageRequest {
+public class WebAddStorageRequest {
     private String storageType;
 
     private WebLocalFileSystemSettings localFileSystemSettings;

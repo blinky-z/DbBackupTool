@@ -25,6 +25,5 @@ create table if not exists backup_properties
   DATE                 TIMESTAMPTZ DEFAULT NOW() not null,
   BACKUP_NAME          varchar(1024)             not null,
   COMPRESSED           boolean                   not null,
-  STORAGE_SETTINGS_ID  integer                   not null,
-  DATABASE_SETTINGS_ID integer                   not null
+  STORAGE_SETTINGS_ID  integer                   not null
 );

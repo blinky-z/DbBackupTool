@@ -23,8 +23,6 @@ public class BackupProperties {
 
     private Integer storageSettingsId;
 
-    private Integer databaseSettingsId;
-
     BackupProperties() {
 
     }
@@ -34,7 +32,6 @@ public class BackupProperties {
         this.backupName = backupName;
         this.compressed = compressed;
         this.storageSettingsId = storageSettingsId;
-        this.databaseSettingsId = databaseSettingsId;
     }
 
     public int getId() {
@@ -77,14 +74,6 @@ public class BackupProperties {
         this.storageSettingsId = storageSettingsId;
     }
 
-    public Integer getDatabaseSettingsId() {
-        return databaseSettingsId;
-    }
-
-    public void setDatabaseSettingsId(Integer databaseSettingsId) {
-        this.databaseSettingsId = databaseSettingsId;
-    }
-
     @Override
     public String toString() {
         return "BackupProperties{" +
@@ -93,7 +82,6 @@ public class BackupProperties {
                 ", backupName='" + backupName + '\'' +
                 ", compressed=" + compressed +
                 ", storageSettingsId=" + storageSettingsId +
-                ", databaseSettingsId=" + databaseSettingsId +
                 '}';
     }
 }

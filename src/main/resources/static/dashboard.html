@@ -326,7 +326,48 @@
                         <h2>Restore Backup</h2>
                     </div>
 
+                    <form id="restoreBackupForm" th:action="@{/restore-backup}" method="post">
 
+                        <label for="selectBackupToRestoreFromList">Select backup to restore from</label>
+                        <table class="table table-hover table-bordered" id="selectBackupToRestoreFromList">
+                            <thead class="thead-dark">
+                            <tr>
+                                <th scope="col"></th>
+                                <th scope="col" class="col-md-8">Description</th>
+                                <th scope="col" class="col-md-3">Creation time</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="backup: ${backupList}" th:object="${backup}">
+                                <td><input type="checkbox" name="checkBackupList" th:value="*{id}"></td>
+                                <td th:text="*{desc}"></td>
+                                <td th:text="*{time}"></td>
+                            </tr>
+                            </tbody>
+                        </table>
+
+                        <label for="selectDatabaseToRestoreToList">Select database to restore to</label>
+                        <table class="table table-hover table-bordered" id="selectDatabaseToRestoreToList">
+                            <thead class="thead-dark">
+                            <tr>
+                                <th scope="col"></th>
+                                <th scope="col" class="col-md-2">Database</th>
+                                <th scope="col" class="col-md-6">Description</th>
+                                <th scope="col" class="col-md-3">Creation time</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="database: ${databaseList}" class="databaseItem" th:object="${database}">
+                                <td><input type="checkbox" name="checkDatabaseList" th:value="*{id}"></td>
+                                <th scope="row" th:text="*{type}"></th>
+                                <td th:text="*{desc}"></td>
+                                <td th:text="*{time}"></td>
+                            </tr>
+                            </tbody>
+                        </table>
+
+                        <button type="submit" class="btn btn-primary">Restore</button>
+                    </form>
                 </div>
             </div>
         </main>

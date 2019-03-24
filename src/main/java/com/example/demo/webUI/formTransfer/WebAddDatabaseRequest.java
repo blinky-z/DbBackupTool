@@ -2,7 +2,7 @@ package com.example.demo.webUI.formTransfer;
 
 import com.example.demo.webUI.formTransfer.database.WebPostgresSettings;
 
-public class WebCreateDatabaseRequest {
+public class WebAddDatabaseRequest {
     private String databaseType;
 
     private String host;
