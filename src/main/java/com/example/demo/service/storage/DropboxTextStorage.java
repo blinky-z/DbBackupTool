@@ -27,13 +27,13 @@ public class DropboxTextStorage implements TextStorage {
 
     private long currentBackupPart;
 
-    public DropboxTextStorage(StorageSettings storageSettings, String databaseName) {
-        SimpleDateFormat date = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
-        this.backupName = String.format("backup_%s_%s",databaseName, date.format(new Date()));
-        this.backupFolder = backupName;
+    public DropboxTextStorage(StorageSettings storageSettings, String backupName) {
+        this.backupName = backupName;
+        this.backupFolder = this.backupName;
         currentBackupPart = 0;
         DbxRequestConfig config = DbxRequestConfig.newBuilder("dbBackup").build();
-        DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(RuntimeException::new);
+        DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(() -> new RuntimeException("Can't " +
+                "construct Dropbox Text Storage: Missing Dropbox Settings"));
         dbxClient = new DbxClientV2(config, dropboxSettings.getAccessToken());
     }
 
@@ -42,11 +42,11 @@ public class DropboxTextStorage implements TextStorage {
         InputStream in = new ByteArrayInputStream(data.getBytes(Charset.defaultCharset()));
         try {
             String currentFile = backupName + "_part" + currentBackupPart + ".data";
-            logger.info("Uploading a new file to Dropbox: {}", currentFile);
+            logger.info("Uploading a new data to Dropbox. Current file: {}", currentFile);
             dbxClient.files().uploadBuilder("/" + backupFolder + "/" + currentFile).uploadAndFinish(in);
             currentBackupPart++;
         } catch (DbxException | IOException ex) {
-            throw new RuntimeException("Error uploading backup file to Dropbox", ex);
+            throw new RuntimeException("Error uploading backup to Dropbox", ex);
         }
     }
 

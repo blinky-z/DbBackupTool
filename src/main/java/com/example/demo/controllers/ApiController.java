@@ -2,6 +2,7 @@ package com.example.demo.controllers;
 
 import com.example.demo.manager.DatabaseBackupManager;
 import com.example.demo.manager.DatabaseSettingsManager;
+import com.example.demo.manager.StorageBackupLoadManager;
 import com.example.demo.manager.StorageSettingsManager;
 import com.example.demo.entities.database.Database;
 import com.example.demo.entities.database.DatabaseSettings;
@@ -43,6 +44,8 @@ public class ApiController {
 
     private DatabaseBackupManager databaseBackupManager;
 
+    private StorageBackupLoadManager storageBackupLoadManager;
+
     @Autowired
     public void setDatabaseSettingsManager(DatabaseSettingsManager databaseSettingsManager) {
         this.databaseSettingsManager = databaseSettingsManager;
@@ -56,6 +59,11 @@ public class ApiController {
     @Autowired
     public void setDatabaseBackupManager(DatabaseBackupManager databaseBackupManager) {
         this.databaseBackupManager = databaseBackupManager;
+    }
+
+    @Autowired
+    public void setStorageBackupLoadManager(StorageBackupLoadManager storageBackupLoadManager) {
+        this.storageBackupLoadManager = storageBackupLoadManager;
     }
 
     //    TODO: добавить нормальную валидацию всех форм.
@@ -153,40 +161,28 @@ public class ApiController {
     @PostMapping(value = "/create-backup")
     public ResponseEntity createBackup(WebCreateBackupRequest createBackupRequest) {
         logger.info("{}", createBackupRequest.getCheckStorageList());
-
         logger.info("{}", createBackupRequest.getCheckDatabaseList());
 
         List<DatabaseSettings> databaseSettingsList = new ArrayList<>();
-
         for (Integer databaseId : createBackupRequest.getCheckDatabaseList()) {
-            Optional<DatabaseSettings> databaseSettings = databaseSettingsManager.getById(databaseId);
-            if (databaseSettings.isPresent()) {
-                databaseSettingsList.add(databaseSettings.get());
-            } else {
-                throw new RuntimeException(String.format("Can't retrieve database settings. Error: no database settings with ID %s",
-                        databaseId));
-            }
-        }
-
-        List<InputStream> backupList = new ArrayList<>();
-        for (DatabaseSettings currentDatabaseSettings : databaseSettingsList) {
-            backupList.add(databaseBackupManager.createBackup(currentDatabaseSettings));
+            databaseSettingsList.add(databaseSettingsManager.getById(databaseId).orElseThrow(() -> new RuntimeException(
+                    String.format("Can't retrieve database settings. Error: no database settings with ID %d", databaseId))));
         }
 
         List<StorageSettings> storageSettingsList = new ArrayList<>();
-
         for (Integer storageId : createBackupRequest.getCheckStorageList()) {
-            Optional<StorageSettings> storageSettings = storageSettingsManager.getById(storageId);
-            if (storageSettings.isPresent()) {
-                storageSettingsList.add(storageSettings.get());
-            } else {
-                throw new RuntimeException(String.format("Can't retrieve storage settings. Error: no storage settings with ID %s",
-                        storageId));
-            }
+            storageSettingsList.add(storageSettingsManager.getById(storageId).orElseThrow(() -> new RuntimeException(
+                    String.format("Can't retrieve storage settings. Error: no storage settings with ID %d", storageId))));
         }
 
         logger.info("Database settings list: {}", databaseSettingsList);
         logger.info("Storage settings list: {}", storageSettingsList);
+
+        for (DatabaseSettings currentDatabaseSettings : databaseSettingsList) {
+            InputStream currentBackup = databaseBackupManager.createBackup(currentDatabaseSettings);
+            storageBackupLoadManager.uploadBackup(currentBackup, currentDatabaseSettings, storageSettingsList,
+                    currentDatabaseSettings.getName(), false, createBackupRequest.getMaxChunkSize());
+        }
 
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }

@@ -1,7 +1,7 @@
 package com.example.demo;
 
-import com.example.demo.BackupManager.PostgresBackupManager;
-import com.example.demo.storage.DropboxTextStorage;
+import com.example.demo.service.databaseBackup.PostgresDatabaseBackup;
+import com.example.demo.service.storage.DropboxTextStorage;
 import com.example.demo.settings.DatabaseSettings;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import org.junit.Test;
@@ -28,7 +28,7 @@ import static org.junit.Assert.assertEquals;
 @AutoConfigureEmbeddedDatabase(beanName = "copyDataSource")
 public class DropboxTextStorageTests {
     @Autowired
-    PostgresBackupManager postgresBackupManager;
+    PostgresDatabaseBackup postgresBackupManager;
 
     @Autowired
     DropboxTextStorage dropboxTextStorage;
@@ -51,8 +51,8 @@ public class DropboxTextStorageTests {
 
     @Test
     public void testSaveBackup() {
-//        dropboxTextStorage.saveBackup("sffksjgfjkdgjkfgh");
-//        dropboxTextStorage.saveBackup("sffksjgfjkdf");
+//        dropboxTextStorage.uploadBackup("sffksjgfjkdgjkfgh");
+//        dropboxTextStorage.uploadBackup("sffksjgfjkdf");
 //
 //        InputStream in = dropboxTextStorage.downloadBackup();
 //
@@ -109,13 +109,13 @@ public class DropboxTextStorageTests {
                 backupChunk.append(System.lineSeparator());
                 currentChunkSize += currentLine.getBytes().length;
                 if (currentChunkSize >= maxChunkSize) {
-                    dropboxTextStorage.saveBackup(backupChunk.toString());
+                    dropboxTextStorage.uploadBackup(backupChunk.toString());
                     currentChunkSize = 0;
                     backupChunk.setLength(0);
                 }
             }
             if (currentChunkSize != 0) {
-                dropboxTextStorage.saveBackup(backupChunk.toString());
+                dropboxTextStorage.uploadBackup(backupChunk.toString());
             }
             backupStreamReader.close();
         } catch (IOException ex) {

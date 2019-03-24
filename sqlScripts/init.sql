@@ -17,4 +17,14 @@ create table if not exists storage_settings
   TYPE              VARCHAR(64)               not null,
   DATE              TIMESTAMPTZ DEFAULT NOW() not null,
   ADDITIONAL_FIELDS varchar(8192)             not null
-)
+);
+
+create table if not exists backup_properties
+(
+  ID                   SERIAL PRIMARY KEY,
+  DATE                 TIMESTAMPTZ DEFAULT NOW() not null,
+  BACKUP_NAME          varchar(1024)             not null,
+  COMPRESSED           boolean                   not null,
+  STORAGE_SETTINGS_ID  integer                   not null,
+  DATABASE_SETTINGS_ID integer                   not null
+);

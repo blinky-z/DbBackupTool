@@ -24,35 +24,32 @@ public class FileSystemTextStorage implements TextStorage {
 
     private BufferedWriter fileWriter;
 
-    private String databaseName;
+    private String backupName;
 
     private List<File> createdBackupFiles;
 
-    private SimpleDateFormat date;
-
-    public FileSystemTextStorage() {
-        createdBackupFiles = new ArrayList<>();
-    }
+    private long currentBackupPart;
 
     private void createNewFile() throws IOException {
-        String dateAsString = date.format(new Date());
-        File currentFile = new File(localFileSystemSettings.getBackupPath() + File.separator + "backup_" +
-                databaseName + "_" + dateAsString + ".data");
+        File currentFile = new File(localFileSystemSettings.getBackupPath() + File.separator + backupName +
+                "_part" + currentBackupPart + ".data");
         logger.info("New created backup file: {}", currentFile.getAbsolutePath());
         createdBackupFiles.add(currentFile);
         fileWriter = new BufferedWriter(new FileWriter(currentFile));
+        currentBackupPart++;
     }
 
-    public FileSystemTextStorage(StorageSettings storageSettings, String databaseName) {
-        date = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss-SS");
+    public FileSystemTextStorage(StorageSettings storageSettings, String backupName) {
         this.storageSettings = storageSettings;
         this.localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(RuntimeException::new);
-        this.databaseName = databaseName;
+        this.backupName = backupName;
+        createdBackupFiles = new ArrayList<>();
     }
 
     /**
      * Saves backup chunk to the local file system.
      * Each call creates new file containing backup chunk.
+     *
      * @param data backup chunk to be saved to the file system
      */
     @Override
@@ -68,6 +65,7 @@ public class FileSystemTextStorage implements TextStorage {
 
     /**
      * Downloads backup from the file system.
+     *
      * @return input stream containing the whole backup.
      */
     @Override

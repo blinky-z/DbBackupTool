@@ -1,7 +1,7 @@
 package com.example.demo;
 
-import com.example.demo.BackupManager.PostgresBackupManager;
-import com.example.demo.storage.FileSystemTextStorage;
+import com.example.demo.service.databaseBackup.PostgresDatabaseBackup;
+import com.example.demo.service.storage.FileSystemTextStorage;
 import com.example.demo.settings.DatabaseSettings;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import org.junit.Test;
@@ -26,9 +26,9 @@ import static org.junit.Assert.assertEquals;
 @SpringBootTest(classes = {DemoApplication.class, TestConfiguration.class}, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureEmbeddedDatabase(beanName = "masterDataSource")
 @AutoConfigureEmbeddedDatabase(beanName = "copyDataSource")
-public class FileSystemStoragePostgresBackupManagerTests {
+public class FileSystemStoragePostgresDatabaseBackupTests {
     @Autowired
-    PostgresBackupManager postgresBackupManager;
+    PostgresDatabaseBackup postgresBackupManager;
 
     @Autowired
     FileSystemTextStorage fileSystemTextStorage;
@@ -93,13 +93,13 @@ public class FileSystemStoragePostgresBackupManagerTests {
                 backupChunk.append("\n");
                 currentChunkSize += currentLine.getBytes().length;
                 if (currentChunkSize >= maxChunkSize) {
-                    fileSystemTextStorage.saveBackup(backupChunk.toString());
+                    fileSystemTextStorage.uploadBackup(backupChunk.toString());
                     currentChunkSize = 0;
                     backupChunk.setLength(0);
                 }
             }
             if (currentChunkSize != 0) {
-                fileSystemTextStorage.saveBackup(backupChunk.toString());
+                fileSystemTextStorage.uploadBackup(backupChunk.toString());
             }
         } catch (IOException ex) {
             ex.printStackTrace();
