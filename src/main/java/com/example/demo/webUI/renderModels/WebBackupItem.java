@@ -1,15 +1,20 @@
 package com.example.demo.webUI.renderModels;
 
+import com.example.demo.entities.database.Database;
+
 public class WebBackupItem {
     private int id;
 
     private String desc;
 
+    private String name;
+
     private String time;
 
-    public WebBackupItem(int id, String desc, String time) {
+    public WebBackupItem(int id, String desc, String name, String time) {
         this.id = id;
         this.desc = desc;
+        this.name = name;
         this.time = time;
     }
 
@@ -19,6 +24,14 @@ public class WebBackupItem {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getDesc() {
@@ -35,5 +48,15 @@ public class WebBackupItem {
 
     public void setTime(String time) {
         this.time = time;
+    }
+
+    @Override
+    public String toString() {
+        return "WebBackupItem{" +
+                "id=" + id +
+                ", desc='" + desc + '\'' +
+                ", name='" + name + '\'' +
+                ", time='" + time + '\'' +
+                '}';
     }
 }

@@ -43,7 +43,7 @@ public class ApiController {
 
     private DatabaseBackupManager databaseBackupManager;
 
-    private StorageBackupLoadManager storageBackupLoadManager;
+    private TextStorageBackupLoadManager textStorageBackupLoadManager;
 
     private BackupPropertiesManager backupPropertiesManager;
 
@@ -63,8 +63,8 @@ public class ApiController {
     }
 
     @Autowired
-    public void setStorageBackupLoadManager(StorageBackupLoadManager storageBackupLoadManager) {
-        this.storageBackupLoadManager = storageBackupLoadManager;
+    public void setTextStorageBackupLoadManager(TextStorageBackupLoadManager textStorageBackupLoadManager) {
+        this.textStorageBackupLoadManager = textStorageBackupLoadManager;
     }
 
     @Autowired
@@ -186,8 +186,8 @@ public class ApiController {
 
         for (DatabaseSettings currentDatabaseSettings : databaseSettingsList) {
             InputStream currentBackup = databaseBackupManager.createBackup(currentDatabaseSettings);
-            storageBackupLoadManager.uploadBackup(currentBackup, currentDatabaseSettings, storageSettingsList,
-                    currentDatabaseSettings.getName(), false, createBackupRequest.getMaxChunkSize());
+            textStorageBackupLoadManager.uploadBackup(currentBackup, storageSettingsList,
+                    currentDatabaseSettings.getName(), createBackupRequest.getMaxChunkSize());
         }
 
         return ResponseEntity.status(HttpStatus.OK).body(null);
@@ -195,24 +195,32 @@ public class ApiController {
 
     @PostMapping(value = "/restore-backup")
     public ResponseEntity restoreBackup(WebRestoreBackupRequest restoreBackupRequest) {
-        logger.info("Backup list: {}", restoreBackupRequest.getCheckBackupList());
-        logger.info("Database list: {}", restoreBackupRequest.getCheckDatabaseList());
+        logger.info("Backup id: {}", restoreBackupRequest.getBackupId());
+        logger.info("Database id: {}", restoreBackupRequest.getDatabaseId());
 
-        List<BackupProperties> backupPropertiesList = new ArrayList<>();
-        for (Integer backupId : restoreBackupRequest.getCheckBackupList()) {
-            backupPropertiesList.add(backupPropertiesManager.getById(backupId).orElseThrow(() ->
-                    new RuntimeException(String.format(
-                            "Can't retrieve backup properties. Error: no backup properties with ID %d", backupId))));
+        Integer backupId = restoreBackupRequest.getBackupId();
+        BackupProperties backupProperties = backupPropertiesManager.getById(backupId).orElseThrow(() ->
+                new RuntimeException(String.format(
+                        "Can't retrieve backup properties. Error: no backup properties with ID %d", backupId)));
+
+        Integer storageSettingsId = backupProperties.getStorageSettingsId();
+        StorageSettings storageSettings = storageSettingsManager.getById(storageSettingsId).
+                orElseThrow(() ->
+                        new RuntimeException(String.format(
+                                "Can't retrieve storage settings. Error: no storage settings with ID %d", storageSettingsId)));
+
+        Integer databaseId = restoreBackupRequest.getDatabaseId();
+        DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseId).orElseThrow(() -> new RuntimeException(
+                String.format("Can't retrieve database settings. Error: no database settings with ID %d", databaseId)));
+
+        logger.info("Backup properties: {}", backupProperties);
+        logger.info("Database settings: {}", databaseSettings);
+
+        if (!backupProperties.getCompressed()) {
+            InputStream downloadedBackup = textStorageBackupLoadManager.downloadBackup(storageSettings,
+                    backupProperties.getBackupName());
+            databaseBackupManager.restoreBackup(downloadedBackup, databaseSettings);
         }
-
-        List<DatabaseSettings> databaseSettingsList = new ArrayList<>();
-        for (Integer databaseId : restoreBackupRequest.getCheckDatabaseList()) {
-            databaseSettingsList.add(databaseSettingsManager.getById(databaseId).orElseThrow(() -> new RuntimeException(
-                    String.format("Can't retrieve database settings. Error: no database settings with ID %d", databaseId))));
-        }
-
-        logger.info("Backup properties list: {}", backupPropertiesList);
-        logger.info("Database settings list: {}", databaseSettingsList);
 
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }

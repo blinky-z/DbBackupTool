@@ -6,19 +6,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+import java.util.regex.Matcher;
 
 /**
  * This class is used to write and download plain text backup from local file system.
  */
 public class FileSystemTextStorage implements TextStorage {
-    StorageSettings storageSettings;
+    private StorageSettings storageSettings;
 
-    LocalFileSystemSettings localFileSystemSettings;
+    private LocalFileSystemSettings localFileSystemSettings;
 
     private static final Logger logger = LoggerFactory.getLogger(FileSystemTextStorage.class);
 
@@ -26,15 +23,19 @@ public class FileSystemTextStorage implements TextStorage {
 
     private String backupName;
 
-    private List<File> createdBackupFiles;
-
     private long currentBackupPart;
 
+    private static String FILENAME_TEMPLATE = "%s/%s_part%d.data";
+
+    private String getFilename() {
+        String filename = String.format(FILENAME_TEMPLATE, localFileSystemSettings.getBackupPath(), backupName,
+                currentBackupPart);
+        return filename.replaceAll("/", Matcher.quoteReplacement(File.separator));
+    }
+
     private void createNewFile() throws IOException {
-        File currentFile = new File(localFileSystemSettings.getBackupPath() + File.separator + backupName +
-                "_part" + currentBackupPart + ".data");
+        File currentFile = new File(getFilename());
         logger.info("New created backup file: {}", currentFile.getAbsolutePath());
-        createdBackupFiles.add(currentFile);
         fileWriter = new BufferedWriter(new FileWriter(currentFile));
         currentBackupPart++;
     }
@@ -43,7 +44,6 @@ public class FileSystemTextStorage implements TextStorage {
         this.storageSettings = storageSettings;
         this.localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(RuntimeException::new);
         this.backupName = backupName;
-        createdBackupFiles = new ArrayList<>();
     }
 
     /**
@@ -72,8 +72,11 @@ public class FileSystemTextStorage implements TextStorage {
     public InputStream downloadBackup() {
         try {
             List<InputStream> backupFilesStreams = new ArrayList<>();
-            for (File currentBackupFile : createdBackupFiles) {
-                backupFilesStreams.add(new FileInputStream(currentBackupFile));
+
+            long filesCount = new File(localFileSystemSettings.getBackupPath()).list().length;
+            for (currentBackupPart = 0; currentBackupPart < filesCount; currentBackupPart++) {
+                File backupFile = new File(getFilename());
+                backupFilesStreams.add(new FileInputStream(backupFile));
             }
 
             return new SequenceInputStream(Collections.enumeration(backupFilesStreams));

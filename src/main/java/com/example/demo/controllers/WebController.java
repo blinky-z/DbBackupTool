@@ -120,16 +120,17 @@ public class WebController {
             for (BackupProperties currentBackupProperties : backupPropertiesManager.getAll()) {
                 HashMap<String, String> backupProperties = new HashMap<>();
 
-                backupProperties.put("Backup name", currentBackupProperties.getBackupName());
-                backupProperties.put("Compressed", currentBackupProperties.getCompressed().toString());
-
                 Integer storageSettingsId = currentBackupProperties.getStorageSettingsId();
                 StorageSettings storageSettings = storageSettingsManager.getById(storageSettingsId).orElseThrow(() ->
                         new RuntimeException(String.format("Error occurred while rendering page: Missing " +
                                 "storage settings with ID %d", storageSettingsId)));
+
+                backupProperties.put("Compressed", currentBackupProperties.getCompressed().toString());
                 backupProperties.put("Stored on", storageSettings.getType().toString());
 
-                WebBackupItem webBackupItem = new WebBackupItem(currentBackupProperties.getId(), backupProperties.toString(),
+                WebBackupItem webBackupItem = new WebBackupItem(currentBackupProperties.getId(),
+                        backupProperties.toString(),
+                        currentBackupProperties.getBackupName(),
                         dateFormat.format(currentBackupProperties.getDate()));
                 backupList.add(webBackupItem);
             }

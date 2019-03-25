@@ -1,8 +1,5 @@
 package com.example.demo.entities.backup;
 
-import com.example.demo.entities.database.Database;
-import com.example.demo.entities.storage.Storage;
-
 import javax.persistence.*;
 import java.util.Date;
 
@@ -14,7 +11,7 @@ public class BackupProperties {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(insertable = false, updatable = false)
+    @Column(updatable = false)
     private Date date;
 
     private String backupName;
@@ -27,10 +24,10 @@ public class BackupProperties {
 
     }
 
-    public BackupProperties(String backupName, Boolean compressed,
-                            Integer storageSettingsId, Integer databaseSettingsId) {
+    public BackupProperties(String backupName, Boolean compressed, Date date, Integer storageSettingsId) {
         this.backupName = backupName;
         this.compressed = compressed;
+        this.date = date;
         this.storageSettingsId = storageSettingsId;
     }
 

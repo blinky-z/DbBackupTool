@@ -7,7 +7,7 @@ public class WebCreateBackupRequest {
 
     private List<Integer> checkDatabaseList;
 
-    int maxChunkSize;
+    private int maxChunkSize;
 
     public List<Integer> getCheckStorageList() {
         return checkStorageList;

@@ -1,25 +1,23 @@
 package com.example.demo.webUI.formTransfer;
 
-import java.util.List;
-
 public class WebRestoreBackupRequest {
-    private List<Integer> checkBackupList;
+    private Integer backupId;
 
-    private List<Integer> checkDatabaseList;
+    private Integer databaseId;
 
-    public List<Integer> getCheckBackupList() {
-        return checkBackupList;
+    public Integer getBackupId() {
+        return backupId;
     }
 
-    public void setCheckBackupList(List<Integer> checkBackupList) {
-        this.checkBackupList = checkBackupList;
+    public void setBackupId(Integer backupId) {
+        this.backupId = backupId;
     }
 
-    public List<Integer> getCheckDatabaseList() {
-        return checkDatabaseList;
+    public Integer getDatabaseId() {
+        return databaseId;
     }
 
-    public void setCheckDatabaseList(List<Integer> checkDatabaseList) {
-        this.checkDatabaseList = checkDatabaseList;
+    public void setDatabaseId(Integer databaseId) {
+        this.databaseId = databaseId;
     }
 }
