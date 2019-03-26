@@ -5,9 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -47,6 +45,8 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
         pb = new ProcessBuilder(command);
         pb.environment().put("PGUSER", databaseSettings.getLogin());
         pb.environment().put("PGPASSWORD", databaseSettings.getPassword());
+        pb.environment().put("LC_MESSAGES", "English");
+
         process = pb.start();
 
         return process;
@@ -54,9 +54,6 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
 
     private List<String> getBackupCommand() {
         ArrayList<String> command = new ArrayList<>();
-
-        SimpleDateFormat date = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss-SS");
-        String dateAsString = date.format(new Date());
 
         command.add("pg_dump");
         command = addCommandParam(command, "-h", databaseSettings.getHost());
@@ -96,7 +93,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
                     logger.info("stdout: " + currentLine);
                 }
             } catch (IOException ex) {
-                throw new RuntimeException("Error occurred while reading process standard output stream");
+                throw new RuntimeException("Error occurred while reading process standard output stream", ex);
             }
         }
     }
@@ -120,10 +117,10 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
                     logger.error("stderr: " + error);
                 }
                 if (isErrorOccurred) {
-                    throw new RuntimeException("Error occurred while creating/restoring backup");
+                    throw new RuntimeException("Error occurred while creating/restoring backup. See error log for details");
                 }
             } catch (IOException ex) {
-                throw new RuntimeException("Error occurred while reading process standard error stream");
+                throw new RuntimeException("Error occurred while reading process standard error stream", ex);
             }
         }
     }

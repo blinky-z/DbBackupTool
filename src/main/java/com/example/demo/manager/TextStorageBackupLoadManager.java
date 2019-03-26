@@ -1,11 +1,11 @@
 package com.example.demo.manager;
 
 import com.example.demo.entities.backup.BackupProperties;
-import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.entities.storage.StorageSettings;
 import com.example.demo.service.storage.DropboxTextStorage;
 import com.example.demo.service.storage.FileSystemTextStorage;
 import com.example.demo.service.storage.TextStorage;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,8 +31,8 @@ public class TextStorageBackupLoadManager {
 
     private static final Logger logger = LoggerFactory.getLogger(DatabaseBackupManager.class);
 
-    public void uploadBackup(InputStream backupStream, List<StorageSettings> storageSettingsList, String databaseName,
-                             int maxChunkSize) {
+    public List<BackupProperties> uploadBackup(InputStream backupStream, List<StorageSettings> storageSettingsList,
+                                                   String databaseName, int maxChunkSize) {
         SimpleDateFormat date = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
         List<TextStorage> storageList = new ArrayList<>();
         Date creationTime = new Date();
@@ -80,19 +80,18 @@ public class TextStorageBackupLoadManager {
             throw new RuntimeException("Error occurred while reading backup", ex);
         }
 
+        List<BackupProperties> backupPropertiesList = new ArrayList<>();
         for (StorageSettings storageSettings : storageSettingsList) {
             BackupProperties backupProperties = new BackupProperties(backupName, false, creationTime,
                     storageSettings.getId());
-            backupPropertiesManager.save(backupProperties);
+            backupPropertiesList.add(backupPropertiesManager.save(backupProperties));
         }
 
-        logger.info("Backup successfully saved onto multiple storages. Storages amount: {}", storageSettingsList.size());
-        for (BackupProperties backupProperties : backupPropertiesManager.getAll()) {
-            logger.info("Current backup properties: {}", backupProperties);
-        }
+        return backupPropertiesList;
     }
 
-    public InputStream downloadBackup(StorageSettings storageSettings, String backupName) {
+    public InputStream downloadBackup(@NotNull StorageSettings storageSettings, @NotNull BackupProperties backupProperties) {
+        String backupName = backupProperties.getBackupName();
         switch (storageSettings.getType()) {
             case LOCAL_FILE_SYSTEM: {
                 FileSystemTextStorage fileSystemTextStorage = new FileSystemTextStorage(storageSettings, backupName);

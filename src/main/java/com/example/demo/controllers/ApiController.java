@@ -218,7 +218,7 @@ public class ApiController {
 
         if (!backupProperties.getCompressed()) {
             InputStream downloadedBackup = textStorageBackupLoadManager.downloadBackup(storageSettings,
-                    backupProperties.getBackupName());
+                    backupProperties);
             databaseBackupManager.restoreBackup(downloadedBackup, databaseSettings);
         }
 
