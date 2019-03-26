@@ -4,15 +4,14 @@ import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.entities.storage.Storage;
 import com.example.demo.entities.storage.StorageSettings;
 import com.example.demo.manager.DatabaseBackupManager;
-import com.example.demo.manager.TextStorageBackupLoadManager;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import org.flywaydb.test.annotation.FlywayTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.InputStream;
@@ -24,6 +23,8 @@ import static org.junit.Assert.assertEquals;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {DemoApplication.class, TestConfiguration.class},
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@FlywayTest
+@AutoConfigureEmbeddedDatabase(beanName = "dataSource") // replace standard data source
 @AutoConfigureEmbeddedDatabase(beanName = "masterDataSource")
 @AutoConfigureEmbeddedDatabase(beanName = "copyDataSource")
 public class PostgresDatabaseTests {
@@ -36,8 +37,6 @@ public class PostgresDatabaseTests {
     private DatabaseSettings copyDatabaseSettings;
 
     private DatabaseBackupManager databaseBackupManager;
-
-    private TextStorageBackupLoadManager textStorageBackupLoadManager;
 
     @Autowired
     public void setJdbcMasterTemplate(JdbcTemplate jdbcMasterTemplate) {
@@ -62,11 +61,6 @@ public class PostgresDatabaseTests {
     @Autowired
     public void setDatabaseBackupManager(DatabaseBackupManager databaseBackupManager) {
         this.databaseBackupManager = databaseBackupManager;
-    }
-
-    @Autowired
-    public void setTextStorageBackupLoadManager(TextStorageBackupLoadManager textStorageBackupLoadManager) {
-        this.textStorageBackupLoadManager = textStorageBackupLoadManager;
     }
 
     @Before
