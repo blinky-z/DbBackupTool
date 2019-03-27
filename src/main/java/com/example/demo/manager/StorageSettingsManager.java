@@ -19,11 +19,11 @@ public class StorageSettingsManager {
         this.storageSettingsRepository = storageSettingsRepository;
     }
 
-    public StorageSettings saveStorageSettings(@NotNull StorageSettings storageSettings) {
+    public StorageSettings save(@NotNull StorageSettings storageSettings) {
         return storageSettingsRepository.save(storageSettings);
     }
 
-    public void deleteStorageSettings(@NotNull Integer id) {
+    public void deleteById(@NotNull Integer id) {
         storageSettingsRepository.deleteById(id);
     }
 

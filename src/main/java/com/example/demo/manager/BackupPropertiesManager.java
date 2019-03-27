@@ -28,4 +28,8 @@ public class BackupPropertiesManager {
     public Iterable<BackupProperties> getAll() {
         return backupPropertiesRepository.findAll();
     }
+
+    public void deleteById(@NotNull Integer id) {
+        backupPropertiesRepository.deleteById(id);
+    }
 }

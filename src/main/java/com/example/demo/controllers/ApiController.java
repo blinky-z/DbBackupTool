@@ -78,7 +78,7 @@ public class ApiController {
     public String deleteDatabase(@RequestParam(value = "id") int id) {
         logger.info("Deletion of database: id: {}", id);
 
-        databaseSettingsManager.deleteDatabaseSettings(id);
+        databaseSettingsManager.deleteById(id);
 
         return "redirect:/dashboard";
     }
@@ -104,7 +104,7 @@ public class ApiController {
                             .withLogin(createDatabaseRequest.getLogin())
                             .withPassword(createDatabaseRequest.getPassword())
                             .build();
-                    databaseSettingsManager.saveDatabaseSettings(databaseSettings);
+                    databaseSettingsManager.save(databaseSettings);
                     break;
                 }
             }
@@ -120,7 +120,7 @@ public class ApiController {
     public String deleteStorage(@RequestParam(value = "id") int id) {
         logger.info("Deletion of storage: id: {}", id);
 
-        storageSettingsManager.deleteStorageSettings(id);
+        storageSettingsManager.deleteById(id);
 
         return "redirect:/dashboard";
     }
@@ -142,7 +142,7 @@ public class ApiController {
                     dropboxSettings.setAccessToken(webDropboxSettings.getAccessToken());
 
                     StorageSettings storageSettings = StorageSettings.dropboxSettings(dropboxSettings).build();
-                    storageSettingsManager.saveStorageSettings(storageSettings);
+                    storageSettingsManager.save(storageSettings);
                     break;
                 }
                 case LOCAL_FILE_SYSTEM: {
@@ -153,7 +153,7 @@ public class ApiController {
                     localFileSystemSettings.setBackupPath(webLocalFileSystemSettings.getBackupPath());
 
                     StorageSettings storageSettings = StorageSettings.localFileSystemSettings(localFileSystemSettings).build();
-                    storageSettingsManager.saveStorageSettings(storageSettings);
+                    storageSettingsManager.save(storageSettings);
                     break;
                 }
             }

@@ -18,11 +18,11 @@ public class DatabaseSettingsManager {
         this.databaseSettingsRepository = databaseSettingsRepository;
     }
 
-    public DatabaseSettings saveDatabaseSettings(@NotNull DatabaseSettings databaseSettings) {
+    public DatabaseSettings save(@NotNull DatabaseSettings databaseSettings) {
         return databaseSettingsRepository.save(databaseSettings);
     }
 
-    public void deleteDatabaseSettings(@NotNull Integer id) {
+    public void deleteById(@NotNull Integer id) {
         databaseSettingsRepository.deleteById(id);
     }
 
