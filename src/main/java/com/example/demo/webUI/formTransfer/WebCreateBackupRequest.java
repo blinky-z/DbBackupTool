@@ -9,6 +9,8 @@ public class WebCreateBackupRequest {
 
     private int maxChunkSize;
 
+    private boolean compress;
+
     public List<Integer> getCheckStorageList() {
         return checkStorageList;
     }
@@ -31,5 +33,13 @@ public class WebCreateBackupRequest {
 
     public void setMaxChunkSize(int maxChunkSize) {
         this.maxChunkSize = maxChunkSize;
+    }
+
+    public boolean isCompress() {
+        return compress;
+    }
+
+    public void setCompress(boolean compress) {
+        this.compress = compress;
     }
 }

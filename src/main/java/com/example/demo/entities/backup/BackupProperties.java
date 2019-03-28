@@ -55,7 +55,7 @@ public class BackupProperties {
         this.backupName = backupName;
     }
 
-    public Boolean getCompressed() {
+    public Boolean isCompressed() {
         return compressed;
     }
 

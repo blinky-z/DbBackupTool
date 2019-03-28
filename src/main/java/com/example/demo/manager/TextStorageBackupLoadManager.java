@@ -23,6 +23,7 @@ import java.util.List;
 @Component
 public class TextStorageBackupLoadManager {
     private BackupPropertiesManager backupPropertiesManager;
+    private static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
 
     @Autowired
     public void setBackupPropertiesManager(BackupPropertiesManager backupPropertiesManager) {
@@ -32,11 +33,10 @@ public class TextStorageBackupLoadManager {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseBackupManager.class);
 
     public List<BackupProperties> uploadBackup(InputStream backupStream, List<StorageSettings> storageSettingsList,
-                                                   String databaseName, int maxChunkSize) {
-        SimpleDateFormat date = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
+                                               String databaseName, int maxChunkSize) {
         List<TextStorage> storageList = new ArrayList<>();
         Date creationTime = new Date();
-        String backupName = String.format("backup_%s_%s", databaseName, date.format(creationTime));
+        String backupName = String.format("backup_%s_%s", databaseName, SIMPLE_DATE_FORMAT.format(creationTime));
         for (StorageSettings storageSettings : storageSettingsList) {
             switch (storageSettings.getType()) {
                 case LOCAL_FILE_SYSTEM: {

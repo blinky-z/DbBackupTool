@@ -125,7 +125,7 @@ public class WebController {
                         new RuntimeException(String.format("Error occurred while rendering page: Missing " +
                                 "storage settings with ID %d", storageSettingsId)));
 
-                backupProperties.put("Compressed", currentBackupProperties.getCompressed().toString());
+                backupProperties.put("Compressed", currentBackupProperties.isCompressed().toString());
                 backupProperties.put("Stored on", storageSettings.getType().toString());
 
                 WebBackupItem webBackupItem = new WebBackupItem(currentBackupProperties.getId(),

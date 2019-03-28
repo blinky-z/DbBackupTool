@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.sql.DataSource;
@@ -39,6 +40,27 @@ class TestUtils {
     private static StorageSettings dropboxStorageSettings;
 
     private static Logger logger = LoggerFactory.getLogger(TestUtils.class);
+
+    static void initDatabase(JdbcTemplate jdbcTemplate) {
+        jdbcTemplate.execute("CREATE TABLE comments" +
+                "(" +
+                "ID        SERIAL PRIMARY KEY," +
+                "AUTHOR    CHARACTER VARYING(36)   not null," +
+                "DATE      TIMESTAMPTZ DEFAULT NOW()," +
+                "CONTENT   CHARACTER VARYING(2048) not null" +
+                ")");
+
+        final long rowsToInsert = 1000L;
+        jdbcTemplate.update("insert into comments (author, content)" +
+                " select " +
+                "    left(md5(i::text), 36)," +
+                "    left(md5(random()::text), 2048) " +
+                "from generate_series(0, ?) s(i)", rowsToInsert);
+    }
+
+    static void clearDatabase(JdbcTemplate jdbcTemplate) {
+        jdbcTemplate.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
+    }
 
     @Autowired
     public void setDropboxAccessToken(@Value("${tests-config.dropbox-access-token}") @NotEmpty String dropboxAccessToken) {
@@ -117,7 +139,8 @@ class TestUtils {
         }
     }
 
-    static InputStream uploadAndDownloadBackup(InputStream backupStream, String databaseName, StorageSettings storageSettings) {
+    static InputStream uploadAndDownloadTextBackup(InputStream backupStream, String databaseName,
+                                                   StorageSettings storageSettings) {
         List<StorageSettings> storageSettingsList = new ArrayList<>();
         storageSettingsList.add(storageSettings);
 

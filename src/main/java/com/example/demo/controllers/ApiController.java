@@ -9,6 +9,7 @@ import com.example.demo.entities.storage.DropboxSettings;
 import com.example.demo.entities.storage.LocalFileSystemSettings;
 import com.example.demo.entities.storage.Storage;
 import com.example.demo.entities.storage.StorageSettings;
+import com.example.demo.service.processor.BackupCompressor;
 import com.example.demo.webUI.formTransfer.WebCreateBackupRequest;
 import com.example.demo.webUI.formTransfer.WebAddDatabaseRequest;
 import com.example.demo.webUI.formTransfer.WebAddStorageRequest;
@@ -45,7 +46,11 @@ public class ApiController {
 
     private TextStorageBackupLoadManager textStorageBackupLoadManager;
 
+    private BinaryStorageBackupLoadManager binaryStorageBackupLoadManager;
+
     private BackupPropertiesManager backupPropertiesManager;
+
+    private BackupCompressor backupCompressor;
 
     @Autowired
     public void setDatabaseSettingsManager(DatabaseSettingsManager databaseSettingsManager) {
@@ -68,8 +73,18 @@ public class ApiController {
     }
 
     @Autowired
+    public void setBinaryStorageBackupLoadManager(BinaryStorageBackupLoadManager binaryStorageBackupLoadManager) {
+        this.binaryStorageBackupLoadManager = binaryStorageBackupLoadManager;
+    }
+
+    @Autowired
     public void setBackupPropertiesManager(BackupPropertiesManager backupPropertiesManager) {
         this.backupPropertiesManager = backupPropertiesManager;
+    }
+
+    @Autowired
+    public void setBackupCompressor(BackupCompressor backupCompressor) {
+        this.backupCompressor = backupCompressor;
     }
 
     //    TODO: добавить нормальную валидацию всех форм.
@@ -95,7 +110,8 @@ public class ApiController {
             switch (databaseType.get()) {
                 case POSTGRES: {
                     PostgresSettings postgresSettings = new PostgresSettings();
-//                    WebPostgresSettings webPostgresSettings = Objects.requireNonNull(createDatabaseRequest.getPostgresSettings());
+//                    WebPostgresSettings webPostgresSettings = Objects.requireNonNull(createDatabaseRequest.
+//                    getPostgresSettings());
 
                     DatabaseSettings databaseSettings = DatabaseSettings.postgresSettings(postgresSettings)
                             .withHost(createDatabaseRequest.getHost())
@@ -184,11 +200,23 @@ public class ApiController {
         logger.info("Database settings list: {}", databaseSettingsList);
         logger.info("Storage settings list: {}", storageSettingsList);
 
-        for (DatabaseSettings currentDatabaseSettings : databaseSettingsList) {
-            InputStream currentBackup = databaseBackupManager.createBackup(currentDatabaseSettings);
-            textStorageBackupLoadManager.uploadBackup(currentBackup, storageSettingsList,
-                    currentDatabaseSettings.getName(), createBackupRequest.getMaxChunkSize());
+        if (createBackupRequest.isCompress()) {
+            for (DatabaseSettings currentDatabaseSettings : databaseSettingsList) {
+                InputStream backupStream = databaseBackupManager.createBackup(currentDatabaseSettings);
+                InputStream compressedBackupStream = backupCompressor.compressBackup(backupStream);
+
+                binaryStorageBackupLoadManager.uploadBackup(compressedBackupStream, storageSettingsList,
+                        currentDatabaseSettings.getName(), createBackupRequest.getMaxChunkSize());
+            }
+        } else {
+            for (DatabaseSettings currentDatabaseSettings : databaseSettingsList) {
+                InputStream currentBackup = databaseBackupManager.createBackup(currentDatabaseSettings);
+
+                textStorageBackupLoadManager.uploadBackup(currentBackup, storageSettingsList,
+                        currentDatabaseSettings.getName(), createBackupRequest.getMaxChunkSize());
+            }
         }
+
 
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }
@@ -216,7 +244,13 @@ public class ApiController {
         logger.info("Backup properties: {}", backupProperties);
         logger.info("Database settings: {}", databaseSettings);
 
-        if (!backupProperties.getCompressed()) {
+        if (backupProperties.isCompressed()) {
+            InputStream downloadedBackup = textStorageBackupLoadManager.downloadBackup(storageSettings,
+                    backupProperties);
+            InputStream decompressedBackup = backupCompressor.decompressBackup(downloadedBackup);
+
+            databaseBackupManager.restoreBackup(decompressedBackup, databaseSettings);
+        } else {
             InputStream downloadedBackup = textStorageBackupLoadManager.downloadBackup(storageSettings,
                     backupProperties);
             databaseBackupManager.restoreBackup(downloadedBackup, databaseSettings);

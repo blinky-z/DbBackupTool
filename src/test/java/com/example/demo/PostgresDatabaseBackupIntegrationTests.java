@@ -4,8 +4,6 @@ import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.entities.storage.Storage;
 import com.example.demo.entities.storage.StorageSettings;
 import com.example.demo.manager.DatabaseBackupManager;
-import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
-import org.flywaydb.test.annotation.FlywayTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,13 +19,8 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {DemoApplication.class, TestConfiguration.class},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@FlywayTest
-@AutoConfigureEmbeddedDatabase(beanName = "dataSource") // replace standard data source
-@AutoConfigureEmbeddedDatabase(beanName = "masterDataSource")
-@AutoConfigureEmbeddedDatabase(beanName = "copyDataSource")
-public class PostgresDatabaseTests {
+@SpringBootTest
+public class PostgresDatabaseBackupIntegrationTests extends ApplicationTests {
     private JdbcTemplate jdbcMasterTemplate;
 
     private JdbcTemplate jdbcCopyTemplate;
@@ -63,34 +56,22 @@ public class PostgresDatabaseTests {
         this.databaseBackupManager = databaseBackupManager;
     }
 
+    private static long rowsToInsert = 10000L;
+
     @Before
-    public void clearDatabase() {
-        jdbcMasterTemplate.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
-        jdbcCopyTemplate.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
+    public void initDatabase() {
+        TestUtils.clearDatabase(jdbcMasterTemplate);
+        TestUtils.clearDatabase(jdbcCopyTemplate);
+        TestUtils.initDatabase(jdbcMasterTemplate);
     }
 
     @Test
     public void createPostgresBackupAndUploadToLocalFileSystemAndRestore() {
         StorageSettings storageSettings = TestUtils.buildStorageSettings(Storage.LOCAL_FILE_SYSTEM);
 
-        jdbcMasterTemplate.execute("CREATE TABLE comments" +
-                "(" +
-                "ID        SERIAL PRIMARY KEY," +
-                "AUTHOR    CHARACTER VARYING(36)   not null," +
-                "DATE      TIMESTAMPTZ DEFAULT NOW()," +
-                "CONTENT   CHARACTER VARYING(2048) not null" +
-                ")");
-
-        long rowsToInsert = 1000L;
-        jdbcMasterTemplate.update("insert into comments (author, content)" +
-                " select " +
-                "    left(md5(i::text), 36)," +
-                "    left(md5(random()::text), 2048) " +
-                "from generate_series(0, ?) s(i)", rowsToInsert);
-
         InputStream createdBackup = databaseBackupManager.createBackup(masterDatabaseSettings);
 
-        InputStream backupFromStorage = TestUtils.uploadAndDownloadBackup(createdBackup, masterDatabaseSettings.getName(),
+        InputStream backupFromStorage = TestUtils.uploadAndDownloadTextBackup(createdBackup, masterDatabaseSettings.getName(),
                 storageSettings);
 
         databaseBackupManager.restoreBackup(backupFromStorage, copyDatabaseSettings);
@@ -99,9 +80,11 @@ public class PostgresDatabaseTests {
         long rowsPerRequest = 10000;
         while (startRangeId < rowsToInsert) {
             long endRangeId = startRangeId + rowsPerRequest;
-            List<Map<String, Object>> oldData = jdbcMasterTemplate.queryForList("SELECT * FROM comments WHERE id BETWEEN ? AND ?",
+            List<Map<String, Object>> oldData = jdbcMasterTemplate.queryForList(
+                    "SELECT * FROM comments WHERE id BETWEEN ? AND ?",
                     startRangeId, endRangeId);
-            List<Map<String, Object>> restoredData = jdbcCopyTemplate.queryForList("SELECT * FROM comments WHERE id BETWEEN ? AND ?",
+            List<Map<String, Object>> restoredData = jdbcCopyTemplate.queryForList(
+                    "SELECT * FROM comments WHERE id BETWEEN ? AND ?",
                     startRangeId, endRangeId);
             startRangeId = endRangeId;
 
@@ -110,27 +93,12 @@ public class PostgresDatabaseTests {
     }
 
     @Test
-    public void CreatePostgresBackupAndUploadToDropboxAndRestore() {
+    public void createPostgresBackupAndUploadToDropboxAndRestore() {
         StorageSettings storageSettings = TestUtils.buildStorageSettings(Storage.DROPBOX);
-
-        jdbcMasterTemplate.execute("CREATE TABLE comments" +
-                "(" +
-                "ID        SERIAL PRIMARY KEY," +
-                "AUTHOR    CHARACTER VARYING(36)   not null," +
-                "DATE      TIMESTAMPTZ DEFAULT NOW()," +
-                "CONTENT   CHARACTER VARYING(2048) not null" +
-                ")");
-
-        long rowsToInsert = 1000L;
-        jdbcMasterTemplate.update("insert into comments (author, content)" +
-                " select " +
-                "    left(md5(i::text), 36)," +
-                "    left(md5(random()::text), 2048) " +
-                "from generate_series(0, ?) s(i)", rowsToInsert);
 
         InputStream createdBackup = databaseBackupManager.createBackup(masterDatabaseSettings);
 
-        InputStream backupFromStorage = TestUtils.uploadAndDownloadBackup(createdBackup, masterDatabaseSettings.getName(),
+        InputStream backupFromStorage = TestUtils.uploadAndDownloadTextBackup(createdBackup, masterDatabaseSettings.getName(),
                 storageSettings);
 
         databaseBackupManager.restoreBackup(backupFromStorage, copyDatabaseSettings);
@@ -139,9 +107,11 @@ public class PostgresDatabaseTests {
         long rowsPerRequest = 10000;
         while (startRangeId < rowsToInsert) {
             long endRangeId = startRangeId + rowsPerRequest;
-            List<Map<String, Object>> oldData = jdbcMasterTemplate.queryForList("SELECT * FROM comments WHERE id BETWEEN ? AND ?",
+            List<Map<String, Object>> oldData = jdbcMasterTemplate.queryForList(
+                    "SELECT * FROM comments WHERE id BETWEEN ? AND ?",
                     startRangeId, endRangeId);
-            List<Map<String, Object>> restoredData = jdbcCopyTemplate.queryForList("SELECT * FROM comments WHERE id BETWEEN ? AND ?",
+            List<Map<String, Object>> restoredData = jdbcCopyTemplate.queryForList(
+                    "SELECT * FROM comments WHERE id BETWEEN ? AND ?",
                     startRangeId, endRangeId);
             startRangeId = endRangeId;
 
