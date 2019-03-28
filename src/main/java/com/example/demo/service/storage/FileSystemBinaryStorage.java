@@ -6,19 +6,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
-/**
- * This class is used to write and download plain text backup from local file system.
- */
-public class FileSystemTextStorage implements TextStorage {
+public class FileSystemBinaryStorage implements BinaryStorage {
     private StorageSettings storageSettings;
 
     private LocalFileSystemSettings localFileSystemSettings;
 
-    private static final Logger logger = LoggerFactory.getLogger(FileSystemTextStorage.class);
+    private static final Logger logger = LoggerFactory.getLogger(FileSystemBinaryStorage.class);
 
-    private BufferedWriter fileWriter;
+    private ZipOutputStream zipFileWriter;
 
     private String backupName;
 
@@ -39,13 +41,16 @@ public class FileSystemTextStorage implements TextStorage {
                 throw new RuntimeException("Can't upload backup to file system storage: error creating backup folder");
             }
         }
-        File currentFile = new File(backupFolderPath + File.separator + getFilename() + ".data");
+        String filename = getFilename();
+        File currentFile = new File(backupFolderPath + File.separator + filename + ".zip");
         logger.info("New created backup file: {}", currentFile.getAbsolutePath());
-        fileWriter = new BufferedWriter(new FileWriter(currentFile));
+        zipFileWriter = new ZipOutputStream(new FileOutputStream(currentFile));
+        ZipEntry zipEntry = new ZipEntry(filename);
+        zipFileWriter.putNextEntry(zipEntry);
         currentBackupPart++;
     }
 
-    public FileSystemTextStorage(StorageSettings storageSettings, String backupName) {
+    public FileSystemBinaryStorage(StorageSettings storageSettings, String backupName) {
         this.storageSettings = storageSettings;
         this.localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(RuntimeException::new);
         this.backupName = backupName;
@@ -59,11 +64,12 @@ public class FileSystemTextStorage implements TextStorage {
      * @param data backup chunk to be saved to the file system
      */
     @Override
-    public void uploadBackup(String data) {
+    public void uploadBackup(byte[] data) {
         try {
             createNewFile();
-            fileWriter.write(data);
-            fileWriter.close();
+            zipFileWriter.write(data);
+            zipFileWriter.closeEntry();
+            zipFileWriter.close();
         } catch (IOException ex) {
             throw new RuntimeException("Error occurred while writing data to file", ex);
         }
@@ -81,8 +87,12 @@ public class FileSystemTextStorage implements TextStorage {
 
             long filesCount = new File(backupFolderPath).list().length;
             for (currentBackupPart = 0; currentBackupPart < filesCount; currentBackupPart++) {
-                File backupFile = new File(backupFolderPath + File.separator + getFilename() + ".data");
-                backupFileStreamList.add(new FileInputStream(backupFile));
+                File backupFile = new File(backupFolderPath + File.separator + getFilename() + ".zip");
+
+                FileInputStream fileInputStream = new FileInputStream(backupFile);
+                ZipInputStream zipInputStream = new ZipInputStream(fileInputStream);
+
+                backupFileStreamList.add(zipInputStream);
             }
 
             return new SequenceInputStream(Collections.enumeration(backupFileStreamList));

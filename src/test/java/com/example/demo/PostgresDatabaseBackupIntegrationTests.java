@@ -21,6 +21,8 @@ import static org.junit.Assert.assertEquals;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class PostgresDatabaseBackupIntegrationTests extends ApplicationTests {
+    private TestUtils testUtils;
+
     private JdbcTemplate jdbcMasterTemplate;
 
     private JdbcTemplate jdbcCopyTemplate;
@@ -30,6 +32,11 @@ public class PostgresDatabaseBackupIntegrationTests extends ApplicationTests {
     private DatabaseSettings copyDatabaseSettings;
 
     private DatabaseBackupManager databaseBackupManager;
+
+    @Autowired
+    public void setTestUtils(TestUtils testUtils) {
+        this.testUtils = testUtils;
+    }
 
     @Autowired
     public void setJdbcMasterTemplate(JdbcTemplate jdbcMasterTemplate) {
@@ -60,18 +67,18 @@ public class PostgresDatabaseBackupIntegrationTests extends ApplicationTests {
 
     @Before
     public void initDatabase() {
-        TestUtils.clearDatabase(jdbcMasterTemplate);
-        TestUtils.clearDatabase(jdbcCopyTemplate);
-        TestUtils.initDatabase(jdbcMasterTemplate);
+        testUtils.clearDatabase(jdbcMasterTemplate);
+        testUtils.clearDatabase(jdbcCopyTemplate);
+        testUtils.initDatabase(jdbcMasterTemplate);
     }
 
     @Test
     public void createPostgresBackupAndUploadToLocalFileSystemAndRestore() {
-        StorageSettings storageSettings = TestUtils.buildStorageSettings(Storage.LOCAL_FILE_SYSTEM);
+        StorageSettings storageSettings = testUtils.buildStorageSettings(Storage.LOCAL_FILE_SYSTEM);
 
         InputStream createdBackup = databaseBackupManager.createBackup(masterDatabaseSettings);
 
-        InputStream backupFromStorage = TestUtils.uploadAndDownloadTextBackup(createdBackup, masterDatabaseSettings.getName(),
+        InputStream backupFromStorage = testUtils.uploadAndDownloadTextBackup(createdBackup, masterDatabaseSettings.getName(),
                 storageSettings);
 
         databaseBackupManager.restoreBackup(backupFromStorage, copyDatabaseSettings);
@@ -94,11 +101,11 @@ public class PostgresDatabaseBackupIntegrationTests extends ApplicationTests {
 
     @Test
     public void createPostgresBackupAndUploadToDropboxAndRestore() {
-        StorageSettings storageSettings = TestUtils.buildStorageSettings(Storage.DROPBOX);
+        StorageSettings storageSettings = testUtils.buildStorageSettings(Storage.DROPBOX);
 
         InputStream createdBackup = databaseBackupManager.createBackup(masterDatabaseSettings);
 
-        InputStream backupFromStorage = TestUtils.uploadAndDownloadTextBackup(createdBackup, masterDatabaseSettings.getName(),
+        InputStream backupFromStorage = testUtils.uploadAndDownloadTextBackup(createdBackup, masterDatabaseSettings.getName(),
                 storageSettings);
 
         databaseBackupManager.restoreBackup(backupFromStorage, copyDatabaseSettings);

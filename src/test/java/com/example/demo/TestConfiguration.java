@@ -20,6 +20,9 @@ public class TestConfiguration {
     @Qualifier("copyDataSource")
     private DataSource copyDataSource;
 
+    @Autowired
+    private TestUtils testUtils;
+
     @Bean
     public JdbcTemplate jdbcMasterTemplate() {
         return new JdbcTemplate(masterDataSource);
@@ -32,11 +35,11 @@ public class TestConfiguration {
 
     @Bean
     public DatabaseSettings masterDatabaseSettings() {
-        return TestUtils.buildDatabaseSettings(Database.POSTGRES, masterDataSource);
+        return testUtils.buildDatabaseSettings(Database.POSTGRES, masterDataSource);
     }
 
     @Bean
     public DatabaseSettings copyDatabaseSettings() {
-        return TestUtils.buildDatabaseSettings(Database.POSTGRES, copyDataSource);
+        return testUtils.buildDatabaseSettings(Database.POSTGRES, copyDataSource);
     }
 }

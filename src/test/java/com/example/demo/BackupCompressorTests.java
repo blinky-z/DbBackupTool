@@ -15,12 +15,12 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.*;
 
-import static org.junit.Assert.*;
-
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class BackupCompressorTests extends ApplicationTests {
     private static final Logger logger = LoggerFactory.getLogger(BackupCompressorTests.class);
+
+    private TestUtils testUtils;
 
     private BackupCompressor backupCompressor;
 
@@ -29,6 +29,11 @@ public class BackupCompressorTests extends ApplicationTests {
     private JdbcTemplate jdbcMasterTemplate;
 
     private DatabaseSettings masterDatabaseSettings;
+
+    @Autowired
+    public void setTestUtils(TestUtils testUtils) {
+        this.testUtils = testUtils;
+    }
 
     @Autowired
     public void setMasterDatabaseSettings(DatabaseSettings masterDatabaseSettings) {
@@ -64,39 +69,18 @@ public class BackupCompressorTests extends ApplicationTests {
 
     @Test
     public void whenCompressAndDecompressBackup_contentIsEqualToSource() {
-        TestUtils.clearDatabase(jdbcMasterTemplate);
-        TestUtils.initDatabase(jdbcMasterTemplate);
+        testUtils.clearDatabase(jdbcMasterTemplate);
+        testUtils.initDatabase(jdbcMasterTemplate);
         InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings);
 
-        try {
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
-            byte[] buffer = new byte[8 * 1024];
-            int byteCount;
-            while ((byteCount = backupStream.read(buffer)) != -1) {
-                output.write(buffer, 0, byteCount);
-            }
-            byte[] source = output.toByteArray();
+        byte[] streamContent = testUtils.getStreamCopyAsByteArray(backupStream);
 
-            InputStream inputStream = new ByteArrayInputStream(source);
-            InputStream copyInputStream = new ByteArrayInputStream(source);
+        InputStream inputStream = new ByteArrayInputStream(streamContent);
+        InputStream copyInputStream = new ByteArrayInputStream(streamContent);
 
-            InputStream compressedBackup = backupCompressor.compressBackup(inputStream);
-            InputStream decompressedBackup = backupCompressor.decompressBackup(compressedBackup);
+        InputStream compressedBackup = backupCompressor.compressBackup(inputStream);
+        InputStream decompressedBackup = backupCompressor.decompressBackup(compressedBackup);
 
-            BufferedReader sourceBackupReader = new BufferedReader(new InputStreamReader(copyInputStream));
-            BufferedReader decompressedBackupReader = new BufferedReader(new InputStreamReader(decompressedBackup));
-
-            String sourceLine;
-            String decompressedLine;
-            do {
-                sourceLine = sourceBackupReader.readLine();
-                decompressedLine = decompressedBackupReader.readLine();
-
-                assertEquals(sourceLine, decompressedLine);
-
-            } while (sourceLine != null);
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
+        testUtils.compareStreams(copyInputStream, decompressedBackup);
     }
 }

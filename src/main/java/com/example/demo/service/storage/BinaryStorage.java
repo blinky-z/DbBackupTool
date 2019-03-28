@@ -7,7 +7,7 @@ import java.io.InputStream;
  * If you have plain text backup, use TextStorage interface
  */
 public interface BinaryStorage extends Storage {
-    void saveBackup(byte[] data);
+    void uploadBackup(byte[] data);
 
     InputStream downloadBackup();
 }

@@ -8,6 +8,7 @@ import com.example.demo.entities.storage.DropboxSettings;
 import com.example.demo.entities.storage.LocalFileSystemSettings;
 import com.example.demo.entities.storage.Storage;
 import com.example.demo.entities.storage.StorageSettings;
+import com.example.demo.manager.BinaryStorageBackupLoadManager;
 import com.example.demo.manager.TextStorageBackupLoadManager;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -15,11 +16,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+
+import org.apache.commons.io.IOUtils;
 
 import javax.sql.DataSource;
 import javax.validation.constraints.NotEmpty;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URI;
 import java.nio.file.FileSystems;
 import java.sql.DatabaseMetaData;
@@ -27,21 +31,26 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-@Service
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+@Component
 class TestUtils {
-    private static String dropboxAccessToken;
+    private String dropboxAccessToken;
 
     private static final String backup_path = FileSystems.getDefault().getPath("src/test").toAbsolutePath().toString();
 
-    private static TextStorageBackupLoadManager textStorageBackupLoadManager;
+    private TextStorageBackupLoadManager textStorageBackupLoadManager;
 
-    private static StorageSettings localFileSystemStorageSettings;
+    private BinaryStorageBackupLoadManager binaryStorageBackupLoadManager;
 
-    private static StorageSettings dropboxStorageSettings;
+    private StorageSettings localFileSystemStorageSettings;
 
-    private static Logger logger = LoggerFactory.getLogger(TestUtils.class);
+    private StorageSettings dropboxStorageSettings;
 
-    static void initDatabase(JdbcTemplate jdbcTemplate) {
+    private Logger logger = LoggerFactory.getLogger(TestUtils.class);
+
+    public void initDatabase(JdbcTemplate jdbcTemplate) {
         jdbcTemplate.execute("CREATE TABLE comments" +
                 "(" +
                 "ID        SERIAL PRIMARY KEY," +
@@ -58,21 +67,26 @@ class TestUtils {
                 "from generate_series(0, ?) s(i)", rowsToInsert);
     }
 
-    static void clearDatabase(JdbcTemplate jdbcTemplate) {
+    public void clearDatabase(JdbcTemplate jdbcTemplate) {
         jdbcTemplate.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
     }
 
     @Autowired
     public void setDropboxAccessToken(@Value("${tests-config.dropbox-access-token}") @NotEmpty String dropboxAccessToken) {
-        TestUtils.dropboxAccessToken = dropboxAccessToken;
+        this.dropboxAccessToken = dropboxAccessToken;
     }
 
     @Autowired
     public void setTextStorageBackupLoadManager(TextStorageBackupLoadManager textStorageBackupLoadManager) {
-        TestUtils.textStorageBackupLoadManager = textStorageBackupLoadManager;
+        this.textStorageBackupLoadManager = textStorageBackupLoadManager;
     }
 
-    static DatabaseSettings buildDatabaseSettings(@NotNull Database databaseType, @NotNull DataSource dataSource) {
+    @Autowired
+    public void setBinaryStorageBackupLoadManager(BinaryStorageBackupLoadManager binaryStorageBackupLoadManager) {
+        this.binaryStorageBackupLoadManager = binaryStorageBackupLoadManager;
+    }
+
+    public DatabaseSettings buildDatabaseSettings(@NotNull Database databaseType, @NotNull DataSource dataSource) {
         try {
             DatabaseMetaData metadata = dataSource.getConnection().getMetaData();
             switch (databaseType) {
@@ -105,7 +119,7 @@ class TestUtils {
         }
     }
 
-    static StorageSettings buildStorageSettings(@NotNull Storage storageType) {
+    public StorageSettings buildStorageSettings(@NotNull Storage storageType) {
         switch (storageType) {
             case LOCAL_FILE_SYSTEM: {
                 if (localFileSystemStorageSettings == null) {
@@ -139,8 +153,7 @@ class TestUtils {
         }
     }
 
-    static InputStream uploadAndDownloadTextBackup(InputStream backupStream, String databaseName,
-                                                   StorageSettings storageSettings) {
+    public InputStream uploadAndDownloadTextBackup(InputStream backupStream, String databaseName, StorageSettings storageSettings) {
         List<StorageSettings> storageSettingsList = new ArrayList<>();
         storageSettingsList.add(storageSettings);
 
@@ -149,7 +162,34 @@ class TestUtils {
                 storageSettingsList, databaseName, maxChinkSize);
         BackupProperties backupProperties = backupPropertiesList.get(0);
 
-        return textStorageBackupLoadManager.
-                downloadBackup(storageSettings, backupProperties);
+        return textStorageBackupLoadManager.downloadBackup(storageSettings, backupProperties);
+    }
+
+    public InputStream uploadAndDownloadBinaryBackup(InputStream backupStream, String databaseName, StorageSettings storageSettings) {
+        List<StorageSettings> storageSettingsList = new ArrayList<>();
+        storageSettingsList.add(storageSettings);
+
+        int maxChinkSize = 32000;
+        List<BackupProperties> backupPropertiesList = binaryStorageBackupLoadManager.uploadBackup(backupStream,
+                storageSettingsList, databaseName, maxChinkSize);
+        BackupProperties backupProperties = backupPropertiesList.get(0);
+
+        return binaryStorageBackupLoadManager.downloadBackup(storageSettings, backupProperties);
+    }
+
+    byte[] getStreamCopyAsByteArray(InputStream inputStream) {
+        try {
+            return IOUtils.toByteArray(inputStream);
+        } catch (IOException ex) {
+            throw new RuntimeException("Error occurred creating byte array copy of Input Stream", ex);
+        }
+    }
+
+    public boolean compareStreams(InputStream in1, InputStream in2) {
+        try {
+            return IOUtils.contentEquals(in1, in2);
+        } catch (IOException ex) {
+            throw new RuntimeException("Error occurred while comparing content of streams", ex);
+        }
     }
 }
