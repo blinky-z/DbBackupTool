@@ -9,7 +9,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.zip.*;
+import java.util.Objects;
 
 public class FileSystemBinaryStorage implements BinaryStorage {
     private StorageSettings storageSettings;
@@ -18,32 +18,31 @@ public class FileSystemBinaryStorage implements BinaryStorage {
 
     private static final Logger logger = LoggerFactory.getLogger(FileSystemBinaryStorage.class);
 
-    private BufferedOutputStream zipFileWriter;
-
     private String backupName;
 
     private long currentBackupPart;
 
     private String backupFolderPath;
 
-    private static String FILENAME_TEMPLATE = "%s_part%d";
+    private static final String FILE_EXTENSION = ".dat";
 
-    private String getFilename() {
-        return String.format(FILENAME_TEMPLATE, backupName, currentBackupPart);
+    private static final String FILENAME_TEMPLATE = "%s_part%d";
+
+    private String getCurrentFilePartAsAbsolutePath() {
+        String filename = String.format(FILENAME_TEMPLATE, backupName, currentBackupPart);
+        return backupFolderPath + File.separator + filename + FILE_EXTENSION;
     }
 
-    private void createNewFile() throws IOException {
+    private File createNewFile() {
         File backupFolder = new File(backupFolderPath);
         if (!backupFolder.exists()) {
             if (!backupFolder.mkdir()) {
-                throw new RuntimeException("Can't upload backup to file system storage: error creating backup folder");
+                throw new RuntimeException("Error creating backup folder");
             }
         }
-        String filename = getFilename();
-        File currentFile = new File(backupFolderPath + File.separator + filename + ".dat");
-        logger.info("New created backup file: {}", currentFile.getAbsolutePath());
-        zipFileWriter = new BufferedOutputStream(new FileOutputStream(currentFile));
+        File currentFile = new File(getCurrentFilePartAsAbsolutePath());
         currentBackupPart++;
+        return currentFile;
     }
 
     public FileSystemBinaryStorage(StorageSettings storageSettings, String backupName) {
@@ -54,44 +53,55 @@ public class FileSystemBinaryStorage implements BinaryStorage {
     }
 
     /**
-     * Saves backup chunk to the local file system.
-     * Each call creates new file containing backup chunk.
+     * Saves backup chunk on the file system.
+     * Each call creates new file.
      *
-     * @param data backup chunk to be saved to the file system
+     * @param data backup chunk to save
      */
     @Override
     public void uploadBackup(byte[] data) {
-        try {
-            createNewFile();
-            zipFileWriter.write(data);
-            zipFileWriter.close();
+        logger.info("Uploading backup chunk to the Local File System into folder {}", backupFolderPath);
+        File currentFile = createNewFile();
+        try (
+                FileOutputStream fileOutputStream = new FileOutputStream(currentFile);
+                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream)
+        ) {
+            bufferedOutputStream.write(data);
         } catch (IOException ex) {
-            throw new RuntimeException("Error occurred while writing data to file", ex);
+            throw new RuntimeException("Error occurred while uploading backup chunk to the Local File System", ex);
         }
+
+        logger.info("Backup chunk successfully saved on the Local File System. Created file: {}", currentFile.getName());
     }
 
     /**
      * Downloads backup from the file system.
      *
-     * @return input stream containing the whole backup.
+     * @return input stream, from which backup can be read
      */
     @Override
     public InputStream downloadBackup() {
+        logger.info("Downloading compressed backup from the Local File System. Backup folder: {}", backupFolderPath);
         try {
             List<InputStream> backupFileStreamList = new ArrayList<>();
 
-            long filesCount = new File(backupFolderPath).list().length;
+            long filesCount = Objects.requireNonNull(new File(backupFolderPath).list(),
+                    "Can't download backup from the Local File System: Missing backup folder").length;
+
+            logger.info("Total files in backup folder on Local File System: {}", filesCount);
+
             for (currentBackupPart = 0; currentBackupPart < filesCount; currentBackupPart++) {
-                File backupFile = new File(backupFolderPath + File.separator + getFilename() + ".dat");
-
-                FileInputStream fileInputStream = new FileInputStream(backupFile);
-
-                backupFileStreamList.add(fileInputStream);
+                File backupFile = new File(getCurrentFilePartAsAbsolutePath());
+                logger.info("Downloading file [{}]: '{}'", currentBackupPart, backupFile.getName());
+                backupFileStreamList.add(new FileInputStream(backupFile));
             }
+
+            logger.info("Downloading of compressed backup from the Local File System successfully completed. Backup folder {}",
+                    backupFolderPath);
 
             return new SequenceInputStream(Collections.enumeration(backupFileStreamList));
         } catch (IOException ex) {
-            throw new RuntimeException("Error occurred while downloading backup", ex);
+            throw new RuntimeException("Error occurred while downloading compressed backup from Local File System", ex);
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.example.demo.manager;
 
 import com.example.demo.entities.backup.BackupProperties;
+import com.example.demo.entities.storage.Storage;
 import com.example.demo.entities.storage.StorageSettings;
 import com.example.demo.service.storage.*;
 import org.jetbrains.annotations.NotNull;
@@ -14,11 +15,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 @Component
 public class BinaryStorageBackupLoadManager {
     private BackupPropertiesManager backupPropertiesManager;
-    private static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss-SS");
+    private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss-SS");
 
     @Autowired
     public void setBackupPropertiesManager(BackupPropertiesManager backupPropertiesManager) {
@@ -31,9 +33,11 @@ public class BinaryStorageBackupLoadManager {
                                                String databaseName, int maxChunkSize) {
         List<BinaryStorage> storageList = new ArrayList<>();
         Date creationTime = new Date();
-        String backupName = String.format("backup_%s_%s", databaseName, SIMPLE_DATE_FORMAT.format(creationTime));
+        String backupName = String.format("backup_%s_%s", databaseName, DATE_FORMATTER.format(creationTime));
+        logger.info("Uploading compressed backup to {} storages. Backup name: {}", storageSettingsList.size());
         for (StorageSettings storageSettings : storageSettingsList) {
-            switch (storageSettings.getType()) {
+            Storage storageType = storageSettings.getType();
+            switch (storageType) {
                 case LOCAL_FILE_SYSTEM: {
                     storageList.add(new FileSystemBinaryStorage(storageSettings, backupName));
                     break;
@@ -43,7 +47,8 @@ public class BinaryStorageBackupLoadManager {
                     break;
                 }
                 default: {
-                    throw new RuntimeException("Can't upload backup: Unknown storage type");
+                    logger.error("Can't upload compressed backup to current storage. Unknown storage type: {}. " +
+                            "Skipping this storage for uploading", storageType);
                 }
             }
         }
@@ -53,16 +58,17 @@ public class BinaryStorageBackupLoadManager {
 
             final byte[] buffer = new byte[8 * 1024];
             int bytesRead;
+            int totalBytes = 0;
             int currentChunkSize = 0;
             while ((bytesRead = backupStream.read(buffer)) != -1) {
                 currentChunkSize += bytesRead;
                 byteArrayOutputStream.write(buffer, 0, bytesRead);
-                byteArrayOutputStream.write(System.lineSeparator().getBytes());
 
                 if (currentChunkSize >= maxChunkSize) {
                     for (BinaryStorage currentStorage : storageList) {
                         currentStorage.uploadBackup(byteArrayOutputStream.toByteArray());
                     }
+                    totalBytes += currentChunkSize;
                     byteArrayOutputStream.reset();
                     currentChunkSize = 0;
                 }
@@ -71,9 +77,11 @@ public class BinaryStorageBackupLoadManager {
                 for (BinaryStorage currentStorage : storageList) {
                     currentStorage.uploadBackup(byteArrayOutputStream.toByteArray());
                 }
+                totalBytes += currentChunkSize;
             }
+            logger.info("Compressed backup uploading completed. Backup name: {}. Total bytes written: {}", backupName, totalBytes);
         } catch (IOException ex) {
-            throw new RuntimeException("Error occurred while reading backup", ex);
+            throw new RuntimeException("Error occurred while reading compressed backup to upload", ex);
         }
 
         List<BackupProperties> backupPropertiesList = new ArrayList<>();
@@ -87,19 +95,32 @@ public class BinaryStorageBackupLoadManager {
     }
 
     public InputStream downloadBackup(@NotNull StorageSettings storageSettings, @NotNull BackupProperties backupProperties) {
+        Objects.requireNonNull(storageSettings);
+        Objects.requireNonNull(backupProperties);
+        Storage storageType = storageSettings.getType();
         String backupName = backupProperties.getBackupName();
-        switch (storageSettings.getType()) {
+        logger.info("Downloading compressed backup from Storage {}. Backup name: {}...", storageType, backupName);
+
+        InputStream downloadedBackup;
+
+        switch (storageType) {
             case LOCAL_FILE_SYSTEM: {
                 FileSystemBinaryStorage fileSystemBinaryStorage = new FileSystemBinaryStorage(storageSettings, backupName);
-                return fileSystemBinaryStorage.downloadBackup();
+                downloadedBackup = fileSystemBinaryStorage.downloadBackup();
+                break;
             }
             case DROPBOX: {
                 DropboxBinaryStorage dropboxBinaryStorage = new DropboxBinaryStorage(storageSettings, backupName);
-                return dropboxBinaryStorage.downloadBackup();
+                downloadedBackup =  dropboxBinaryStorage.downloadBackup();
+                break;
             }
             default: {
-                throw new RuntimeException("Can't download backup: Unknown storage type");
+                throw new RuntimeException(String.format("Can't download compressed backup. Unknown storage type: %s", storageType));
             }
         }
+
+        logger.info("Compressed backup successfully downloaded from Storage {}. Backup name: {}", storageType, backupName);
+
+        return downloadedBackup;
     }
 }

@@ -1,5 +1,6 @@
 package com.example.demo.manager;
 
+import com.example.demo.entities.database.Database;
 import com.example.demo.service.databaseBackup.PostgresDatabaseBackup;
 import com.example.demo.entities.database.DatabaseSettings;
 import org.jetbrains.annotations.NotNull;
@@ -8,37 +9,50 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
+import java.util.Objects;
 
 @Component
 public class DatabaseBackupManager {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseBackupManager.class);
 
     public InputStream createBackup(@NotNull DatabaseSettings databaseSettings) {
-        logger.info("Creating backup: Database Settings: {}", databaseSettings);
+        Objects.requireNonNull(databaseSettings);
+        logger.info("Creating backup of database {}... Database Settings: {}", databaseSettings.getName(), databaseSettings);
 
-        switch (databaseSettings.getType()) {
+        InputStream backupStream;
+
+        Database databaseType = databaseSettings.getType();
+        switch (databaseType) {
             case POSTGRES: {
                 PostgresDatabaseBackup postgresBackupCreator = new PostgresDatabaseBackup(databaseSettings);
-                return postgresBackupCreator.createDbDump();
-            }
-            default: {
-                throw new RuntimeException("Can't create backup: Unknown database type");
-            }
-        }
-    }
-
-    public void restoreBackup(@NotNull InputStream backup, @NotNull DatabaseSettings databaseSettings) {
-        logger.info("Restoring backup: Database Settings: {}", databaseSettings);
-
-        switch (databaseSettings.getType()) {
-            case POSTGRES: {
-                PostgresDatabaseBackup postgresDatabaseBackup = new PostgresDatabaseBackup(databaseSettings);
-                postgresDatabaseBackup.restoreDbDump(backup);
+                backupStream = postgresBackupCreator.createBackup();
                 break;
             }
             default: {
-                throw new RuntimeException("Can't restore backup: Unknown database type");
+                throw new RuntimeException(String.format("Can't create backup. Unknown database type: %s", databaseType));
             }
         }
+
+        logger.info("Backup successfully created. Database name: {}", databaseSettings.getName());
+
+        return backupStream;
+    }
+
+    public void restoreBackup(@NotNull InputStream backup, @NotNull DatabaseSettings databaseSettings) {
+        logger.info("Restoring backup to database {}... Database Settings: {}", databaseSettings.getName(), databaseSettings);
+
+        Database databaseType = databaseSettings.getType();
+        switch (databaseType) {
+            case POSTGRES: {
+                PostgresDatabaseBackup postgresDatabaseBackup = new PostgresDatabaseBackup(databaseSettings);
+                postgresDatabaseBackup.restoreBackup(backup);
+                break;
+            }
+            default: {
+                throw new RuntimeException(String.format("Can't restore backup. Unknown database type: %s", databaseType));
+            }
+        }
+
+        logger.info("Backup successfully restored. Database name: {}", databaseSettings.getName());
     }
 }

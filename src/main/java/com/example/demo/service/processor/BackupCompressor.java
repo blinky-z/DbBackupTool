@@ -24,7 +24,7 @@ public class BackupCompressor {
      * @return input stream, from which compressed data can be read
      */
     public InputStream compressBackup(@NotNull InputStream uncompressedBackup) {
-        logger.info("Compressing backup...");
+        logger.info("Compressing backup");
         Objects.requireNonNull(uncompressedBackup, UNCOMPRESSED_BACKUP_STREAM_MUST_NOT_BE_NULL);
         return new DeflaterInputStream(uncompressedBackup);
     }
@@ -36,7 +36,7 @@ public class BackupCompressor {
      * @return input stream, from which decompressed data can be read
      */
     public InputStream decompressBackup(@NotNull InputStream compressedBackup) {
-        logger.info("Decompressing backup...");
+        logger.info("Decompressing backup");
         Objects.requireNonNull(compressedBackup, COMPRESSED_BACKUP_STREAM_MUST_NOT_BE_NULL);
         return new InflaterInputStream(compressedBackup);
     }

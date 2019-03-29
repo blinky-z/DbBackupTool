@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * This class allows to work with POSTGRES database backups
+ * This class class handles PostgreSQL database backups
  */
 public class PostgresDatabaseBackup implements DatabaseBackup {
     private DatabaseSettings databaseSettings;
@@ -182,14 +182,14 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
                 processStderrReaderThread.start();
 
                 try {
-                    logger.info("Waiting for closing PostgreSQL backup process...");
+                    logger.info("Waiting for terminating PostgreSQL backup process...");
                     process.waitFor();
                 } catch (InterruptedException ex) {
                     throw new RuntimeException(ex);
                 }
 
-                logger.info("Destroying PostgreSQL backup process...");
                 process.destroy();
+                logger.info("PostgreSQL backup process destroyed");
             }
         }.start();
 
@@ -243,7 +243,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
         }
 
         try {
-            logger.info("Waiting for closing PostgreSQL restore process...");
+            logger.info("Waiting for terminating PostgreSQL restore process...");
             process.waitFor();
         } catch (InterruptedException ex) {
             throw new RuntimeException(ex);
