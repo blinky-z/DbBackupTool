@@ -65,20 +65,11 @@ public class DropboxBinaryStorage implements BinaryStorage {
     @Override
     public void uploadBackup(byte[] data) {
         try {
-            PipedOutputStream pipedOutputStream = new PipedOutputStream();
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(data);
 
-            PipedInputStream pipedInputStream = new PipedInputStream();
-            pipedInputStream.connect(pipedOutputStream);
-
-            ZipOutputStream zipOutputStream = new ZipOutputStream(pipedOutputStream);
-
-            String entryName = backupName + "_part" + currentBackupPart;
-            Thread zipFileWriterThread = new Thread(new ZipFileWriter(zipOutputStream, data, entryName));
-            zipFileWriterThread.start();
-
-            String currentFile = entryName + ".zip";
+            String currentFile = backupName + "_part" + currentBackupPart + ".dat";
             logger.info("Uploading a new data to Dropbox. Current file: {}", currentFile);
-            dbxClient.files().uploadBuilder("/" + backupFolder + "/" + currentFile).uploadAndFinish(pipedInputStream);
+            dbxClient.files().uploadBuilder("/" + backupFolder + "/" + currentFile).uploadAndFinish(byteArrayInputStream);
             currentBackupPart++;
         } catch (DbxException | IOException ex) {
             throw new RuntimeException("Error uploading backup to Dropbox", ex);
@@ -99,19 +90,13 @@ public class DropboxBinaryStorage implements BinaryStorage {
             long currentFileCount = 0;
             try {
                 for (currentFileCount = 0; currentFileCount < filesCount; currentFileCount++) {
-                    String currentFile = "/" + backupFolder + "/" + backupName + "_part" + currentFileCount + ".zip";
+                    String currentFile = "/" + backupFolder + "/" + backupName + "_part" + currentFileCount + ".dat";
                     logger.info("Downloading backup file: {}", currentFile);
                     dbxClient.files().downloadBuilder(currentFile).download(out);
                 }
-
+                out.close();
             } catch (DbxException | IOException ex) {
                 throw new RuntimeException("Error downloading backup from Dropbox", ex);
-            }
-
-            try {
-                out.close();
-            } catch (IOException ex) {
-                throw new RuntimeException("Error closing output stream used for downloading backup", ex);
             }
         }
     }
@@ -139,7 +124,7 @@ public class DropboxBinaryStorage implements BinaryStorage {
             Thread backupDownloader = new Thread(new BackupDownloader(out, filesCount));
             backupDownloader.start();
 
-            return new ZipInputStream(in);
+            return in;
         } catch (IOException ex) {
             throw new RuntimeException("Error connecting input stream to backup download output stream", ex);
         }

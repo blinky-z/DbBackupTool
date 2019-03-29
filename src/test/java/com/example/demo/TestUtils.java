@@ -177,6 +177,14 @@ class TestUtils {
         return binaryStorageBackupLoadManager.downloadBackup(storageSettings, backupProperties);
     }
 
+
+    /**
+     * Returns stream content as byte array.
+     * Passed input stream will not be available for reading anymore
+     *
+     * @param inputStream input stream of which to make a byte array copy
+     * @return content of stream as byte array
+     */
     byte[] getStreamCopyAsByteArray(InputStream inputStream) {
         try {
             return IOUtils.toByteArray(inputStream);
@@ -185,7 +193,15 @@ class TestUtils {
         }
     }
 
-    public boolean compareStreams(InputStream in1, InputStream in2) {
+    /**
+     * Compares content of two streams
+     * Both passed input stream will not be available for reading anymore
+     *
+     * @param in1 the first stream
+     * @param in2 the second stream
+     * @return true if content of both stream are equal, false otherwise
+     */
+    public boolean streamsContentEquals(InputStream in1, InputStream in2) {
         try {
             return IOUtils.contentEquals(in1, in2);
         } catch (IOException ex) {

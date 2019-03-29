@@ -9,9 +9,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
+import java.util.zip.*;
 
 public class FileSystemBinaryStorage implements BinaryStorage {
     private StorageSettings storageSettings;
@@ -20,7 +18,7 @@ public class FileSystemBinaryStorage implements BinaryStorage {
 
     private static final Logger logger = LoggerFactory.getLogger(FileSystemBinaryStorage.class);
 
-    private ZipOutputStream zipFileWriter;
+    private BufferedOutputStream zipFileWriter;
 
     private String backupName;
 
@@ -42,11 +40,9 @@ public class FileSystemBinaryStorage implements BinaryStorage {
             }
         }
         String filename = getFilename();
-        File currentFile = new File(backupFolderPath + File.separator + filename + ".zip");
+        File currentFile = new File(backupFolderPath + File.separator + filename + ".dat");
         logger.info("New created backup file: {}", currentFile.getAbsolutePath());
-        zipFileWriter = new ZipOutputStream(new FileOutputStream(currentFile));
-        ZipEntry zipEntry = new ZipEntry(filename);
-        zipFileWriter.putNextEntry(zipEntry);
+        zipFileWriter = new BufferedOutputStream(new FileOutputStream(currentFile));
         currentBackupPart++;
     }
 
@@ -68,7 +64,6 @@ public class FileSystemBinaryStorage implements BinaryStorage {
         try {
             createNewFile();
             zipFileWriter.write(data);
-            zipFileWriter.closeEntry();
             zipFileWriter.close();
         } catch (IOException ex) {
             throw new RuntimeException("Error occurred while writing data to file", ex);
@@ -87,12 +82,11 @@ public class FileSystemBinaryStorage implements BinaryStorage {
 
             long filesCount = new File(backupFolderPath).list().length;
             for (currentBackupPart = 0; currentBackupPart < filesCount; currentBackupPart++) {
-                File backupFile = new File(backupFolderPath + File.separator + getFilename() + ".zip");
+                File backupFile = new File(backupFolderPath + File.separator + getFilename() + ".dat");
 
                 FileInputStream fileInputStream = new FileInputStream(backupFile);
-                ZipInputStream zipInputStream = new ZipInputStream(fileInputStream);
 
-                backupFileStreamList.add(zipInputStream);
+                backupFileStreamList.add(fileInputStream);
             }
 
             return new SequenceInputStream(Collections.enumeration(backupFileStreamList));

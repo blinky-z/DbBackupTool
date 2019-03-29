@@ -15,6 +15,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.*;
 
+import static org.junit.Assert.assertTrue;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class BackupCompressorTests extends ApplicationTests {
@@ -55,32 +57,24 @@ public class BackupCompressorTests extends ApplicationTests {
         this.backupCompressor = backupCompressor;
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void whenCompressNullBackupStream_throwIAE() {
-        InputStream in = null;
-        backupCompressor.compressBackup(in);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void whenDecompressNullBackupStream_throwIAE() {
-        InputStream in = null;
-        backupCompressor.decompressBackup(in);
-    }
-
     @Test
     public void whenCompressAndDecompressBackup_contentIsEqualToSource() {
         testUtils.clearDatabase(jdbcMasterTemplate);
         testUtils.initDatabase(jdbcMasterTemplate);
-        InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings);
-
-        byte[] streamContent = testUtils.getStreamCopyAsByteArray(backupStream);
-
-        InputStream inputStream = new ByteArrayInputStream(streamContent);
-        InputStream copyInputStream = new ByteArrayInputStream(streamContent);
-
-        InputStream compressedBackup = backupCompressor.compressBackup(inputStream);
-        InputStream decompressedBackup = backupCompressor.decompressBackup(compressedBackup);
-
-        testUtils.compareStreams(copyInputStream, decompressedBackup);
+        try (
+                InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings)
+        ) {
+            byte[] streamContent = testUtils.getStreamCopyAsByteArray(backupStream);
+            try (
+                    InputStream inputStream = new ByteArrayInputStream(streamContent);
+                    InputStream copyInputStream = new ByteArrayInputStream(streamContent);
+                    InputStream compressedBackup = backupCompressor.compressBackup(inputStream);
+                    InputStream decompressedBackup = backupCompressor.decompressBackup(compressedBackup)
+            ) {
+                assertTrue(testUtils.streamsContentEquals(copyInputStream, decompressedBackup));
+            }
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 }

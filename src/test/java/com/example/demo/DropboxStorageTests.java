@@ -15,6 +15,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
+import static org.junit.Assert.assertTrue;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class DropboxStorageTests extends ApplicationTests {
@@ -68,7 +70,7 @@ public class DropboxStorageTests extends ApplicationTests {
         InputStream downloadedBackup = testUtils.uploadAndDownloadTextBackup(inputStream, masterDatabaseSettings.getName(),
                 storageSettings);
 
-        testUtils.compareStreams(copyInputStream, downloadedBackup);
+        assertTrue(testUtils.streamsContentEquals(copyInputStream, downloadedBackup));
     }
 
     @Test
@@ -88,7 +90,28 @@ public class DropboxStorageTests extends ApplicationTests {
         InputStream downloadedBackup = testUtils.uploadAndDownloadBinaryBackup(inputStream, masterDatabaseSettings.getName(),
                 storageSettings);
 
+        assertTrue(testUtils.streamsContentEquals(copyCompressedBackup, downloadedBackup));
+    }
 
-        testUtils.compareStreams(copyCompressedBackup, downloadedBackup);
+    @Test
+    public void whenUploadCompressedBackupAndDownloadAndDecompress_contentIsEqualToSource() {
+        testUtils.clearDatabase(jdbcMasterTemplate);
+        testUtils.initDatabase(jdbcMasterTemplate);
+
+        InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings);
+
+        byte[] sourceBackupContent = testUtils.getStreamCopyAsByteArray(backupStream);
+        InputStream inputStream = new ByteArrayInputStream(sourceBackupContent);
+        InputStream copySourceBackup = new ByteArrayInputStream(sourceBackupContent);
+
+        InputStream compressedBackup = backupCompressor.compressBackup(inputStream);
+
+        StorageSettings storageSettings = testUtils.buildStorageSettings(Storage.DROPBOX);
+        InputStream downloadedBackup = testUtils.uploadAndDownloadBinaryBackup(compressedBackup, masterDatabaseSettings.getName(),
+                storageSettings);
+
+        InputStream decompressedBackup = backupCompressor.decompressBackup(downloadedBackup);
+
+        assertTrue(testUtils.streamsContentEquals(copySourceBackup, decompressedBackup));
     }
 }
