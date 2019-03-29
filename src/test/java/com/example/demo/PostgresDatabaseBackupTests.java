@@ -103,12 +103,15 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
     public void createPostgresBackupAndUploadToLocalFileSystemAndRestore() {
         StorageSettings storageSettings = testUtils.buildStorageSettings(Storage.LOCAL_FILE_SYSTEM);
 
-        InputStream createdBackup = databaseBackupManager.createBackup(masterDatabaseSettings);
-
-        InputStream backupFromStorage = testUtils.uploadAndDownloadTextBackup(createdBackup, masterDatabaseSettings.getName(),
-                storageSettings);
-
-        databaseBackupManager.restoreBackup(backupFromStorage, copyDatabaseSettings);
+        try (
+                InputStream createdBackup = databaseBackupManager.createBackup(masterDatabaseSettings);
+                InputStream downloadedBackup = testUtils.uploadAndDownloadTextBackup(createdBackup, masterDatabaseSettings.getName(),
+                        storageSettings);
+        ) {
+            databaseBackupManager.restoreBackup(downloadedBackup, copyDatabaseSettings);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         compareDatabases();
     }
