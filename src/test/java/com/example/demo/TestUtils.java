@@ -10,6 +10,7 @@ import com.example.demo.entities.storage.Storage;
 import com.example.demo.entities.storage.StorageSettings;
 import com.example.demo.manager.BinaryStorageBackupLoadManager;
 import com.example.demo.manager.TextStorageBackupLoadManager;
+import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,13 +18,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
-
-import org.apache.commons.io.IOUtils;
 
 import javax.sql.DataSource;
 import javax.validation.constraints.NotEmpty;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.FileSystems;
 import java.sql.DatabaseMetaData;
@@ -31,12 +30,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 @Component
 class TestUtils {
-    private String dropboxAccessToken;
+    private static final String dropboxAccessToken = "tzFnUqsYFXAAAAAAAAAAGWlPSXuRZBC16SDGHvaVayLEtM3wtFpAQD0enHv2p_2S";
 
     private static final String backup_path = FileSystems.getDefault().getPath("src/test").toAbsolutePath().toString();
 
@@ -69,11 +65,6 @@ class TestUtils {
 
     public void clearDatabase(JdbcTemplate jdbcTemplate) {
         jdbcTemplate.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
-    }
-
-    @Autowired
-    public void setDropboxAccessToken(@Value("${tests-config.dropbox-access-token}") @NotEmpty String dropboxAccessToken) {
-        this.dropboxAccessToken = dropboxAccessToken;
     }
 
     @Autowired

@@ -71,8 +71,8 @@ public class BackupCompressorTests extends ApplicationTests {
             ) {
                 assertTrue(testUtils.streamsContentEquals(copyInputStream, decompressedBackup));
             }
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

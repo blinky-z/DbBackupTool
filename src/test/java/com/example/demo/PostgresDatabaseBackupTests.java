@@ -13,6 +13,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -80,6 +82,23 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
         testUtils.initDatabase(jdbcMasterTemplate);
     }
 
+    private void compareDatabases() {
+        long startRangeId = 0;
+        long rowsPerRequest = 10000;
+        while (startRangeId < rowsToInsert) {
+            long endRangeId = startRangeId + rowsPerRequest;
+            List<Map<String, Object>> oldData = jdbcMasterTemplate.queryForList(
+                    "SELECT * FROM comments WHERE id BETWEEN ? AND ?",
+                    startRangeId, endRangeId);
+            List<Map<String, Object>> restoredData = jdbcCopyTemplate.queryForList(
+                    "SELECT * FROM comments WHERE id BETWEEN ? AND ?",
+                    startRangeId, endRangeId);
+            startRangeId = endRangeId;
+
+            assertEquals(oldData, restoredData);
+        }
+    }
+
     @Test
     public void createPostgresBackupAndUploadToLocalFileSystemAndRestore() {
         StorageSettings storageSettings = testUtils.buildStorageSettings(Storage.LOCAL_FILE_SYSTEM);
@@ -91,105 +110,106 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
 
         databaseBackupManager.restoreBackup(backupFromStorage, copyDatabaseSettings);
 
-        long startRangeId = 0;
-        long rowsPerRequest = 10000;
-        while (startRangeId < rowsToInsert) {
-            long endRangeId = startRangeId + rowsPerRequest;
-            List<Map<String, Object>> oldData = jdbcMasterTemplate.queryForList(
-                    "SELECT * FROM comments WHERE id BETWEEN ? AND ?",
-                    startRangeId, endRangeId);
-            List<Map<String, Object>> restoredData = jdbcCopyTemplate.queryForList(
-                    "SELECT * FROM comments WHERE id BETWEEN ? AND ?",
-                    startRangeId, endRangeId);
-            startRangeId = endRangeId;
-
-            assertEquals(oldData, restoredData);
-        }
+        compareDatabases();
     }
 
     @Test
     public void createPostgresBackupAndUploadToDropboxAndRestore() {
         StorageSettings storageSettings = testUtils.buildStorageSettings(Storage.DROPBOX);
 
-        InputStream createdBackup = databaseBackupManager.createBackup(masterDatabaseSettings);
+        try (
+                InputStream createdBackup = databaseBackupManager.createBackup(masterDatabaseSettings);
+                InputStream downloadedBackup = testUtils.uploadAndDownloadTextBackup(createdBackup, masterDatabaseSettings.getName(),
+                        storageSettings);
 
-        InputStream backupFromStorage = testUtils.uploadAndDownloadTextBackup(createdBackup, masterDatabaseSettings.getName(),
-                storageSettings);
-
-        databaseBackupManager.restoreBackup(backupFromStorage, copyDatabaseSettings);
-
-        long startRangeId = 0;
-        long rowsPerRequest = 10000;
-        while (startRangeId < rowsToInsert) {
-            long endRangeId = startRangeId + rowsPerRequest;
-            List<Map<String, Object>> oldData = jdbcMasterTemplate.queryForList(
-                    "SELECT * FROM comments WHERE id BETWEEN ? AND ?",
-                    startRangeId, endRangeId);
-            List<Map<String, Object>> restoredData = jdbcCopyTemplate.queryForList(
-                    "SELECT * FROM comments WHERE id BETWEEN ? AND ?",
-                    startRangeId, endRangeId);
-            startRangeId = endRangeId;
-
-            assertEquals(oldData, restoredData);
+        ) {
+            databaseBackupManager.restoreBackup(downloadedBackup, copyDatabaseSettings);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
+        compareDatabases();
     }
 
     @Test
     public void createPostgresBackupAndCompressAndUploadToLocalFileSystemAndDecompressAndRestore() {
         StorageSettings storageSettings = testUtils.buildStorageSettings(Storage.LOCAL_FILE_SYSTEM);
 
-        InputStream createdBackup = databaseBackupManager.createBackup(masterDatabaseSettings);
-
-        InputStream compressedBackup = backupCompressor.compressBackup(createdBackup);
-
-        InputStream downloadedCompressedBackup = testUtils.uploadAndDownloadBinaryBackup(compressedBackup,
-                masterDatabaseSettings.getName(), storageSettings);
-
-        InputStream decompressedBackup = backupCompressor.decompressBackup(downloadedCompressedBackup);
-
-        databaseBackupManager.restoreBackup(decompressedBackup, copyDatabaseSettings);
-
-        long startRangeId = 0;
-        long rowsPerRequest = 10000;
-        while (startRangeId < rowsToInsert) {
-            long endRangeId = startRangeId + rowsPerRequest;
-            List<Map<String, Object>> oldData = jdbcMasterTemplate.queryForList(
-                    "SELECT * FROM comments WHERE id BETWEEN ? AND ?",
-                    startRangeId, endRangeId);
-            List<Map<String, Object>> restoredData = jdbcCopyTemplate.queryForList(
-                    "SELECT * FROM comments WHERE id BETWEEN ? AND ?",
-                    startRangeId, endRangeId);
-            startRangeId = endRangeId;
-
-            assertEquals(oldData, restoredData);
+        try (
+                InputStream createdBackup = databaseBackupManager.createBackup(masterDatabaseSettings);
+                InputStream compressedBackup = backupCompressor.compressBackup(createdBackup);
+                InputStream downloadedCompressedBackup = testUtils.uploadAndDownloadBinaryBackup(compressedBackup,
+                        masterDatabaseSettings.getName(), storageSettings);
+                InputStream decompressedBackup = backupCompressor.decompressBackup(downloadedCompressedBackup);
+        ) {
+            databaseBackupManager.restoreBackup(decompressedBackup, copyDatabaseSettings);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
+        compareDatabases();
     }
 
     @Test
     public void createPostgresBackupAndCompressAndUploadToDropboxAndDecompressAndRestore() {
         StorageSettings storageSettings = testUtils.buildStorageSettings(Storage.DROPBOX);
 
+        try (
+                InputStream createdBackup = databaseBackupManager.createBackup(masterDatabaseSettings);
+                InputStream compressedBackup = backupCompressor.compressBackup(createdBackup);
+                InputStream downloadedCompressedBackup = testUtils.uploadAndDownloadBinaryBackup(compressedBackup,
+                        masterDatabaseSettings.getName(), storageSettings);
+                InputStream decompressedBackup = backupCompressor.decompressBackup(downloadedCompressedBackup);
+        ) {
+            databaseBackupManager.restoreBackup(decompressedBackup, copyDatabaseSettings);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        compareDatabases();
+    }
+
+    @Test
+    public void createPostgresBackupAndUploadToDifferentStoragesAndRestoreEachIntoSeparateDatabases() {
+        StorageSettings localFileSystemStorageSettings = testUtils.buildStorageSettings(Storage.LOCAL_FILE_SYSTEM);
+        StorageSettings dropboxStorageSettings = testUtils.buildStorageSettings(Storage.DROPBOX);
+
         InputStream createdBackup = databaseBackupManager.createBackup(masterDatabaseSettings);
-        InputStream compressedBackup = backupCompressor.compressBackup(createdBackup);
-        InputStream downloadedCompressedBackup = testUtils.uploadAndDownloadBinaryBackup(compressedBackup,
-                masterDatabaseSettings.getName(), storageSettings);
-        InputStream decompressedBackup = backupCompressor.decompressBackup(downloadedCompressedBackup);
+        byte[] createdBackupAsByteArray = testUtils.getStreamCopyAsByteArray(createdBackup);
+        try {
+            createdBackup.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        databaseBackupManager.restoreBackup(decompressedBackup, copyDatabaseSettings);
+        {
+            try (
+                    InputStream inputStream = new ByteArrayInputStream(createdBackupAsByteArray);
+                    InputStream downloadedUncompressedInputStream = testUtils.uploadAndDownloadTextBackup(
+                            inputStream, masterDatabaseSettings.getName(), localFileSystemStorageSettings);
+            ) {
+                databaseBackupManager.restoreBackup(downloadedUncompressedInputStream, copyDatabaseSettings);
+                compareDatabases();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
-        long startRangeId = 0;
-        long rowsPerRequest = 10000;
-        while (startRangeId < rowsToInsert) {
-            long endRangeId = startRangeId + rowsPerRequest;
-            List<Map<String, Object>> oldData = jdbcMasterTemplate.queryForList(
-                    "SELECT * FROM comments WHERE id BETWEEN ? AND ?",
-                    startRangeId, endRangeId);
-            List<Map<String, Object>> restoredData = jdbcCopyTemplate.queryForList(
-                    "SELECT * FROM comments WHERE id BETWEEN ? AND ?",
-                    startRangeId, endRangeId);
-            startRangeId = endRangeId;
+        testUtils.clearDatabase(jdbcCopyTemplate);
 
-            assertEquals(oldData, restoredData);
+        {
+            try (
+                    InputStream inputStream = new ByteArrayInputStream(createdBackupAsByteArray);
+                    InputStream compressedInputStream = backupCompressor.compressBackup(inputStream);
+                    InputStream downloadedCompressedInputStream = testUtils.uploadAndDownloadBinaryBackup(
+                            compressedInputStream, masterDatabaseSettings.getName(), dropboxStorageSettings);
+                    InputStream decompressedDownloadedInputStream = backupCompressor.decompressBackup(downloadedCompressedInputStream);
+            ) {
+                databaseBackupManager.restoreBackup(decompressedDownloadedInputStream, copyDatabaseSettings);
+                compareDatabases();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

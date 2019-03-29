@@ -5,7 +5,7 @@ import com.example.demo.entities.storage.Storage;
 import com.example.demo.entities.storage.StorageSettings;
 import com.example.demo.manager.DatabaseBackupManager;
 import com.example.demo.service.processor.BackupCompressor;
-import org.apache.commons.io.IOUtils;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +17,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -57,63 +57,76 @@ public class FileSystemStorageTests extends ApplicationTests {
         this.jdbcMasterTemplate = jdbcMasterTemplate;
     }
 
-    @Test
-    public void whenUploadTextBackupAndDownload_contentIsEqual() {
+    @Before
+    public void setUp() {
         testUtils.clearDatabase(jdbcMasterTemplate);
         testUtils.initDatabase(jdbcMasterTemplate);
+    }
 
-        InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings);
-        byte[] streamContent = testUtils.getStreamCopyAsByteArray(backupStream);
-
-        InputStream inputStream = new ByteArrayInputStream(streamContent);
-        InputStream copyInputStream = new ByteArrayInputStream(streamContent);
-
+    @Test
+    public void whenUploadTextBackupAndDownload_contentIsEqual() {
         StorageSettings storageSettings = testUtils.buildStorageSettings(Storage.LOCAL_FILE_SYSTEM);
-        InputStream downloadedBackup = testUtils.uploadAndDownloadTextBackup(inputStream, masterDatabaseSettings.getName(),
-                storageSettings);
 
-        assertTrue(testUtils.streamsContentEquals(copyInputStream, downloadedBackup));
+        try (
+                InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings);
+        ) {
+            byte[] streamContent = testUtils.getStreamCopyAsByteArray(backupStream);
+            try (
+                    InputStream inputStream = new ByteArrayInputStream(streamContent);
+                    InputStream copyInputStream = new ByteArrayInputStream(streamContent);
+                    InputStream downloadedBackup = testUtils.uploadAndDownloadTextBackup(copyInputStream, masterDatabaseSettings.getName(),
+                            storageSettings);
+            ) {
+                assertTrue(testUtils.streamsContentEquals(inputStream, downloadedBackup));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
     public void whenUploadCompressedBackupAndDownload_contentIsEqual() {
-        testUtils.clearDatabase(jdbcMasterTemplate);
-        testUtils.initDatabase(jdbcMasterTemplate);
-
-        InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings);
-
-        InputStream compressedBackup = backupCompressor.compressBackup(backupStream);
-
-        byte[] compressedBackupContent = testUtils.getStreamCopyAsByteArray(compressedBackup);
-        InputStream inputStream = new ByteArrayInputStream(compressedBackupContent);
-        InputStream copyCompressedBackup = new ByteArrayInputStream(compressedBackupContent);
-
         StorageSettings storageSettings = testUtils.buildStorageSettings(Storage.LOCAL_FILE_SYSTEM);
-        InputStream downloadedBackup = testUtils.uploadAndDownloadBinaryBackup(inputStream, masterDatabaseSettings.getName(),
-                storageSettings);
 
-        assertTrue(testUtils.streamsContentEquals(copyCompressedBackup, downloadedBackup));
+        try (
+                InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings);
+                InputStream compressedBackup = backupCompressor.compressBackup(backupStream);
+        ) {
+            byte[] compressedBackupContent = testUtils.getStreamCopyAsByteArray(compressedBackup);
+            try (
+                    InputStream inputStream = new ByteArrayInputStream(compressedBackupContent);
+                    InputStream copyInputStream = new ByteArrayInputStream(compressedBackupContent);
+                    InputStream downloadedCompressedBackup = testUtils.uploadAndDownloadBinaryBackup(copyInputStream,
+                            masterDatabaseSettings.getName(), storageSettings)
+            ) {
+                assertTrue(testUtils.streamsContentEquals(inputStream, downloadedCompressedBackup));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
     public void whenUploadCompressedBackupAndDownloadAndDecompress_contentIsEqualToSource() {
-        testUtils.clearDatabase(jdbcMasterTemplate);
-        testUtils.initDatabase(jdbcMasterTemplate);
-
-        InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings);
-
-        byte[] sourceBackupContent = testUtils.getStreamCopyAsByteArray(backupStream);
-        InputStream inputStream = new ByteArrayInputStream(sourceBackupContent);
-        InputStream copySourceBackup = new ByteArrayInputStream(sourceBackupContent);
-
-        InputStream compressedBackup = backupCompressor.compressBackup(inputStream);
-
         StorageSettings storageSettings = testUtils.buildStorageSettings(Storage.LOCAL_FILE_SYSTEM);
-        InputStream downloadedBackup = testUtils.uploadAndDownloadBinaryBackup(compressedBackup, masterDatabaseSettings.getName(),
-                storageSettings);
 
-        InputStream decompressedBackup = backupCompressor.decompressBackup(downloadedBackup);
+        try (
+                InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings);
+        ) {
+            byte[] sourceBackupContent = testUtils.getStreamCopyAsByteArray(backupStream);
+            try (
+                    InputStream inputStream = new ByteArrayInputStream(sourceBackupContent);
+                    InputStream copyInputStream = new ByteArrayInputStream(sourceBackupContent);
+                    InputStream compressedBackup = backupCompressor.compressBackup(copyInputStream);
+                    InputStream downloadedCompressedBackup = testUtils.uploadAndDownloadBinaryBackup(compressedBackup,
+                            masterDatabaseSettings.getName(), storageSettings);
+                    InputStream decompressedDownloadedBackup = backupCompressor.decompressBackup(downloadedCompressedBackup);
+            ) {
+                assertTrue(testUtils.streamsContentEquals(inputStream, decompressedDownloadedBackup));
 
-        assertTrue(testUtils.streamsContentEquals(copySourceBackup, decompressedBackup));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
