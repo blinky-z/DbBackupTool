@@ -100,7 +100,7 @@ class TestUtils {
 
                     DatabaseSettings postgresDatabaseSettings = DatabaseSettings.postgresSettings(postgresSettings)
                             .withHost(parsedConnUrl.getHost())
-                            .withPort(String.valueOf(parsedConnUrl.getPort()))
+                            .withPort(parsedConnUrl.getPort())
                             .withName(parsedConnUrl.getPath().substring(parsedConnUrl.getPath().lastIndexOf("/") + 1))
                             .withLogin("postgres")
                             .withPassword("postgres")

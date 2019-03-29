@@ -38,13 +38,6 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresDatabaseBackup.class);
 
-    private static final String DB_CONNECTION_URL_FORMAT = "jdbc:postgresql://%s:%s/%s";
-
-    private String buildUrl() {
-        return String.format(DB_CONNECTION_URL_FORMAT, databaseSettings.getHost(), databaseSettings.getPort(),
-                databaseSettings.getName());
-    }
-
     private ArrayList<String> addCommandParam(ArrayList<String> command, String paramName, String paramValue) {
         command.add(paramName);
         if (paramValue != null && !paramValue.isEmpty()) {
@@ -70,7 +63,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
 
         command.add("pg_dump");
         command = addCommandParam(command, "-h", databaseSettings.getHost());
-        command = addCommandParam(command, "-p", databaseSettings.getPort());
+        command = addCommandParam(command, "-p", Integer.toString(databaseSettings.getPort()));
         command = addCommandParam(command, "-F", "p");
         command = addCommandParam(command, "-d", databaseSettings.getName());
 
@@ -83,7 +76,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
         command.add("psql");
         command = addCommandParam(command, "-h", databaseSettings.getHost());
         command = addCommandParam(command, "-U", databaseSettings.getLogin());
-        command = addCommandParam(command, "-p", databaseSettings.getPort());
+        command = addCommandParam(command, "-p", Integer.toString(databaseSettings.getPort()));
         command = addCommandParam(command, "-d", databaseSettings.getName());
 
         return command;

@@ -21,7 +21,7 @@ public class DatabaseSettings {
 
     private String host;
 
-    private String port;
+    private int port;
 
     private String name;
 
@@ -48,7 +48,7 @@ public class DatabaseSettings {
         return host;
     }
 
-    public String getPort() {
+    public int getPort() {
         return port;
     }
 
@@ -83,7 +83,7 @@ public class DatabaseSettings {
         this.host = host;
     }
 
-    void setPort(String port) {
+    void setPort(int port) {
         this.port = port;
     }
 
@@ -111,12 +111,12 @@ public class DatabaseSettings {
         return Optional.ofNullable(additionalDatabaseSettings.getPostgresSettings());
     }
 
-    private DatabaseSettings(@NotNull Database type, @NotNull String host, @NotNull String port, @NotNull String name,
+    private DatabaseSettings(@NotNull Database type, @NotNull String host, int port, @NotNull String name,
                              @NotNull String login, @NotNull String password,
                              @NotNull AdditionalDatabaseSettings additionalDatabaseSettings) {
         this.type = Objects.requireNonNull(type);
         this.host = Objects.requireNonNull(host);
-        this.port = Objects.requireNonNull(port);
+        this.port = port;
         this.name = Objects.requireNonNull(name);
         this.login = Objects.requireNonNull(login);
         this.password = Objects.requireNonNull(password);
@@ -126,7 +126,7 @@ public class DatabaseSettings {
     public static final class Builder {
         private Database type;
         private String host;
-        private String port;
+        private int port;
         private String name;
         private String login;
         private String password;
@@ -140,8 +140,8 @@ public class DatabaseSettings {
             return this;
         }
 
-        public Builder withPort(@NotNull String port) {
-            this.port = Objects.requireNonNull(port);
+        public Builder withPort(int port) {
+            this.port = port;
             return this;
         }
 

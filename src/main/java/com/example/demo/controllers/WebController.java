@@ -103,7 +103,7 @@ public class WebController {
 
                 HashMap<String, String> storageProperties = new HashMap<>();
                 storageProperties.put("Host", databaseSettings.getHost());
-                storageProperties.put("Port", databaseSettings.getPort());
+                storageProperties.put("Port", Integer.toString(databaseSettings.getPort()));
                 storageProperties.put("Database name", databaseSettings.getName());
 
                 WebDatabaseItem databaseItem = new WebDatabaseItem(databaseSettings.getType(), databaseSettings.getId(),

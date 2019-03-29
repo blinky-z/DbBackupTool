@@ -52,7 +52,8 @@ public class FileSystemTextStorage implements TextStorage {
         this.storageSettings = storageSettings;
         this.localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(RuntimeException::new);
         this.backupName = backupName;
-        this.backupFolderPath = localFileSystemSettings.getBackupPath() + File.separator + backupName;
+        String backupPath = localFileSystemSettings.getBackupPath().replace("/", File.separator);
+        this.backupFolderPath = backupPath + File.separator + backupName;
     }
 
     /**

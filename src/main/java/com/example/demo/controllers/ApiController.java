@@ -91,7 +91,7 @@ public class ApiController {
 
     @DeleteMapping(value = "/database")
     public String deleteDatabase(@RequestParam(value = "id") int id) {
-        logger.info("Deletion of database: id: {}", id);
+        logger.info("deleteDatabase(): Got database configuration deletion job. Database ID: {}", id);
 
         databaseSettingsManager.deleteById(id);
 
@@ -99,23 +99,18 @@ public class ApiController {
     }
 
     @PostMapping(value = "/database")
-    public String createDatabase(@Valid WebAddDatabaseRequest createDatabaseRequest, BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            logger.info("Has errors");
-            logger.info(bindingResult.getAllErrors().toString());
-        }
+    public String createDatabase(@Valid WebAddDatabaseRequest createDatabaseRequest) {
+        logger.info("createDatabase(): Got database configuration creation job");
 
         Optional<Database> databaseType = Database.of(createDatabaseRequest.getDatabaseType());
         if (databaseType.isPresent()) {
             switch (databaseType.get()) {
                 case POSTGRES: {
                     PostgresSettings postgresSettings = new PostgresSettings();
-//                    WebPostgresSettings webPostgresSettings = Objects.requireNonNull(createDatabaseRequest.
-//                    getPostgresSettings());
 
                     DatabaseSettings databaseSettings = DatabaseSettings.postgresSettings(postgresSettings)
                             .withHost(createDatabaseRequest.getHost())
-                            .withPort(createDatabaseRequest.getPort())
+                            .withPort(Integer.valueOf(createDatabaseRequest.getPort()))
                             .withName(createDatabaseRequest.getName())
                             .withLogin(createDatabaseRequest.getLogin())
                             .withPassword(createDatabaseRequest.getPassword())
@@ -134,7 +129,7 @@ public class ApiController {
 
     @DeleteMapping(value = "/storage")
     public String deleteStorage(@RequestParam(value = "id") int id) {
-        logger.info("Deletion of storage: id: {}", id);
+        logger.info("deleteStorage(): Got storage configuration deletion job. Storage ID: {}", id);
 
         storageSettingsManager.deleteById(id);
 
@@ -142,11 +137,8 @@ public class ApiController {
     }
 
     @PostMapping(value = "/storage")
-    public String createStorage(@Valid WebAddStorageRequest createStorageRequest, BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            logger.info("Has errors");
-            logger.info(bindingResult.getAllErrors().toString());
-        }
+    public String createStorage(WebAddStorageRequest createStorageRequest) {
+        logger.info("createStorage(): Got storage configuration creation job");
 
         Optional<Storage> storageType = Storage.of(createStorageRequest.getStorageType());
         if (storageType.isPresent()) {
@@ -182,8 +174,7 @@ public class ApiController {
 
     @PostMapping(value = "/create-backup")
     public ResponseEntity createBackup(WebCreateBackupRequest createBackupRequest) {
-        logger.info("{}", createBackupRequest.getCheckStorageList());
-        logger.info("{}", createBackupRequest.getCheckDatabaseList());
+        logger.info("createBackup(): Got backup creation job");
 
         List<DatabaseSettings> databaseSettingsList = new ArrayList<>();
         for (Integer databaseId : createBackupRequest.getCheckDatabaseList()) {
@@ -197,8 +188,8 @@ public class ApiController {
                     String.format("Can't retrieve storage settings. Error: no storage settings with ID %d", storageId))));
         }
 
-        logger.info("Database settings list: {}", databaseSettingsList);
-        logger.info("Storage settings list: {}", storageSettingsList);
+        logger.info("createBackup(): Database settings list: {}", databaseSettingsList);
+        logger.info("createBackup(): Storage settings list: {}", storageSettingsList);
 
         if (createBackupRequest.isCompress()) {
             for (DatabaseSettings currentDatabaseSettings : databaseSettingsList) {
@@ -217,14 +208,13 @@ public class ApiController {
             }
         }
 
-
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 
     @PostMapping(value = "/restore-backup")
     public ResponseEntity restoreBackup(WebRestoreBackupRequest restoreBackupRequest) {
-        logger.info("Backup id: {}", restoreBackupRequest.getBackupId());
-        logger.info("Database id: {}", restoreBackupRequest.getDatabaseId());
+        logger.info("restoreBackup(): Got backup restoration job. Backup id: {}. Database id: {}",
+                restoreBackupRequest.getBackupId(), restoreBackupRequest.getDatabaseId());
 
         Integer backupId = restoreBackupRequest.getBackupId();
         BackupProperties backupProperties = backupPropertiesManager.getById(backupId).orElseThrow(() ->
@@ -241,8 +231,8 @@ public class ApiController {
         DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseId).orElseThrow(() -> new RuntimeException(
                 String.format("Can't retrieve database settings. Error: no database settings with ID %d", databaseId)));
 
-        logger.info("Backup properties: {}", backupProperties);
-        logger.info("Database settings: {}", databaseSettings);
+        logger.info("restoreBackup(): Backup properties: {}", backupProperties);
+        logger.info("restoreBackup(): Database settings: {}", databaseSettings);
 
         if (backupProperties.isCompressed()) {
             InputStream downloadedBackup = textStorageBackupLoadManager.downloadBackup(storageSettings,
