@@ -22,7 +22,7 @@ public class AdditionalDatabaseSettingsConverter implements AttributeConverter<A
     public String convertToDatabaseColumn(AdditionalDatabaseSettings attribute) {
         try {
             logger.debug("Serializing entity to JSON. From: {} - {}, To: {}", ENTITY_TYPE, attribute, DB_FIELD_TYPE);
-            String attributeAsJson =  objectMapper.writeValueAsString(attribute);
+            String attributeAsJson = objectMapper.writeValueAsString(attribute);
             logger.debug("Serialized entity: {}", attributeAsJson);
             return attributeAsJson;
         } catch (JsonProcessingException ex) {

@@ -5,9 +5,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
+import java.io.InputStream;
 import java.util.Objects;
-import java.util.zip.*;
+import java.util.zip.DeflaterInputStream;
+import java.util.zip.InflaterInputStream;
 
 @Service
 public class BackupCompressor {

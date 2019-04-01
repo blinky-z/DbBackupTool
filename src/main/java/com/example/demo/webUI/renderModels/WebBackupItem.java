@@ -1,7 +1,5 @@
 package com.example.demo.webUI.renderModels;
 
-import com.example.demo.entities.database.Database;
-
 public class WebBackupItem {
     private int id;
 

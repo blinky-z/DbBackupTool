@@ -3,14 +3,18 @@ package com.example.demo.manager;
 import com.example.demo.entities.backup.BackupProperties;
 import com.example.demo.entities.storage.Storage;
 import com.example.demo.entities.storage.StorageSettings;
-import com.example.demo.service.storage.*;
+import com.example.demo.service.storage.BinaryStorage;
+import com.example.demo.service.storage.DropboxBinaryStorage;
+import com.example.demo.service.storage.FileSystemBinaryStorage;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -111,7 +115,7 @@ public class BinaryStorageBackupLoadManager {
             }
             case DROPBOX: {
                 DropboxBinaryStorage dropboxBinaryStorage = new DropboxBinaryStorage(storageSettings, backupName);
-                downloadedBackup =  dropboxBinaryStorage.downloadBackup();
+                downloadedBackup = dropboxBinaryStorage.downloadBackup();
                 break;
             }
             default: {

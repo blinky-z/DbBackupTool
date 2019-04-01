@@ -1,16 +1,16 @@
 package com.example.demo.controllers;
 
 import com.example.demo.entities.backup.BackupProperties;
-import com.example.demo.entities.database.PostgresSettings;
-import com.example.demo.manager.BackupPropertiesManager;
-import com.example.demo.manager.DatabaseSettingsManager;
-import com.example.demo.manager.StorageSettingsManager;
 import com.example.demo.entities.database.Database;
 import com.example.demo.entities.database.DatabaseSettings;
+import com.example.demo.entities.database.PostgresSettings;
 import com.example.demo.entities.storage.DropboxSettings;
 import com.example.demo.entities.storage.LocalFileSystemSettings;
 import com.example.demo.entities.storage.Storage;
 import com.example.demo.entities.storage.StorageSettings;
+import com.example.demo.manager.BackupPropertiesManager;
+import com.example.demo.manager.DatabaseSettingsManager;
+import com.example.demo.manager.StorageSettingsManager;
 import com.example.demo.webUI.renderModels.WebBackupItem;
 import com.example.demo.webUI.renderModels.WebDatabaseItem;
 import com.example.demo.webUI.renderModels.WebStorageItem;

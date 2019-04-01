@@ -106,7 +106,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
         try (
                 InputStream createdBackup = databaseBackupManager.createBackup(masterDatabaseSettings);
                 InputStream downloadedBackup = testUtils.uploadAndDownloadTextBackup(createdBackup, masterDatabaseSettings.getName(),
-                        storageSettings);
+                        storageSettings)
         ) {
             databaseBackupManager.restoreBackup(downloadedBackup, copyDatabaseSettings);
         } catch (IOException e) {
@@ -123,7 +123,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
         try (
                 InputStream createdBackup = databaseBackupManager.createBackup(masterDatabaseSettings);
                 InputStream downloadedBackup = testUtils.uploadAndDownloadTextBackup(createdBackup, masterDatabaseSettings.getName(),
-                        storageSettings);
+                        storageSettings)
 
         ) {
             databaseBackupManager.restoreBackup(downloadedBackup, copyDatabaseSettings);
@@ -143,7 +143,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
                 InputStream compressedBackup = backupCompressor.compressBackup(createdBackup);
                 InputStream downloadedCompressedBackup = testUtils.uploadAndDownloadBinaryBackup(compressedBackup,
                         masterDatabaseSettings.getName(), storageSettings);
-                InputStream decompressedBackup = backupCompressor.decompressBackup(downloadedCompressedBackup);
+                InputStream decompressedBackup = backupCompressor.decompressBackup(downloadedCompressedBackup)
         ) {
             databaseBackupManager.restoreBackup(decompressedBackup, copyDatabaseSettings);
         } catch (IOException e) {
@@ -162,7 +162,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
                 InputStream compressedBackup = backupCompressor.compressBackup(createdBackup);
                 InputStream downloadedCompressedBackup = testUtils.uploadAndDownloadBinaryBackup(compressedBackup,
                         masterDatabaseSettings.getName(), storageSettings);
-                InputStream decompressedBackup = backupCompressor.decompressBackup(downloadedCompressedBackup);
+                InputStream decompressedBackup = backupCompressor.decompressBackup(downloadedCompressedBackup)
         ) {
             databaseBackupManager.restoreBackup(decompressedBackup, copyDatabaseSettings);
         } catch (IOException e) {
@@ -189,7 +189,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
             try (
                     InputStream inputStream = new ByteArrayInputStream(createdBackupAsByteArray);
                     InputStream downloadedUncompressedInputStream = testUtils.uploadAndDownloadTextBackup(
-                            inputStream, masterDatabaseSettings.getName(), localFileSystemStorageSettings);
+                            inputStream, masterDatabaseSettings.getName(), localFileSystemStorageSettings)
             ) {
                 databaseBackupManager.restoreBackup(downloadedUncompressedInputStream, copyDatabaseSettings);
                 compareDatabases();
@@ -206,7 +206,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
                     InputStream compressedInputStream = backupCompressor.compressBackup(inputStream);
                     InputStream downloadedCompressedInputStream = testUtils.uploadAndDownloadBinaryBackup(
                             compressedInputStream, masterDatabaseSettings.getName(), dropboxStorageSettings);
-                    InputStream decompressedDownloadedInputStream = backupCompressor.decompressBackup(downloadedCompressedInputStream);
+                    InputStream decompressedDownloadedInputStream = backupCompressor.decompressBackup(downloadedCompressedInputStream)
             ) {
                 databaseBackupManager.restoreBackup(decompressedDownloadedInputStream, copyDatabaseSettings);
                 compareDatabases();

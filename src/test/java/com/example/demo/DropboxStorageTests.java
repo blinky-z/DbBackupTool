@@ -68,14 +68,14 @@ public class DropboxStorageTests extends ApplicationTests {
         StorageSettings storageSettings = testUtils.buildStorageSettings(Storage.DROPBOX);
 
         try (
-                InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings);
+                InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings)
         ) {
             byte[] streamContent = testUtils.getStreamCopyAsByteArray(backupStream);
             try (
                     InputStream inputStream = new ByteArrayInputStream(streamContent);
                     InputStream copyInputStream = new ByteArrayInputStream(streamContent);
                     InputStream downloadedBackup = testUtils.uploadAndDownloadTextBackup(copyInputStream, masterDatabaseSettings.getName(),
-                            storageSettings);
+                            storageSettings)
             ) {
                 assertTrue(testUtils.streamsContentEquals(inputStream, downloadedBackup));
             }
@@ -90,7 +90,7 @@ public class DropboxStorageTests extends ApplicationTests {
 
         try (
                 InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings);
-                InputStream compressedBackup = backupCompressor.compressBackup(backupStream);
+                InputStream compressedBackup = backupCompressor.compressBackup(backupStream)
         ) {
             byte[] compressedBackupContent = testUtils.getStreamCopyAsByteArray(compressedBackup);
             try (
@@ -111,7 +111,7 @@ public class DropboxStorageTests extends ApplicationTests {
         StorageSettings storageSettings = testUtils.buildStorageSettings(Storage.DROPBOX);
 
         try (
-                InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings);
+                InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings)
         ) {
             byte[] sourceBackupContent = testUtils.getStreamCopyAsByteArray(backupStream);
             try (
@@ -120,7 +120,7 @@ public class DropboxStorageTests extends ApplicationTests {
                     InputStream compressedBackup = backupCompressor.compressBackup(copyInputStream);
                     InputStream downloadedCompressedBackup = testUtils.uploadAndDownloadBinaryBackup(compressedBackup, masterDatabaseSettings.getName(),
                             storageSettings);
-                    InputStream decompressedDownloadedBackup = backupCompressor.decompressBackup(downloadedCompressedBackup);
+                    InputStream decompressedDownloadedBackup = backupCompressor.decompressBackup(downloadedCompressedBackup)
             ) {
                 assertTrue(testUtils.streamsContentEquals(inputStream, decompressedDownloadedBackup));
             }

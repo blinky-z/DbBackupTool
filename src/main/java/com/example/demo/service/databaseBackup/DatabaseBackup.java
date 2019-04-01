@@ -8,12 +8,14 @@ import java.io.InputStream;
 public interface DatabaseBackup {
     /**
      * Creates database backup.
+     *
      * @return input stream contains the plain text database backup
      */
     InputStream createBackup();
 
     /**
      * Restores database backup.
+     *
      * @param dumpData input stream contains the plain text database backup
      */
     void restoreBackup(InputStream dumpData);

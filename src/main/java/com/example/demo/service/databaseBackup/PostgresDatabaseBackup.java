@@ -3,7 +3,6 @@ package com.example.demo.service.databaseBackup;
 import com.example.demo.entities.database.DatabaseSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.batch.BatchProperties;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -197,7 +196,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
      * <p>
      * If psql reports about error while executing, RuntimeException will be thrown
      * In such case, you can find process's stderr messages in the class log
-     *
+     * <p>
      * Note, that there are two types of possible errors: the one from psql tool executing in separate process,
      * and the second one produced by Java (IO Exception) while writing backup to process output stream
      *
