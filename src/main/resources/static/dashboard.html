@@ -272,6 +272,17 @@
                     </div>
 
                     <form id="createBackupForm" th:action="@{/create-backup}" method="post">
+                        <div class="form-group">
+                            <label for="createBackup-selectDatabase">Select database to backup</label>
+                            <select class="form-control" name="databaseId" id="createBackup-selectDatabase" required>
+                                <option value="" disabled selected>Select Database</option>
+                                <option th:each="database: ${databaseList}" th:object="${database}" th:value="*{id}"
+                                        th:text="${'Database: ' + database.type +
+                                        ' | Details: ' + database.desc +
+                                        ' | Creation time: ' + database.time}">
+                                </option>
+                            </select>
+                        </div>
 
                         <label for="selectStorageForBackupList">Select storage</label>
                         <table class="table table-hover table-bordered" id="selectStorageForBackupList">
@@ -289,26 +300,6 @@
                                 <th scope="row" th:text="${storage.type}"></th>
                                 <td th:text="${storage.desc}"></td>
                                 <td th:text="${storage.time}"></td>
-                            </tr>
-                            </tbody>
-                        </table>
-
-                        <label for="selectDatabaseForBackupList">Select database</label>
-                        <table class="table table-hover table-bordered" id="selectDatabaseForBackupList">
-                            <thead class="thead-dark">
-                            <tr>
-                                <th scope="col"></th>
-                                <th scope="col" class="col-md-2">Database</th>
-                                <th scope="col" class="col-md-6">Description</th>
-                                <th scope="col" class="col-md-3">Creation time</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr th:each="database: ${databaseList}" class="databaseItem">
-                                <td><input type="checkbox" name="checkDatabaseList" th:value="${database.id}"></td>
-                                <th scope="row" th:text="${database.type}"></th>
-                                <td th:text="${database.desc}"></td>
-                                <td th:text="${database.time}"></td>
                             </tr>
                             </tbody>
                         </table>

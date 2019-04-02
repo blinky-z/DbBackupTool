@@ -175,11 +175,9 @@ public class ApiController {
     public ResponseEntity createBackup(WebCreateBackupRequest createBackupRequest) {
         logger.info("createBackup(): Got backup creation job");
 
-        List<DatabaseSettings> databaseSettingsList = new ArrayList<>();
-        for (Integer databaseId : createBackupRequest.getCheckDatabaseList()) {
-            databaseSettingsList.add(databaseSettingsManager.getById(databaseId).orElseThrow(() -> new RuntimeException(
-                    String.format("Can't retrieve database settings. Error: no database settings with ID %d", databaseId))));
-        }
+        Integer databaseId = createBackupRequest.getDatabaseId();
+        DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseId).orElseThrow(() -> new RuntimeException(
+                String.format("Can't retrieve database settings. Error: no database settings with ID %d", databaseId)));
 
         List<StorageSettings> storageSettingsList = new ArrayList<>();
         for (Integer storageId : createBackupRequest.getCheckStorageList()) {
@@ -187,24 +185,20 @@ public class ApiController {
                     String.format("Can't retrieve storage settings. Error: no storage settings with ID %d", storageId))));
         }
 
-        logger.info("createBackup(): Database settings list: {}", databaseSettingsList);
+        logger.info("createBackup(): Database settings: {}", databaseSettings);
         logger.info("createBackup(): Storage settings list: {}", storageSettingsList);
 
         if (createBackupRequest.isCompress()) {
-            for (DatabaseSettings currentDatabaseSettings : databaseSettingsList) {
-                InputStream backupStream = databaseBackupManager.createBackup(currentDatabaseSettings);
+                InputStream backupStream = databaseBackupManager.createBackup(databaseSettings);
                 InputStream compressedBackupStream = backupCompressor.compressBackup(backupStream);
 
                 binaryStorageBackupLoadManager.uploadBackup(compressedBackupStream, storageSettingsList,
-                        currentDatabaseSettings.getName(), createBackupRequest.getMaxChunkSize());
-            }
+                        databaseSettings.getName(), createBackupRequest.getMaxChunkSize());
         } else {
-            for (DatabaseSettings currentDatabaseSettings : databaseSettingsList) {
-                InputStream currentBackup = databaseBackupManager.createBackup(currentDatabaseSettings);
+                InputStream currentBackup = databaseBackupManager.createBackup(databaseSettings);
 
                 textStorageBackupLoadManager.uploadBackup(currentBackup, storageSettingsList,
-                        currentDatabaseSettings.getName(), createBackupRequest.getMaxChunkSize());
-            }
+                        databaseSettings.getName(), createBackupRequest.getMaxChunkSize());
         }
 
         return ResponseEntity.status(HttpStatus.OK).body(null);

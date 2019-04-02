@@ -3,13 +3,21 @@ package com.example.demo.webUI.formTransfer;
 import java.util.List;
 
 public class WebCreateBackupRequest {
-    private List<Integer> checkStorageList;
+    private int databaseId;
 
-    private List<Integer> checkDatabaseList;
+    private List<Integer> checkStorageList;
 
     private int maxChunkSize;
 
     private boolean compress;
+
+    public int getDatabaseId() {
+        return databaseId;
+    }
+
+    public void setDatabaseId(int databaseId) {
+        this.databaseId = databaseId;
+    }
 
     public List<Integer> getCheckStorageList() {
         return checkStorageList;
@@ -17,14 +25,6 @@ public class WebCreateBackupRequest {
 
     public void setCheckStorageList(List<Integer> checkStorageList) {
         this.checkStorageList = checkStorageList;
-    }
-
-    public List<Integer> getCheckDatabaseList() {
-        return checkDatabaseList;
-    }
-
-    public void setCheckDatabaseList(List<Integer> checkDatabaseList) {
-        this.checkDatabaseList = checkDatabaseList;
     }
 
     public int getMaxChunkSize() {
