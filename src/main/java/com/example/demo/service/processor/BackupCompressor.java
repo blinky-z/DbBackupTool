@@ -11,12 +11,14 @@ import java.util.zip.DeflaterInputStream;
 import java.util.zip.InflaterInputStream;
 
 @Service
-public class BackupCompressor {
+public class BackupCompressor implements Processor {
     private static final Logger logger = LoggerFactory.getLogger(BackupCompressor.class);
 
     private static final String UNCOMPRESSED_BACKUP_STREAM_MUST_NOT_BE_NULL = "Uncompressed backup stream must not be null!";
 
     private static final String COMPRESSED_BACKUP_STREAM_MUST_NOT_BE_NULL = "Compressed backup stream must not be null!";
+
+    private static final String processorName = "Compressor";
 
     /**
      * Compress backup
@@ -24,7 +26,7 @@ public class BackupCompressor {
      * @param uncompressedBackup the stream contains data to compress
      * @return input stream, from which compressed data can be read
      */
-    public InputStream compressBackup(@NotNull InputStream uncompressedBackup) {
+    public InputStream process(@NotNull InputStream uncompressedBackup) {
         logger.info("Compressing backup");
         Objects.requireNonNull(uncompressedBackup, UNCOMPRESSED_BACKUP_STREAM_MUST_NOT_BE_NULL);
         return new DeflaterInputStream(uncompressedBackup);
@@ -36,9 +38,14 @@ public class BackupCompressor {
      * @param compressedBackup the stream contains compressed data
      * @return input stream, from which decompressed data can be read
      */
-    public InputStream decompressBackup(@NotNull InputStream compressedBackup) {
+    public InputStream deprocess(@NotNull InputStream compressedBackup) {
         logger.info("Decompressing backup");
         Objects.requireNonNull(compressedBackup, COMPRESSED_BACKUP_STREAM_MUST_NOT_BE_NULL);
         return new InflaterInputStream(compressedBackup);
+    }
+
+    @Override
+    public String getName() {
+        return processorName;
     }
 }

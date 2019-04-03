@@ -6,7 +6,7 @@ import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.entities.database.PostgresSettings;
 import com.example.demo.entities.storage.DropboxSettings;
 import com.example.demo.entities.storage.LocalFileSystemSettings;
-import com.example.demo.entities.storage.Storage;
+import com.example.demo.entities.storage.StorageType;
 import com.example.demo.entities.storage.StorageSettings;
 import com.example.demo.manager.BackupPropertiesManager;
 import com.example.demo.manager.DatabaseSettingsManager;
@@ -70,7 +70,7 @@ public class WebController {
         {
             List<WebStorageItem> storageList = new ArrayList<>();
 
-            for (StorageSettings storageSettings : storageSettingsManager.getAllByType(Storage.LOCAL_FILE_SYSTEM)) {
+            for (StorageSettings storageSettings : storageSettingsManager.getAllByType(StorageType.LOCAL_FILE_SYSTEM)) {
                 LocalFileSystemSettings localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(
                         RuntimeException::new);
 
@@ -81,7 +81,7 @@ public class WebController {
                         storageProperties.toString(), dateFormat.format(storageSettings.getDate()));
                 storageList.add(storageItem);
             }
-            for (StorageSettings storageSettings : storageSettingsManager.getAllByType(Storage.DROPBOX)) {
+            for (StorageSettings storageSettings : storageSettingsManager.getAllByType(StorageType.DROPBOX)) {
                 DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(RuntimeException::new);
 
                 HashMap<String, String> storageProperties = new HashMap<>();
@@ -125,7 +125,7 @@ public class WebController {
                         new RuntimeException(String.format("Error occurred while rendering page: Missing " +
                                 "storage settings with ID %d", storageSettingsId)));
 
-                backupProperties.put("Compressed", currentBackupProperties.isCompressed().toString());
+                backupProperties.put("Processors", currentBackupProperties.getProcessors().toString());
                 backupProperties.put("Stored on", storageSettings.getType().toString());
 
                 WebBackupItem webBackupItem = new WebBackupItem(currentBackupProperties.getId(),

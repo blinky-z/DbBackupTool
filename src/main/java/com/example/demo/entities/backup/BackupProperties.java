@@ -1,7 +1,9 @@
 package com.example.demo.entities.backup;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "backup_properties")
@@ -16,7 +18,9 @@ public class BackupProperties {
 
     private String backupName;
 
-    private Boolean compressed;
+    @Column(updatable = false)
+    @Convert(converter = ProcessorsFieldConverter.class)
+    private List<String> processors;
 
     private Integer storageSettingsId;
 
@@ -24,9 +28,9 @@ public class BackupProperties {
 
     }
 
-    public BackupProperties(String backupName, Boolean compressed, Date date, Integer storageSettingsId) {
+    public BackupProperties(String backupName, List<String> processors, Date date, Integer storageSettingsId) {
         this.backupName = backupName;
-        this.compressed = compressed;
+        this.processors = processors;
         this.date = date;
         this.storageSettingsId = storageSettingsId;
     }
@@ -55,12 +59,12 @@ public class BackupProperties {
         this.backupName = backupName;
     }
 
-    public Boolean isCompressed() {
-        return compressed;
+    public List<String> getProcessors() {
+        return processors;
     }
 
-    public void setCompressed(Boolean compressed) {
-        this.compressed = compressed;
+    public void setProcessors(List<String> processors) {
+        this.processors = processors;
     }
 
     public Integer getStorageSettingsId() {
@@ -77,7 +81,7 @@ public class BackupProperties {
                 "id=" + id +
                 ", date=" + date +
                 ", backupName='" + backupName + '\'' +
-                ", compressed=" + compressed +
+                ", processors=" + processors +
                 ", storageSettingsId=" + storageSettingsId +
                 '}';
     }

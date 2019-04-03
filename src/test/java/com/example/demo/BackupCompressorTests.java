@@ -66,8 +66,8 @@ public class BackupCompressorTests extends ApplicationTests {
             try (
                     InputStream inputStream = new ByteArrayInputStream(streamContent);
                     InputStream copyInputStream = new ByteArrayInputStream(streamContent);
-                    InputStream compressedBackup = backupCompressor.compressBackup(inputStream);
-                    InputStream decompressedBackup = backupCompressor.decompressBackup(compressedBackup)
+                    InputStream compressedBackup = backupCompressor.process(inputStream);
+                    InputStream decompressedBackup = backupCompressor.deprocess(compressedBackup)
             ) {
                 assertTrue(testUtils.streamsContentEquals(copyInputStream, decompressedBackup));
             }

@@ -6,10 +6,9 @@ import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.entities.database.PostgresSettings;
 import com.example.demo.entities.storage.DropboxSettings;
 import com.example.demo.entities.storage.LocalFileSystemSettings;
-import com.example.demo.entities.storage.Storage;
 import com.example.demo.entities.storage.StorageSettings;
+import com.example.demo.entities.storage.StorageType;
 import com.example.demo.manager.*;
-import com.example.demo.service.processor.BackupCompressor;
 import com.example.demo.webUI.formTransfer.WebAddDatabaseRequest;
 import com.example.demo.webUI.formTransfer.WebAddStorageRequest;
 import com.example.demo.webUI.formTransfer.WebCreateBackupRequest;
@@ -28,7 +27,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.validation.Valid;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -43,13 +41,11 @@ public class ApiController {
 
     private DatabaseBackupManager databaseBackupManager;
 
-    private TextStorageBackupLoadManager textStorageBackupLoadManager;
-
-    private BinaryStorageBackupLoadManager binaryStorageBackupLoadManager;
+    private BackupLoadManager backupLoadManager;
 
     private BackupPropertiesManager backupPropertiesManager;
 
-    private BackupCompressor backupCompressor;
+    private BackupProcessorManager backupProcessorManager;
 
     @Autowired
     public void setDatabaseSettingsManager(DatabaseSettingsManager databaseSettingsManager) {
@@ -67,13 +63,8 @@ public class ApiController {
     }
 
     @Autowired
-    public void setTextStorageBackupLoadManager(TextStorageBackupLoadManager textStorageBackupLoadManager) {
-        this.textStorageBackupLoadManager = textStorageBackupLoadManager;
-    }
-
-    @Autowired
-    public void setBinaryStorageBackupLoadManager(BinaryStorageBackupLoadManager binaryStorageBackupLoadManager) {
-        this.binaryStorageBackupLoadManager = binaryStorageBackupLoadManager;
+    public void setBackupLoadManager(BackupLoadManager backupLoadManager) {
+        this.backupLoadManager = backupLoadManager;
     }
 
     @Autowired
@@ -82,11 +73,9 @@ public class ApiController {
     }
 
     @Autowired
-    public void setBackupCompressor(BackupCompressor backupCompressor) {
-        this.backupCompressor = backupCompressor;
+    public void setBackupProcessorManager(BackupProcessorManager backupProcessorManager) {
+        this.backupProcessorManager = backupProcessorManager;
     }
-
-    //    TODO: добавить нормальную валидацию всех форм.
 
     @DeleteMapping(value = "/database")
     public String deleteDatabase(@RequestParam(value = "id") int id) {
@@ -128,7 +117,7 @@ public class ApiController {
 
     @DeleteMapping(value = "/storage")
     public String deleteStorage(@RequestParam(value = "id") int id) {
-        logger.info("deleteStorage(): Got storage configuration deletion job. Storage ID: {}", id);
+        logger.info("deleteStorage(): Got storage configuration deletion job. StorageType ID: {}", id);
 
         storageSettingsManager.deleteById(id);
 
@@ -139,7 +128,7 @@ public class ApiController {
     public String createStorage(WebAddStorageRequest createStorageRequest) {
         logger.info("createStorage(): Got storage configuration creation job");
 
-        Optional<Storage> storageType = Storage.of(createStorageRequest.getStorageType());
+        Optional<StorageType> storageType = StorageType.of(createStorageRequest.getStorageType());
         if (storageType.isPresent()) {
             switch (storageType.get()) {
                 case DROPBOX: {
@@ -175,30 +164,30 @@ public class ApiController {
     public ResponseEntity createBackup(WebCreateBackupRequest createBackupRequest) {
         logger.info("createBackup(): Got backup creation job");
 
-        Integer databaseId = createBackupRequest.getDatabaseId();
+        int databaseId = createBackupRequest.getDatabaseId();
         DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseId).orElseThrow(() -> new RuntimeException(
                 String.format("Can't retrieve database settings. Error: no database settings with ID %d", databaseId)));
-
-        List<StorageSettings> storageSettingsList = new ArrayList<>();
-        for (Integer storageId : createBackupRequest.getCheckStorageList()) {
-            storageSettingsList.add(storageSettingsManager.getById(storageId).orElseThrow(() -> new RuntimeException(
-                    String.format("Can't retrieve storage settings. Error: no storage settings with ID %d", storageId))));
-        }
+        String databaseName = databaseSettings.getName();
 
         logger.info("createBackup(): Database settings: {}", databaseSettings);
-        logger.info("createBackup(): Storage settings list: {}", storageSettingsList);
 
-        if (createBackupRequest.isCompress()) {
-                InputStream backupStream = databaseBackupManager.createBackup(databaseSettings);
-                InputStream compressedBackupStream = backupCompressor.compressBackup(backupStream);
+        for (WebCreateBackupRequest.StorageProperties storageProperties : createBackupRequest.getStorageProperties()) {
+            int storageId = storageProperties.getId();
+            StorageSettings storageSettings = storageSettingsManager.getById(storageId).orElseThrow(() -> new RuntimeException(
+                    String.format("createBackup(): Can't retrieve storage settings. Error: no storage settings with ID %d",
+                            storageId)));
 
-                binaryStorageBackupLoadManager.uploadBackup(compressedBackupStream, storageSettingsList,
-                        databaseSettings.getName(), createBackupRequest.getMaxChunkSize());
-        } else {
-                InputStream currentBackup = databaseBackupManager.createBackup(databaseSettings);
+            logger.info("Current storage settings: {}", storageSettings.toString());
 
-                textStorageBackupLoadManager.uploadBackup(currentBackup, storageSettingsList,
-                        databaseSettings.getName(), createBackupRequest.getMaxChunkSize());
+            logger.info("createBackup(): Creating backup...");
+            InputStream backupStream = databaseBackupManager.createBackup(databaseSettings);
+
+            List<String> processorList = storageProperties.getProcessors();
+            logger.info("createBackup(): Applying processors on created backup. Processors: {}", processorList);
+            InputStream processedBackupStream = backupProcessorManager.process(backupStream, processorList);
+
+            logger.info("createBackup(): Uploading backup...");
+            backupLoadManager.uploadBackup(processedBackupStream, storageSettings, processorList, databaseName);
         }
 
         return ResponseEntity.status(HttpStatus.OK).body(null);
@@ -227,17 +216,15 @@ public class ApiController {
         logger.info("restoreBackup(): Backup properties: {}", backupProperties);
         logger.info("restoreBackup(): Database settings: {}", databaseSettings);
 
-        if (backupProperties.isCompressed()) {
-            InputStream downloadedBackup = textStorageBackupLoadManager.downloadBackup(storageSettings,
-                    backupProperties);
-            InputStream decompressedBackup = backupCompressor.decompressBackup(downloadedBackup);
 
-            databaseBackupManager.restoreBackup(decompressedBackup, databaseSettings);
-        } else {
-            InputStream downloadedBackup = textStorageBackupLoadManager.downloadBackup(storageSettings,
-                    backupProperties);
-            databaseBackupManager.restoreBackup(downloadedBackup, databaseSettings);
-        }
+        logger.info("restoreBackup(): Downloading backup...");
+        InputStream downloadedBackup = backupLoadManager.downloadBackup(storageSettings, backupProperties);
+
+        logger.info("restoreBackup(): Deprocessing backup...");
+        InputStream deprocessedBackup = backupProcessorManager.deprocess(downloadedBackup, backupProperties.getProcessors());
+
+        logger.info("restoreBackup(): Restoring backup...");
+        databaseBackupManager.restoreBackup(deprocessedBackup, databaseSettings);
 
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }

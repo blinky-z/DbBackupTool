@@ -1,15 +1,41 @@
 package com.example.demo.webUI.formTransfer;
 
-import java.util.List;
+import java.util.ArrayList;
 
 public class WebCreateBackupRequest {
+    public static final class StorageProperties {
+        private int id;
+
+        private ArrayList<String> processors = new ArrayList<>();
+
+        public int getId() {
+            return id;
+        }
+
+        public void setId(int id) {
+            this.id = id;
+        }
+
+        public ArrayList<String> getProcessors() {
+            return processors;
+        }
+
+        public void setProcessors(ArrayList<String> processors) {
+            this.processors = processors;
+        }
+    }
+
     private int databaseId;
 
-    private List<Integer> checkStorageList;
+    private ArrayList<StorageProperties> storageProperties = new ArrayList<>();
 
-    private int maxChunkSize;
+    public ArrayList<StorageProperties> getStorageProperties() {
+        return storageProperties;
+    }
 
-    private boolean compress;
+    public void setStorageProperties(ArrayList<StorageProperties> storageProperties) {
+        this.storageProperties = storageProperties;
+    }
 
     public int getDatabaseId() {
         return databaseId;
@@ -17,29 +43,5 @@ public class WebCreateBackupRequest {
 
     public void setDatabaseId(int databaseId) {
         this.databaseId = databaseId;
-    }
-
-    public List<Integer> getCheckStorageList() {
-        return checkStorageList;
-    }
-
-    public void setCheckStorageList(List<Integer> checkStorageList) {
-        this.checkStorageList = checkStorageList;
-    }
-
-    public int getMaxChunkSize() {
-        return maxChunkSize;
-    }
-
-    public void setMaxChunkSize(int maxChunkSize) {
-        this.maxChunkSize = maxChunkSize;
-    }
-
-    public boolean isCompress() {
-        return compress;
-    }
-
-    public void setCompress(boolean compress) {
-        this.compress = compress;
     }
 }

@@ -1,15 +1,13 @@
 package com.example.demo;
 
-import com.example.demo.entities.backup.BackupProperties;
 import com.example.demo.entities.database.Database;
 import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.entities.database.PostgresSettings;
 import com.example.demo.entities.storage.DropboxSettings;
 import com.example.demo.entities.storage.LocalFileSystemSettings;
-import com.example.demo.entities.storage.Storage;
 import com.example.demo.entities.storage.StorageSettings;
-import com.example.demo.manager.BinaryStorageBackupLoadManager;
-import com.example.demo.manager.TextStorageBackupLoadManager;
+import com.example.demo.entities.storage.StorageType;
+import com.example.demo.manager.BackupLoadManager;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -25,18 +23,14 @@ import java.net.URI;
 import java.nio.file.FileSystems;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
 @Component
 class TestUtils {
-    private static final String dropboxAccessToken = "tzFnUqsYFXAAAAAAAAAAGWlPSXuRZBC16SDGHvaVayLEtM3wtFpAQD0enHv2p_2S";
+    private static final String dropboxAccessToken = "tzFnUqsYFXAAAAAAAAAAG-irDd6KaODXHm7TlYvPwBytOxGRTJz-F0u4grmndSg3";
 
     private static final String backup_path = FileSystems.getDefault().getPath("src/test").toAbsolutePath().toString();
 
-    private TextStorageBackupLoadManager textStorageBackupLoadManager;
-
-    private BinaryStorageBackupLoadManager binaryStorageBackupLoadManager;
+    private BackupLoadManager backupLoadManager;
 
     private StorageSettings localFileSystemStorageSettings;
 
@@ -66,13 +60,8 @@ class TestUtils {
     }
 
     @Autowired
-    public void setTextStorageBackupLoadManager(TextStorageBackupLoadManager textStorageBackupLoadManager) {
-        this.textStorageBackupLoadManager = textStorageBackupLoadManager;
-    }
-
-    @Autowired
-    public void setBinaryStorageBackupLoadManager(BinaryStorageBackupLoadManager binaryStorageBackupLoadManager) {
-        this.binaryStorageBackupLoadManager = binaryStorageBackupLoadManager;
+    public void setBackupLoadManager(BackupLoadManager backupLoadManager) {
+        this.backupLoadManager = backupLoadManager;
     }
 
     public DatabaseSettings buildDatabaseSettings(@NotNull Database databaseType, @NotNull DataSource dataSource) {
@@ -108,18 +97,18 @@ class TestUtils {
         }
     }
 
-    public StorageSettings buildStorageSettings(@NotNull Storage storageType) {
+    public StorageSettings buildStorageSettings(@NotNull StorageType storageType) {
         switch (storageType) {
             case LOCAL_FILE_SYSTEM: {
                 if (localFileSystemStorageSettings == null) {
                     LocalFileSystemSettings localFileSystemSettings = new LocalFileSystemSettings();
                     localFileSystemSettings.setBackupPath(backup_path);
                     logger.info("Initializing {} settings for the first time. Configuration Details: {}",
-                            Storage.LOCAL_FILE_SYSTEM, localFileSystemSettings);
+                            StorageType.LOCAL_FILE_SYSTEM, localFileSystemSettings);
                     localFileSystemStorageSettings = StorageSettings.localFileSystemSettings(localFileSystemSettings).build();
 
                     logger.info("Initializing {} storage settings for the first time completed. " +
-                            "Storage settings: {}", Storage.LOCAL_FILE_SYSTEM, localFileSystemStorageSettings);
+                            "StorageType settings: {}", StorageType.LOCAL_FILE_SYSTEM, localFileSystemStorageSettings);
                 }
                 return localFileSystemStorageSettings;
             }
@@ -128,11 +117,11 @@ class TestUtils {
                     DropboxSettings dropboxSettings = new DropboxSettings();
                     dropboxSettings.setAccessToken(dropboxAccessToken);
                     logger.info("Initializing {} settings for the first time. Configuration Details: {}",
-                            Storage.LOCAL_FILE_SYSTEM, dropboxSettings);
+                            StorageType.LOCAL_FILE_SYSTEM, dropboxSettings);
                     dropboxStorageSettings = StorageSettings.dropboxSettings(dropboxSettings).build();
 
                     logger.info("Initializing {} storage settings for the first time completed." +
-                            "{} storage settings: {}", Storage.LOCAL_FILE_SYSTEM, dropboxStorageSettings);
+                            "storage settings: {}", StorageType.DROPBOX, dropboxStorageSettings);
                 }
                 return dropboxStorageSettings;
             }
@@ -141,31 +130,6 @@ class TestUtils {
             }
         }
     }
-
-    public InputStream uploadAndDownloadTextBackup(InputStream backupStream, String databaseName, StorageSettings storageSettings) {
-        List<StorageSettings> storageSettingsList = new ArrayList<>();
-        storageSettingsList.add(storageSettings);
-
-        int maxChinkSize = 32000;
-        List<BackupProperties> backupPropertiesList = textStorageBackupLoadManager.uploadBackup(backupStream,
-                storageSettingsList, databaseName, maxChinkSize);
-        BackupProperties backupProperties = backupPropertiesList.get(0);
-
-        return textStorageBackupLoadManager.downloadBackup(storageSettings, backupProperties);
-    }
-
-    public InputStream uploadAndDownloadBinaryBackup(InputStream backupStream, String databaseName, StorageSettings storageSettings) {
-        List<StorageSettings> storageSettingsList = new ArrayList<>();
-        storageSettingsList.add(storageSettings);
-
-        int maxChinkSize = 32000;
-        List<BackupProperties> backupPropertiesList = binaryStorageBackupLoadManager.uploadBackup(backupStream,
-                storageSettingsList, databaseName, maxChinkSize);
-        BackupProperties backupProperties = backupPropertiesList.get(0);
-
-        return binaryStorageBackupLoadManager.downloadBackup(storageSettings, backupProperties);
-    }
-
 
     /**
      * Returns stream content as byte array.

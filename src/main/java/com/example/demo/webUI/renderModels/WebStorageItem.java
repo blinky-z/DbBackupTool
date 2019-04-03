@@ -1,9 +1,9 @@
 package com.example.demo.webUI.renderModels;
 
-import com.example.demo.entities.storage.Storage;
+import com.example.demo.entities.storage.StorageType;
 
 public class WebStorageItem {
-    private Storage type;
+    private StorageType type;
 
     private int id;
 
@@ -11,18 +11,18 @@ public class WebStorageItem {
 
     private String time;
 
-    public WebStorageItem(Storage type, int id, String desc, String time) {
+    public WebStorageItem(StorageType type, int id, String desc, String time) {
         this.type = type;
         this.id = id;
         this.desc = desc;
         this.time = time;
     }
 
-    public Storage getType() {
+    public StorageType getType() {
         return type;
     }
 
-    public void setType(Storage type) {
+    public void setType(StorageType type) {
         this.type = type;
     }
 

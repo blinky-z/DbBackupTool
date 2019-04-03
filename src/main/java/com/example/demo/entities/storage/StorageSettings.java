@@ -17,7 +17,7 @@ public class StorageSettings {
 
     @Enumerated(EnumType.STRING)
     @Column(updatable = false)
-    private Storage type;
+    private StorageType type;
 
     @Column(insertable = false, updatable = false)
     private Date date;
@@ -37,7 +37,7 @@ public class StorageSettings {
         this.date = date;
     }
 
-    void setType(Storage type) {
+    void setType(StorageType type) {
         this.type = type;
     }
 
@@ -45,7 +45,7 @@ public class StorageSettings {
         this.additionalStorageSettings = additionalStorageSettings;
     }
 
-    private StorageSettings(@NotNull Storage type, @NotNull AdditionalStorageSettings additionalStorageSettings) {
+    private StorageSettings(@NotNull StorageType type, @NotNull AdditionalStorageSettings additionalStorageSettings) {
         this.type = Objects.requireNonNull(type);
         this.additionalStorageSettings = Objects.requireNonNull(additionalStorageSettings);
     }
@@ -54,7 +54,7 @@ public class StorageSettings {
         return id;
     }
 
-    public Storage getType() {
+    public StorageType getType() {
         return type;
     }
 
@@ -71,7 +71,7 @@ public class StorageSettings {
     }
 
     public static final class Builder {
-        private Storage type;
+        private StorageType type;
 
         private LocalFileSystemSettings localFileSystemSettings;
 
@@ -89,14 +89,14 @@ public class StorageSettings {
 
     public static Builder localFileSystemSettings(@NotNull LocalFileSystemSettings localFileSystemSettings) {
         Builder builder = new Builder();
-        builder.type = Storage.LOCAL_FILE_SYSTEM;
+        builder.type = StorageType.LOCAL_FILE_SYSTEM;
         builder.localFileSystemSettings = Objects.requireNonNull(localFileSystemSettings);
         return builder;
     }
 
     public static Builder dropboxSettings(@NotNull DropboxSettings dropboxSettings) {
         Builder builder = new Builder();
-        builder.type = Storage.DROPBOX;
+        builder.type = StorageType.DROPBOX;
         builder.dropboxSettings = Objects.requireNonNull(dropboxSettings);
         return builder;
     }

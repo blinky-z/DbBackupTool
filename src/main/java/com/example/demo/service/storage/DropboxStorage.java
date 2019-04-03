@@ -11,13 +11,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.nio.charset.Charset;
 import java.util.List;
 
-public class DropboxTextStorage implements TextStorage {
+public class DropboxStorage implements Storage {
     private DbxClientV2 dbxClient;
 
-    private static final Logger logger = LoggerFactory.getLogger(DropboxTextStorage.class);
+    private static final Logger logger = LoggerFactory.getLogger(DropboxStorage.class);
 
     private String backupFolderPath;
 
@@ -29,12 +28,14 @@ public class DropboxTextStorage implements TextStorage {
 
     private static final String FILENAME_TEMPLATE = "%s_part%d";
 
-    public DropboxTextStorage(StorageSettings storageSettings, String backupName) {
+    public DropboxStorage(StorageSettings storageSettings, String backupName) {
         this.backupName = backupName;
         this.backupFolderPath = "/" + backupName;
+        currentBackupPart = 0;
         DbxRequestConfig config = DbxRequestConfig.newBuilder("dbBackup").build();
         DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(() -> new RuntimeException(
-                "Can't construct Dropbox Text Storage: Missing Dropbox Settings"));
+                "Can't construct Dropbox storage: Missing Settings"));
+        logger.info("Constructing new Dropbox Storage with provided settings: {}", dropboxSettings);
         dbxClient = new DbxClientV2(config, dropboxSettings.getAccessToken());
     }
 
@@ -43,28 +44,60 @@ public class DropboxTextStorage implements TextStorage {
         return backupFolderPath + "/" + filename + FILE_EXTENSION;
     }
 
+
+    /**
+     * Saves backup on Dropbox
+     *
+     * @param in the input stream to read backup from
+     */
     @Override
-    public void uploadBackup(String data) {
-        logger.info("Uploading plain-text backup chunk to Dropbox into folder {}", backupFolderPath);
-        String currentFilePath = getCurrentFilePartAsAbsolutePath();
-        try {
-            InputStream in = new ByteArrayInputStream(data.getBytes(Charset.defaultCharset()));
-            dbxClient.files().uploadBuilder(currentFilePath).uploadAndFinish(in);
-            currentBackupPart++;
+    public void uploadBackup(InputStream in) {
+        logger.info("Uploading backup to Dropbox. Backup folder: {}", backupFolderPath);
+
+        try (BufferedInputStream bufferedInputStream = new BufferedInputStream(in);
+             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+             BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream)
+        ) {
+            long maxChunkSize = 64L * 1024 * 1024;
+            int bytesRead;
+            long currentChunkSize = 0;
+
+            byte[] buffer = new byte[64 * 1024];
+            while ((bytesRead = bufferedInputStream.read(buffer)) != -1) {
+                currentChunkSize += bytesRead;
+                bufferedOutputStream.write(buffer, 0, bytesRead);
+
+                if (currentChunkSize >= maxChunkSize) {
+                    bufferedOutputStream.flush();
+                    String currentFilePath = getCurrentFilePartAsAbsolutePath();
+                    dbxClient.files().uploadBuilder(currentFilePath).uploadAndFinish(
+                            new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
+                    currentBackupPart++;
+
+                    byteArrayOutputStream.reset();
+                    currentChunkSize = 0;
+                }
+            }
+            if (currentChunkSize != 0) {
+                bufferedOutputStream.flush();
+                String currentFilePath = getCurrentFilePartAsAbsolutePath();
+                dbxClient.files().uploadBuilder(currentFilePath).uploadAndFinish(
+                        new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
+                byteArrayOutputStream.reset();
+            }
         } catch (DbxException | IOException ex) {
-            throw new RuntimeException("Error occurred while uploading backup to Dropbox", ex);
+            throw new RuntimeException("Error occurred while uploading binary backup to Dropbox", ex);
         }
 
-        logger.info("Plain-text backup chunk successfully saved on Dropbox. Created file: {}",
-                currentFilePath.substring(currentFilePath.lastIndexOf("/") + 1));
+        logger.info("Backup successfully saved on Dropbox. Backup folder: {}", backupFolderPath);
     }
 
     private class BackupDownloader implements Runnable {
         OutputStream out;
 
-        int filesCount;
+        long filesCount;
 
-        BackupDownloader(OutputStream out, int filesCount) {
+        BackupDownloader(OutputStream out, long filesCount) {
             this.out = out;
             this.filesCount = filesCount;
         }
@@ -79,22 +112,24 @@ public class DropboxTextStorage implements TextStorage {
                     dbxClient.files().downloadBuilder(currentFile).download(out);
                 }
                 out.close();
-                logger.info("Downloading of plain-text backup from Dropbox successfully completed. Backup folder: {}", backupFolderPath);
+                logger.info("Downloading backup from Dropbox completed. Backup folder: {}", backupFolderPath);
             } catch (DbxException | IOException ex) {
                 throw new RuntimeException(
-                        String.format("Error occurred while downloading plain-text backup from Dropbox. Backup folder: %s",
+                        String.format("Error occurred while downloading backup from Dropbox. Backup folder: %s",
                                 backupFolderPath), ex);
             }
         }
     }
 
-    @Override
+    /**
+     * Downloads backup from the file system.
+     *
+     * @return input stream, from which backup can be read
+     */
     public InputStream downloadBackup() {
-        logger.info("Downloading plain-text backup from Dropbox. Backup folder: {}", backupFolderPath);
+        logger.info("Downloading backup from Dropbox. Backup folder: {}", backupFolderPath);
 
-        PipedOutputStream out = new PipedOutputStream();
-
-        int filesCount;
+        long filesCount;
         try {
             ListFolderResult listFolderResult = dbxClient.files().listFolder(backupFolderPath);
             List<Metadata> listFolderMetadata = listFolderResult.getEntries();
@@ -104,6 +139,7 @@ public class DropboxTextStorage implements TextStorage {
         }
 
         try {
+            PipedOutputStream out = new PipedOutputStream();
             PipedInputStream in = new PipedInputStream();
             in.connect(out);
 
@@ -112,7 +148,7 @@ public class DropboxTextStorage implements TextStorage {
 
             return in;
         } catch (IOException ex) {
-            throw new RuntimeException("Error occurred while initializing plain-text backup downloading from Dropbox", ex);
+            throw new RuntimeException("Error occurred while initializing backup downloading from Dropbox", ex);
         }
     }
 }

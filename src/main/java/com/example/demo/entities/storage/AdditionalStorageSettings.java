@@ -4,13 +4,13 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 class AdditionalStorageSettings {
-    private Storage type;
+    private StorageType type;
 
     private LocalFileSystemSettings localFileSystemSettings;
 
     private DropboxSettings dropboxSettings;
 
-    public Storage getType() {
+    public StorageType getType() {
         return type;
     }
 
@@ -23,7 +23,7 @@ class AdditionalStorageSettings {
     }
 
     @JsonCreator
-    AdditionalStorageSettings(@JsonProperty("type") Storage type,
+    AdditionalStorageSettings(@JsonProperty("type") StorageType type,
                               @JsonProperty("localFileSystemSettings") LocalFileSystemSettings localFileSystemSettings,
                               @JsonProperty("dropboxSettings") DropboxSettings dropboxSettings) {
         this.type = type;

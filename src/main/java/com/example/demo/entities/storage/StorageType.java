@@ -2,7 +2,7 @@ package com.example.demo.entities.storage;
 
 import java.util.Optional;
 
-public enum Storage {
+public enum StorageType {
     DROPBOX("dropbox") {
         public String toString() {
             return "Dropbox";
@@ -16,12 +16,12 @@ public enum Storage {
 
     private final String storageAsString;
 
-    Storage(String storageAsString) {
+    StorageType(String storageAsString) {
         this.storageAsString = storageAsString;
     }
 
-    public static Optional<Storage> of(String storage) {
-        for (Storage value : values()) {
+    public static Optional<StorageType> of(String storage) {
+        for (StorageType value : values()) {
             if (value.storageAsString.equals(storage)) {
                 return Optional.of(value);
             }

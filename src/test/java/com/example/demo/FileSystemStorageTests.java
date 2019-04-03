@@ -1,10 +1,12 @@
 package com.example.demo;
 
+import com.example.demo.entities.backup.BackupProperties;
 import com.example.demo.entities.database.DatabaseSettings;
-import com.example.demo.entities.storage.Storage;
 import com.example.demo.entities.storage.StorageSettings;
+import com.example.demo.entities.storage.StorageType;
+import com.example.demo.manager.BackupLoadManager;
+import com.example.demo.manager.BackupProcessorManager;
 import com.example.demo.manager.DatabaseBackupManager;
-import com.example.demo.service.processor.BackupCompressor;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,14 +18,14 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class FileSystemStorageTests extends ApplicationTests {
-    private BackupCompressor backupCompressor;
-
     private TestUtils testUtils;
 
     private DatabaseBackupManager databaseBackupManager;
@@ -32,14 +34,13 @@ public class FileSystemStorageTests extends ApplicationTests {
 
     private DatabaseSettings masterDatabaseSettings;
 
+    private BackupProcessorManager backupProcessorManager;
+
+    private BackupLoadManager backupLoadManager;
+
     @Autowired
     public void setTestUtils(TestUtils testUtils) {
         this.testUtils = testUtils;
-    }
-
-    @Autowired
-    public void setBackupCompressor(BackupCompressor backupCompressor) {
-        this.backupCompressor = backupCompressor;
     }
 
     @Autowired
@@ -57,6 +58,16 @@ public class FileSystemStorageTests extends ApplicationTests {
         this.jdbcMasterTemplate = jdbcMasterTemplate;
     }
 
+    @Autowired
+    public void setBackupProcessorManager(BackupProcessorManager backupProcessorManager) {
+        this.backupProcessorManager = backupProcessorManager;
+    }
+
+    @Autowired
+    public void setBackupLoadManager(BackupLoadManager backupLoadManager) {
+        this.backupLoadManager = backupLoadManager;
+    }
+
     @Before
     public void setUp() {
         testUtils.clearDatabase(jdbcMasterTemplate);
@@ -65,7 +76,9 @@ public class FileSystemStorageTests extends ApplicationTests {
 
     @Test
     public void whenUploadTextBackupAndDownload_contentIsEqual() {
-        StorageSettings storageSettings = testUtils.buildStorageSettings(Storage.LOCAL_FILE_SYSTEM);
+        StorageSettings storageSettings = testUtils.buildStorageSettings(StorageType.LOCAL_FILE_SYSTEM);
+
+        List<String> processors = new ArrayList<>();
 
         try (
                 InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings)
@@ -73,11 +86,15 @@ public class FileSystemStorageTests extends ApplicationTests {
             byte[] streamContent = testUtils.getStreamCopyAsByteArray(backupStream);
             try (
                     InputStream inputStream = new ByteArrayInputStream(streamContent);
-                    InputStream copyInputStream = new ByteArrayInputStream(streamContent);
-                    InputStream downloadedBackup = testUtils.uploadAndDownloadTextBackup(copyInputStream, masterDatabaseSettings.getName(),
-                            storageSettings)
+                    InputStream copyInputStream = new ByteArrayInputStream(streamContent)
             ) {
-                assertTrue(testUtils.streamsContentEquals(inputStream, downloadedBackup));
+                BackupProperties backupProperties = backupLoadManager.uploadBackup(copyInputStream, storageSettings, processors,
+                        masterDatabaseSettings.getName());
+                try (
+                        InputStream downloadedBackup = backupLoadManager.downloadBackup(storageSettings, backupProperties)
+                ) {
+                    assertTrue(testUtils.streamsContentEquals(inputStream, downloadedBackup));
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -86,20 +103,27 @@ public class FileSystemStorageTests extends ApplicationTests {
 
     @Test
     public void whenUploadCompressedBackupAndDownload_contentIsEqual() {
-        StorageSettings storageSettings = testUtils.buildStorageSettings(Storage.LOCAL_FILE_SYSTEM);
+        StorageSettings storageSettings = testUtils.buildStorageSettings(StorageType.LOCAL_FILE_SYSTEM);
+
+        List<String> processors = new ArrayList<>();
+        processors.add("Processor");
 
         try (
                 InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings);
-                InputStream compressedBackup = backupCompressor.compressBackup(backupStream)
+                InputStream compressedBackup = backupProcessorManager.process(backupStream, processors)
         ) {
             byte[] compressedBackupContent = testUtils.getStreamCopyAsByteArray(compressedBackup);
             try (
                     InputStream inputStream = new ByteArrayInputStream(compressedBackupContent);
                     InputStream copyInputStream = new ByteArrayInputStream(compressedBackupContent);
-                    InputStream downloadedCompressedBackup = testUtils.uploadAndDownloadBinaryBackup(copyInputStream,
-                            masterDatabaseSettings.getName(), storageSettings)
             ) {
-                assertTrue(testUtils.streamsContentEquals(inputStream, downloadedCompressedBackup));
+                BackupProperties backupProperties = backupLoadManager.uploadBackup(copyInputStream, storageSettings, processors,
+                        masterDatabaseSettings.getName());
+                try (
+                        InputStream downloadedBackup = backupLoadManager.downloadBackup(storageSettings, backupProperties)
+                ) {
+                    assertTrue(testUtils.streamsContentEquals(inputStream, downloadedBackup));
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -108,7 +132,10 @@ public class FileSystemStorageTests extends ApplicationTests {
 
     @Test
     public void whenUploadCompressedBackupAndDownloadAndDecompress_contentIsEqualToSource() {
-        StorageSettings storageSettings = testUtils.buildStorageSettings(Storage.LOCAL_FILE_SYSTEM);
+        StorageSettings storageSettings = testUtils.buildStorageSettings(StorageType.LOCAL_FILE_SYSTEM);
+
+        List<String> processors = new ArrayList<>();
+        processors.add("Processor");
 
         try (
                 InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings)
@@ -117,13 +144,16 @@ public class FileSystemStorageTests extends ApplicationTests {
             try (
                     InputStream inputStream = new ByteArrayInputStream(sourceBackupContent);
                     InputStream copyInputStream = new ByteArrayInputStream(sourceBackupContent);
-                    InputStream compressedBackup = backupCompressor.compressBackup(copyInputStream);
-                    InputStream downloadedCompressedBackup = testUtils.uploadAndDownloadBinaryBackup(compressedBackup,
-                            masterDatabaseSettings.getName(), storageSettings);
-                    InputStream decompressedDownloadedBackup = backupCompressor.decompressBackup(downloadedCompressedBackup)
+                    InputStream compressedBackup = backupProcessorManager.process(copyInputStream, processors)
             ) {
-                assertTrue(testUtils.streamsContentEquals(inputStream, decompressedDownloadedBackup));
-
+                BackupProperties backupProperties = backupLoadManager.uploadBackup(compressedBackup, storageSettings, processors,
+                        masterDatabaseSettings.getName());
+                try (
+                        InputStream downloadedBackup = backupLoadManager.downloadBackup(storageSettings, backupProperties);
+                        InputStream decompressedBackup = backupProcessorManager.deprocess(downloadedBackup, processors);
+                ) {
+                    assertTrue(testUtils.streamsContentEquals(inputStream, decompressedBackup));
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();

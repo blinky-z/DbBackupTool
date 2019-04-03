@@ -1,6 +1,6 @@
 package com.example.demo.manager;
 
-import com.example.demo.entities.storage.Storage;
+import com.example.demo.entities.storage.StorageType;
 import com.example.demo.entities.storage.StorageSettings;
 import com.example.demo.repositories.StorageSettingsRepository;
 import org.jetbrains.annotations.NotNull;
@@ -34,7 +34,7 @@ public class StorageSettingsManager {
         return storageSettingsRepository.findAll();
     }
 
-    public Iterable<StorageSettings> getAllByType(@NotNull Storage type) {
+    public Iterable<StorageSettings> getAllByType(@NotNull StorageType type) {
         return storageSettingsRepository.getAllByType(type);
     }
 }

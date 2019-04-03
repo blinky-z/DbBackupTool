@@ -14,7 +14,7 @@ public class DropboxSettings {
     @Override
     public String toString() {
         return "DropboxSettings{" +
-                ", accessToken='" + accessToken + '\'' +
+                "accessToken='" + accessToken + '\'' +
                 '}';
     }
 }
