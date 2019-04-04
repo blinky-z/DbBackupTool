@@ -7,57 +7,41 @@ import com.dropbox.core.v2.files.ListFolderResult;
 import com.dropbox.core.v2.files.Metadata;
 import com.example.demo.entities.storage.DropboxSettings;
 import com.example.demo.entities.storage.StorageSettings;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.util.List;
 
+@Service
 public class DropboxStorage implements Storage {
-    private DbxClientV2 dbxClient;
-
     private static final Logger logger = LoggerFactory.getLogger(DropboxStorage.class);
 
-    private String backupFolderPath;
-
-    private String backupName;
-
-    private long currentBackupPart;
-
-    private static final String FILE_EXTENSION = ".dat";
-
-    private static final String FILENAME_TEMPLATE = "%s_part%d";
-
-    public DropboxStorage(StorageSettings storageSettings, String backupName) {
-        this.backupName = backupName;
-        this.backupFolderPath = "/" + backupName;
-        currentBackupPart = 0;
-        DbxRequestConfig config = DbxRequestConfig.newBuilder("dbBackup").build();
-        DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(() -> new RuntimeException(
-                "Can't construct Dropbox storage: Missing Settings"));
-        logger.info("Constructing new Dropbox Storage with provided settings: {}", dropboxSettings);
-        dbxClient = new DbxClientV2(config, dropboxSettings.getAccessToken());
-    }
-
-    private String getCurrentFilePartAsAbsolutePath() {
-        String filename = String.format(FILENAME_TEMPLATE, backupName, currentBackupPart);
+    private String getCurrentFilePartAsAbsolutePath(String backupFolderPath, String backupName, long backupPart) {
+        String filename = String.format(FILENAME_TEMPLATE, backupName, backupPart);
         return backupFolderPath + "/" + filename + FILE_EXTENSION;
     }
 
-
     /**
-     * Saves backup on Dropbox
+     * Uploads backup to Dropbox
      *
-     * @param in the input stream to read backup from
+     * Backup is saved into root folder, which is usually is an app folder
      */
-    @Override
-    public void uploadBackup(InputStream in) {
+    public void uploadBackup(@NotNull InputStream in, @NotNull StorageSettings storageSettings, @NotNull String backupName) {
+        String backupFolderPath = "/" + backupName;
         logger.info("Uploading backup to Dropbox. Backup folder: {}", backupFolderPath);
+        DbxRequestConfig config = DbxRequestConfig.newBuilder("dbBackupUploader").build();
+        DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(() -> new RuntimeException(
+                "Can't upload backup Dropbox storage: Missing Dropbox Settings"));
+        DbxClientV2 dbxClient = new DbxClientV2(config, dropboxSettings.getAccessToken());
 
         try (BufferedInputStream bufferedInputStream = new BufferedInputStream(in);
              ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
              BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream)
         ) {
+            long currentBackupPart = 0;
             long maxChunkSize = 64L * 1024 * 1024;
             int bytesRead;
             long currentChunkSize = 0;
@@ -69,7 +53,7 @@ public class DropboxStorage implements Storage {
 
                 if (currentChunkSize >= maxChunkSize) {
                     bufferedOutputStream.flush();
-                    String currentFilePath = getCurrentFilePartAsAbsolutePath();
+                    String currentFilePath = getCurrentFilePartAsAbsolutePath(backupFolderPath, backupName, currentBackupPart);
                     dbxClient.files().uploadBuilder(currentFilePath).uploadAndFinish(
                             new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
                     currentBackupPart++;
@@ -80,7 +64,7 @@ public class DropboxStorage implements Storage {
             }
             if (currentChunkSize != 0) {
                 bufferedOutputStream.flush();
-                String currentFilePath = getCurrentFilePartAsAbsolutePath();
+                String currentFilePath = getCurrentFilePartAsAbsolutePath(backupFolderPath, backupName, currentBackupPart);
                 dbxClient.files().uploadBuilder(currentFilePath).uploadAndFinish(
                         new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
                 byteArrayOutputStream.reset();
@@ -93,20 +77,30 @@ public class DropboxStorage implements Storage {
     }
 
     private class BackupDownloader implements Runnable {
-        OutputStream out;
+        private OutputStream out;
 
-        long filesCount;
+        private DbxClientV2 dbxClient;
 
-        BackupDownloader(OutputStream out, long filesCount) {
+        private long filesCount;
+
+        private String backupFolderPath;
+
+        private String backupName;
+
+        BackupDownloader(OutputStream out, DbxClientV2 dbxClient, String backupFolderPath,
+                         String backupName, long filesCount) {
             this.out = out;
+            this.dbxClient = dbxClient;
+            this.backupFolderPath = backupFolderPath;
+            this.backupName = backupName;
             this.filesCount = filesCount;
         }
 
         public void run() {
             try {
                 logger.info("Total files in backup folder on Dropbox: {}. Backup folder: {}", filesCount, backupFolderPath);
-                for (currentBackupPart = 0; currentBackupPart < filesCount; currentBackupPart++) {
-                    String currentFile = getCurrentFilePartAsAbsolutePath();
+                for (long currentBackupPart = 0; currentBackupPart < filesCount; currentBackupPart++) {
+                    String currentFile = getCurrentFilePartAsAbsolutePath(backupFolderPath, backupName, currentBackupPart);
                     logger.info("Downloading file [{}]: '{}'...", currentBackupPart,
                             currentFile.substring(currentFile.lastIndexOf("/") + 1));
                     dbxClient.files().downloadBuilder(currentFile).download(out);
@@ -122,12 +116,15 @@ public class DropboxStorage implements Storage {
     }
 
     /**
-     * Downloads backup from the file system.
-     *
-     * @return input stream, from which backup can be read
+     * Downloads backup from Dropbox
      */
-    public InputStream downloadBackup() {
+    public InputStream downloadBackup(@NotNull StorageSettings storageSettings, @NotNull String backupName) {
+        String backupFolderPath = "/" + backupName;
         logger.info("Downloading backup from Dropbox. Backup folder: {}", backupFolderPath);
+        DbxRequestConfig config = DbxRequestConfig.newBuilder("dbBackupDownloader").build();
+        DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(() -> new RuntimeException(
+                "Can't download backup from Dropbox storage: Missing Dropbox Settings"));
+        DbxClientV2 dbxClient = new DbxClientV2(config, dropboxSettings.getAccessToken());
 
         long filesCount;
         try {
@@ -143,7 +140,7 @@ public class DropboxStorage implements Storage {
             PipedInputStream in = new PipedInputStream();
             in.connect(out);
 
-            Thread backupDownloader = new Thread(new BackupDownloader(out, filesCount));
+            Thread backupDownloader = new Thread(new BackupDownloader(out, dbxClient, backupFolderPath, backupName, filesCount));
             backupDownloader.start();
 
             return in;

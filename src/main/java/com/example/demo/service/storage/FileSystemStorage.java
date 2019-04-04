@@ -4,6 +4,7 @@ import com.example.demo.entities.storage.LocalFileSystemSettings;
 import com.example.demo.entities.storage.StorageSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -11,66 +12,44 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+@Service
 public class FileSystemStorage implements Storage {
-    private StorageSettings storageSettings;
-
-    private LocalFileSystemSettings localFileSystemSettings;
-
     private static final Logger logger = LoggerFactory.getLogger(FileSystemStorage.class);
 
-    private String backupName;
-
-    private long currentBackupPart;
-
-    private String backupFolderPath;
-
-    private static final String FILE_EXTENSION = ".dat";
-
-    private static final String FILENAME_TEMPLATE = "%s_part%d";
-
-    private String getCurrentFilePartAsAbsolutePath() {
+    private String getCurrentFilePartAsAbsolutePath(String backupFolderPath, String backupName, long currentBackupPart) {
         String filename = String.format(FILENAME_TEMPLATE, backupName, currentBackupPart);
         return backupFolderPath + File.separator + filename + FILE_EXTENSION;
     }
 
-    private File createNewFile() {
-        File backupFolder = new File(backupFolderPath);
-        if (!backupFolder.exists()) {
-            if (!backupFolder.mkdir()) {
-                throw new RuntimeException("Error creating backup folder");
-            }
-        }
-        File currentFile = new File(getCurrentFilePartAsAbsolutePath());
-        return currentFile;
-    }
-
-    public FileSystemStorage(StorageSettings storageSettings, String backupName) {
-        this.storageSettings = storageSettings;
-        this.localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(() -> new RuntimeException(
-                "Can't construct File System StorageType: Missing Settings"));
-        this.backupName = backupName;
-        String backupPath = localFileSystemSettings.getBackupPath().replace("/", File.separator);
-        this.backupFolderPath = backupPath + File.separator + backupName;
-    }
-
     /**
-     * Saves backup on the File System.
+     * Uploads backup to Local File System
      *
-     * @param in the input stream to read backup from
      */
     @Override
-    public void uploadBackup(InputStream in) {
-        logger.info("Uploading backup chunk to the Local File System into folder {}", backupFolderPath);
+    public void uploadBackup(InputStream in, StorageSettings storageSettings, String backupName) {
+        LocalFileSystemSettings localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(() ->
+                new RuntimeException("Can't upload backup to Local File System storage: Missing Storage Settings"));
+        String backupFolderPath = localFileSystemSettings.getBackupPath().replace("/", File.separator);
+        backupFolderPath = backupFolderPath + File.separator + backupName;
+
+        logger.info("Uploading backup chunk to the Local File System. Backup folder: {}", backupFolderPath);
 
         try (
                 BufferedInputStream bufferedInputStream = new BufferedInputStream(in)
         ) {
             long maxChunkSize = 64L * 1024;
+            long currentBackupPart = 0;
             long currentChunkSize;
             int bytesRead = 0;
 
+            File backupFolder = new File(backupFolderPath);
+            if (!backupFolder.mkdir()) {
+                throw new RuntimeException(
+                        "Can't upload backup to Local File System storage: error creating backup folder to save backup to");
+            }
+
             while (bytesRead != -1) {
-                File currentFile = createNewFile();
+                File currentFile = new File(getCurrentFilePartAsAbsolutePath(backupFolderPath, backupName, currentBackupPart));
                 currentChunkSize = 0;
 
                 try (
@@ -98,12 +77,15 @@ public class FileSystemStorage implements Storage {
     }
 
     /**
-     * Downloads backup from the file system.
-     *
-     * @return input stream, from which backup can be read
+     * Downloads backup from Local File System
      */
     @Override
-    public InputStream downloadBackup() {
+    public InputStream downloadBackup(StorageSettings storageSettings, String backupName) {
+        LocalFileSystemSettings localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(() ->
+                new RuntimeException("Can't download backup from Local File System storage: Missing Storage Settings"));
+        String backupFolderPath = localFileSystemSettings.getBackupPath().replace("/", File.separator);
+        backupFolderPath = backupFolderPath + File.separator + backupName;
+
         logger.info("Downloading backup from the Local File System. Backup folder: {}", backupFolderPath);
         try {
             List<InputStream> backupFileStreamList = new ArrayList<>();
@@ -112,9 +94,9 @@ public class FileSystemStorage implements Storage {
 
             logger.info("Total files in backup folder on Local File System: {}. Backup folder: {}", filesCount, backupFolderPath);
 
-            for (currentBackupPart = 0; currentBackupPart < filesCount; currentBackupPart++) {
-                File backupFile = new File(getCurrentFilePartAsAbsolutePath());
-                logger.info("Downloading file [{}]: '{}'", currentBackupPart, backupFile.getName());
+            for (long currentBackupPart = 0; currentBackupPart < filesCount; currentBackupPart++) {
+                File backupFile = new File(getCurrentFilePartAsAbsolutePath(backupFolderPath, backupName, currentBackupPart));
+                logger.info("Downloading file [{}/{}]: '{}'", currentBackupPart, filesCount, backupFile.getName());
                 backupFileStreamList.add(new FileInputStream(backupFile));
             }
 
