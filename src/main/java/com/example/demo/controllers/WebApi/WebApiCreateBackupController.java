@@ -1,5 +1,6 @@
 package com.example.demo.controllers.WebApi;
 
+import com.example.demo.controllers.WebApi.Errors.ValidationError;
 import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.entities.storage.StorageSettings;
 import com.example.demo.manager.*;
@@ -14,7 +15,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 @Controller
 @RequestMapping("/create-backup")
@@ -56,9 +59,37 @@ public class WebApiCreateBackupController {
         this.backupProcessorManager = backupProcessorManager;
     }
 
+    private String validateCreateBackupRequest(WebCreateBackupRequest createBackupRequest) {
+        if (createBackupRequest.getDatabaseId() == null) {
+            return "Please, provide database to backup";
+        }
+
+        HashMap<Integer, WebCreateBackupRequest.BackupCreationProperties> backupCreationProperties =
+                createBackupRequest.getBackupCreationProperties();
+        logger.info("Storages amount to upload backup to: {}", backupCreationProperties.size());
+        if (backupCreationProperties.size() == 0) {
+            return "Please, select at least one storage to upload backup to";
+        }
+
+        Set<Integer> storages = backupCreationProperties.keySet();
+        for (Integer currentStorageId : storages) {
+            WebCreateBackupRequest.BackupCreationProperties currentBackupCreationProperties = backupCreationProperties.get(currentStorageId);
+            if (currentBackupCreationProperties == null) {
+                return "Invalid Storage settings with ID " + currentStorageId;
+            }
+        }
+
+        return "";
+    }
+
     @PostMapping
     public ResponseEntity createBackup(WebCreateBackupRequest createBackupRequest) {
         logger.info("createBackup(): Got backup creation job");
+
+        String error = validateCreateBackupRequest(createBackupRequest);
+        if (!error.isEmpty()) {
+            throw new ValidationError(error);
+        }
 
         int databaseId = createBackupRequest.getDatabaseId();
         DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseId).orElseThrow(() -> new RuntimeException(
@@ -67,7 +98,8 @@ public class WebApiCreateBackupController {
 
         logger.info("createBackup(): Database settings: {}", databaseSettings);
 
-        for (WebCreateBackupRequest.BackupCreationProperties backupCreationProperties : createBackupRequest.getBackupCreationProperties()) {
+        for (WebCreateBackupRequest.BackupCreationProperties backupCreationProperties :
+                createBackupRequest.getBackupCreationProperties().values()) {
             int storageId = backupCreationProperties.getId();
             StorageSettings storageSettings = storageSettingsManager.getById(storageId).orElseThrow(() -> new RuntimeException(
                     String.format("createBackup(): Can't retrieve storage settings. Error: no storage settings with ID %d",

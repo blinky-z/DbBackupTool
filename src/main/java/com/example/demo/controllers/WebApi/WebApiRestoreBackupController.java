@@ -1,10 +1,12 @@
 package com.example.demo.controllers.WebApi;
 
+import com.example.demo.controllers.WebApi.Errors.ValidationError;
 import com.example.demo.controllers.WebFrontController;
 import com.example.demo.entities.backup.BackupProperties;
 import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.entities.storage.StorageSettings;
 import com.example.demo.manager.*;
+import com.example.demo.webUI.formTransfer.WebCreateBackupRequest;
 import com.example.demo.webUI.formTransfer.WebRestoreBackupRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,10 +66,25 @@ public class WebApiRestoreBackupController {
         this.backupProcessorManager = backupProcessorManager;
     }
 
+    private String validateRestoreBackupRequest(WebRestoreBackupRequest restoreBackupRequest) {
+        if (restoreBackupRequest.getBackupId() == null) {
+            return "Please, provide backup to restore";
+        }
+        if (restoreBackupRequest.getDatabaseId() == null) {
+            return "Please, provide database to restore backup to";
+        }
+
+        return "";
+    }
+
     @PostMapping
     public ResponseEntity restoreBackup(WebRestoreBackupRequest restoreBackupRequest) {
-        logger.info("restoreBackup(): Got backup restoration job. Backup id: {}. Database id: {}",
-                restoreBackupRequest.getBackupId(), restoreBackupRequest.getDatabaseId());
+        logger.info("restoreBackup(): Got backup restoration job");
+
+        String error = validateRestoreBackupRequest(restoreBackupRequest);
+        if (!error.isEmpty()) {
+            throw new ValidationError(error);
+        }
 
         Integer backupId = restoreBackupRequest.getBackupId();
         BackupProperties backupProperties = backupPropertiesManager.getById(backupId).orElseThrow(() ->

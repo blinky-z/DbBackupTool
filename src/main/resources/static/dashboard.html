@@ -138,7 +138,7 @@
                             <form id="configureStorageForm" action="/storage" method="post">
                                 <div class="form-group">
                                     <label for="configureStorage.selectStorage">Select Storage</label>
-                                    <select class="form-control" name="storageType" id="configureStorage.selectStorage" required>
+                                    <select class="form-control" name="storageType" id="configureStorage.selectStorage">
                                         <option value="" selected disabled>Select Storage</option>
                                         <option value="localFileSystem" id="localFileSystemStorageSelect">Local File System</option>
                                         <option value="dropbox" id="dropboxStorageSelect">Dropbox</option>
@@ -230,7 +230,7 @@
                             <form id="configureDatabaseForm" action="/database" method="post">
                                 <div class="form-group">
                                     <label for="configureDatabase-selectDatabase">Select Database</label>
-                                    <select class="form-control" name="databaseType" id="configureDatabase-selectDatabase" required>
+                                    <select class="form-control" name="databaseType" id="configureDatabase-selectDatabase">
                                         <option value="" selected disabled>Select Database</option>
                                         <option value="postgres" id="postgresDatabaseSelect">Postgres</option>
                                     </select>
@@ -239,20 +239,20 @@
                                 <div class="form-group" id="commonDatabaseInputFields">
                                     <label for="createDatabaseHostInput">Host</label>
                                     <input type="text" class="form-control form-control-sm" id="createDatabaseHostInput"
-                                           name="host" placeholder="" required>
+                                           name="host" placeholder="">
                                     <label for="createDatabasePortInput">Port</label>
                                     <input type="text" class="form-control form-control-sm" id="createDatabasePortInput"
-                                           name="port" placeholder="" required>
+                                           name="port" placeholder="">
                                     <label for="createDatabaseNameInput">Database name</label>
                                     <input type="text" class="form-control form-control-sm" id="createDatabaseNameInput"
-                                           name="name" placeholder="" required>
+                                           name="name" placeholder="">
                                     <label for="createDatabaseLoginInput">Database login</label>
                                     <input type="text" class="form-control form-control-sm" id="createDatabaseLoginInput"
-                                           name="login" placeholder="" required>
+                                           name="login" placeholder="">
                                     <label for="createDatabasePasswordInput">Database password</label>
                                     <input type="text" class="form-control form-control-sm" id="createDatabasePasswordInput"
                                            name="password"
-                                           placeholder="" required>
+                                           placeholder="">
                                 </div>
 
                                 <!--Database select based content-->
@@ -274,7 +274,7 @@
                     <form id="createBackupForm" th:action="@{/create-backup}" method="post">
                         <div class="form-group">
                             <label for="createBackup-selectDatabase">Select database to backup</label>
-                            <select class="form-control" name="databaseId" id="createBackup-selectDatabase" required>
+                            <select class="form-control" name="databaseId" id="createBackup-selectDatabase">
                                 <option value="" disabled selected>Select Database</option>
                                 <option th:each="database: ${databaseList}" th:object="${database}" th:value="*{id}"
                                         th:text="${'Database: ' + database.type +
@@ -299,7 +299,7 @@
                             <tr th:each="storage, iterStat: ${storageList}" class="storageItem">
                                 <td>
                                     <div class="input-group">
-                                        <input type="checkbox" th:name="|backupCreationProperties[${iterStat.index}].id|" th:value="${storage.id}">
+                                        <input type="checkbox" th:name="|backupCreationProperties[${storage.id}].id|" th:value="${storage.id}">
                                     </div>
                                 </td>
                                 <th scope="row" th:text="${storage.type}"></th>
@@ -308,7 +308,7 @@
                                 <td>
                                     <div class="form-check form-group">
                                         <input type="checkbox" class="form-check-input"
-                                               th:name="|backupCreationProperties[${iterStat.index}].processors|" th:value="'Compressor'">
+                                               th:name="|backupCreationProperties[${storage.id}].processors|" th:value="'Compressor'">
                                     </div>
                             </tr>
                             </tbody>
@@ -325,7 +325,7 @@
 
                         <div class="form-group">
                             <label for="restoreBackup-selectBackup">Select backup to restore from</label>
-                            <select class="form-control" name="backupId" id="restoreBackup-selectBackup" required>
+                            <select class="form-control" name="backupId" id="restoreBackup-selectBackup">
                                 <option value="" disabled selected>Select Backup</option>
                                 <option th:each="backup: ${backupList}" th:object="${backup}" th:value="*{id}"
                                         th:text="${'Backup name: ' + backup.name + ' | Details: ' + backup.desc +
@@ -336,33 +336,13 @@
 
                         <div class="form-group">
                             <label for="restoreBackup-selectDatabase">Select database to restore to</label>
-                            <select class="form-control" name="databaseId" id="restoreBackup-selectDatabase" required>
+                            <select class="form-control" name="databaseId" id="restoreBackup-selectDatabase">
                                 <option value="" disabled selected>Select Database</option>
                                 <option th:each="database: ${databaseList}" th:object="${database}" th:value="*{id}"
                                         th:text="${'Database type: ' + database.type.toString() + ' | Details: ' + database.desc}">
                                 </option>
                             </select>
                         </div>
-
-                        <!--<label for="selectDatabaseToRestoreToList">Select database to restore to</label>-->
-                        <!--<table class="table table-hover table-bordered" id="selectDatabaseToRestoreToList">-->
-                        <!--<thead class="thead-dark">-->
-                        <!--<tr>-->
-                        <!--<th scope="col"></th>-->
-                        <!--<th scope="col" class="col-md-2">Database</th>-->
-                        <!--<th scope="col" class="col-md-6">Description</th>-->
-                        <!--<th scope="col" class="col-md-3">Creation time</th>-->
-                        <!--</tr>-->
-                        <!--</thead>-->
-                        <!--<tbody>-->
-                        <!--<tr th:each="database: ${databaseList}" class="databaseItem" th:object="${database}">-->
-                        <!--<td><input type="checkbox" name="checkDatabaseList" th:value="*{id}"></td>-->
-                        <!--<th scope="row" th:text="*{type}"></th>-->
-                        <!--<td th:text="*{desc}"></td>-->
-                        <!--<td th:text="*{time}"></td>-->
-                        <!--</tr>-->
-                        <!--</tbody>-->
-                        <!--</table>-->
 
                         <button type="submit" class="btn btn-primary">Restore</button>
                     </form>

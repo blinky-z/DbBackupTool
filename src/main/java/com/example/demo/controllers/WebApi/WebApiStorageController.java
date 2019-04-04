@@ -1,5 +1,6 @@
 package com.example.demo.controllers.WebApi;
 
+import com.example.demo.controllers.WebApi.Errors.ValidationError;
 import com.example.demo.entities.storage.DropboxSettings;
 import com.example.demo.entities.storage.LocalFileSystemSettings;
 import com.example.demo.entities.storage.StorageSettings;
@@ -33,24 +34,72 @@ public class WebApiStorageController {
     }
 
     @DeleteMapping
-    public String deleteStorage(@RequestParam(value = "id") int id) {
-        logger.info("deleteStorage(): Got storage configuration deletion job. StorageType ID: {}", id);
+    public String deleteStorage(@RequestParam(value = "id") Optional<Integer> optionalId) {
+        if (!optionalId.isPresent()) {
+            throw new ValidationError("Please, provide storage ID to delete");
+        }
+
+        Integer id = optionalId.get();
+
+        logger.info("deleteStorage(): Got storage deletion job. Storage ID: {}", id);
 
         storageSettingsManager.deleteById(id);
 
         return "redirect:/dashboard";
     }
 
-    @PostMapping
-    public String createStorage(WebAddStorageRequest createStorageRequest) {
-        logger.info("createStorage(): Got storage configuration creation job");
+    private String validateAddStorageRequest(WebAddStorageRequest addStorageRequest) {
+        String storageTypeAsString = addStorageRequest.getStorageType();
+        if (storageTypeAsString == null || storageTypeAsString.isEmpty()) {
+            return "Please, specify storage type";
+        }
+        Optional<StorageType> optionalStorageType = StorageType.of(storageTypeAsString);
+        if (!optionalStorageType.isPresent()) {
+            return "Please, provide proper storage type";
+        }
+        StorageType storageType = optionalStorageType.get();
+        switch (storageType) {
+            case DROPBOX: {
+                if (addStorageRequest.getDropboxSettings() == null) {
+                    return "Dropbox storage was specified, but no settings provided";
+                }
+                WebDropboxSettings webDropboxSettings = addStorageRequest.getDropboxSettings();
+                String accessToken = webDropboxSettings.getAccessToken();
+                if (accessToken == null || accessToken.isEmpty()) {
+                    return "Invalid Dropbox settings";
+                }
+                break;
+            }
+            case LOCAL_FILE_SYSTEM: {
+                if (addStorageRequest.getDropboxSettings() == null) {
+                    return "Local File System storage was specified, but no settings provided";
+                }
+                WebLocalFileSystemSettings webLocalFileSystemSettings = addStorageRequest.getLocalFileSystemSettings();
+                String backupPath = webLocalFileSystemSettings.getBackupPath();
+                if (backupPath == null || backupPath.isEmpty()) {
+                    return "Invalid Local File System settings";
+                }
+                break;
+            }
+        }
+        return "";
+    }
 
-        Optional<StorageType> storageType = StorageType.of(createStorageRequest.getStorageType());
+    @PostMapping
+    public String createStorage(WebAddStorageRequest addStorageRequest) {
+        logger.info("createStorage(): Got storage creation job");
+
+        String error = validateAddStorageRequest(addStorageRequest);
+        if (!error.isEmpty()) {
+            throw new ValidationError(error);
+        }
+
+        Optional<StorageType> storageType = StorageType.of(addStorageRequest.getStorageType());
         if (storageType.isPresent()) {
             switch (storageType.get()) {
                 case DROPBOX: {
                     DropboxSettings dropboxSettings = new DropboxSettings();
-                    WebDropboxSettings webDropboxSettings = Objects.requireNonNull(createStorageRequest.getDropboxSettings());
+                    WebDropboxSettings webDropboxSettings = Objects.requireNonNull(addStorageRequest.getDropboxSettings());
 
                     dropboxSettings.setAccessToken(webDropboxSettings.getAccessToken());
 
@@ -61,7 +110,7 @@ public class WebApiStorageController {
                 case LOCAL_FILE_SYSTEM: {
                     LocalFileSystemSettings localFileSystemSettings = new LocalFileSystemSettings();
                     WebLocalFileSystemSettings webLocalFileSystemSettings = Objects.requireNonNull(
-                            createStorageRequest.getLocalFileSystemSettings());
+                            addStorageRequest.getLocalFileSystemSettings());
 
                     localFileSystemSettings.setBackupPath(webLocalFileSystemSettings.getBackupPath());
 

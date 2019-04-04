@@ -2,7 +2,7 @@ package com.example.demo.entities.database;
 
 import java.util.Optional;
 
-public enum Database {
+public enum DatabaseType {
     POSTGRES("postgres") {
         public String toString() {
             return "PostgreSQL";
@@ -11,12 +11,12 @@ public enum Database {
 
     private final String databaseAsString;
 
-    Database(String databaseAsString) {
+    DatabaseType(String databaseAsString) {
         this.databaseAsString = databaseAsString;
     }
 
-    public static Optional<Database> of(String database) {
-        for (Database value : values()) {
+    public static Optional<DatabaseType> of(String database) {
+        for (DatabaseType value : values()) {
             if (value.databaseAsString.equals(database)) {
                 return Optional.of(value);
             }

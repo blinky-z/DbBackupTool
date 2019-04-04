@@ -4,11 +4,11 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 class AdditionalDatabaseSettings {
-    private Database type;
+    private DatabaseType type;
 
     private PostgresSettings postgresSettings;
 
-    public Database getType() {
+    public DatabaseType getType() {
         return type;
     }
 
@@ -17,7 +17,7 @@ class AdditionalDatabaseSettings {
     }
 
     @JsonCreator
-    AdditionalDatabaseSettings(@JsonProperty("type") Database type,
+    AdditionalDatabaseSettings(@JsonProperty("type") DatabaseType type,
                                @JsonProperty("postgresSettings") PostgresSettings postgresSettings) {
         this.type = type;
         this.postgresSettings = postgresSettings;

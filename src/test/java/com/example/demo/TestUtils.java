@@ -1,6 +1,6 @@
 package com.example.demo;
 
-import com.example.demo.entities.database.Database;
+import com.example.demo.entities.database.DatabaseType;
 import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.entities.database.PostgresSettings;
 import com.example.demo.entities.storage.DropboxSettings;
@@ -64,7 +64,7 @@ class TestUtils {
         this.backupLoadManager = backupLoadManager;
     }
 
-    public DatabaseSettings buildDatabaseSettings(@NotNull Database databaseType, @NotNull DataSource dataSource) {
+    public DatabaseSettings buildDatabaseSettings(@NotNull DatabaseType databaseType, @NotNull DataSource dataSource) {
         try {
             DatabaseMetaData metadata = dataSource.getConnection().getMetaData();
             switch (databaseType) {
@@ -72,7 +72,7 @@ class TestUtils {
                     String jdbcPrefix = "jdbc:";
                     String connUrl = metadata.getURL().substring(jdbcPrefix.length());
                     logger.info("Initializing {} database settings. Connection url: {}",
-                            Database.POSTGRES, connUrl);
+                            DatabaseType.POSTGRES, connUrl);
                     PostgresSettings postgresSettings = new PostgresSettings();
                     URI parsedConnUrl = URI.create(connUrl);
 
@@ -85,7 +85,7 @@ class TestUtils {
                             .build();
 
                     logger.info("Initializing {} database settings completed. " +
-                            "Created Database settings: {}", Database.POSTGRES, postgresDatabaseSettings);
+                            "Created Database settings: {}", DatabaseType.POSTGRES, postgresDatabaseSettings);
                     return postgresDatabaseSettings;
                 }
                 default: {

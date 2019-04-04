@@ -1,18 +1,19 @@
 package com.example.demo.webUI.formTransfer;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class WebCreateBackupRequest {
     public static final class BackupCreationProperties {
-        private int id;
+        private Integer id;
 
         private ArrayList<String> processors = new ArrayList<>();
 
-        public int getId() {
+        public Integer getId() {
             return id;
         }
 
-        public void setId(int id) {
+        public void setId(Integer id) {
             this.id = id;
         }
 
@@ -25,23 +26,23 @@ public class WebCreateBackupRequest {
         }
     }
 
-    private int databaseId;
+    private Integer databaseId;
 
-    private ArrayList<BackupCreationProperties> backupCreationProperties = new ArrayList<>();
+    private HashMap<Integer, BackupCreationProperties> backupCreationProperties = new HashMap<>();
 
-    public ArrayList<BackupCreationProperties> getBackupCreationProperties() {
+    public HashMap<Integer, BackupCreationProperties> getBackupCreationProperties() {
         return backupCreationProperties;
     }
 
-    public void setBackupCreationProperties(ArrayList<BackupCreationProperties> backupCreationProperties) {
+    public void setBackupCreationProperties(HashMap<Integer, BackupCreationProperties> backupCreationProperties) {
         this.backupCreationProperties = backupCreationProperties;
     }
 
-    public int getDatabaseId() {
+    public Integer getDatabaseId() {
         return databaseId;
     }
 
-    public void setDatabaseId(int databaseId) {
+    public void setDatabaseId(Integer databaseId) {
         this.databaseId = databaseId;
     }
 }

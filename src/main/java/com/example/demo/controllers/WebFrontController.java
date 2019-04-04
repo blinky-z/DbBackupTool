@@ -1,7 +1,7 @@
 package com.example.demo.controllers;
 
 import com.example.demo.entities.backup.BackupProperties;
-import com.example.demo.entities.database.Database;
+import com.example.demo.entities.database.DatabaseType;
 import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.entities.database.PostgresSettings;
 import com.example.demo.entities.storage.DropboxSettings;
@@ -98,7 +98,7 @@ public class WebFrontController {
         {
             List<WebDatabaseItem> databaseList = new ArrayList<>();
 
-            for (DatabaseSettings databaseSettings : databaseSettingsManager.getAllByType(Database.POSTGRES)) {
+            for (DatabaseSettings databaseSettings : databaseSettingsManager.getAllByType(DatabaseType.POSTGRES)) {
                 PostgresSettings postgresSettings = databaseSettings.getPostgresSettings().orElseThrow(RuntimeException::new);
 
                 HashMap<String, String> storageProperties = new HashMap<>();

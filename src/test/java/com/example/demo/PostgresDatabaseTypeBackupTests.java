@@ -26,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class PostgresDatabaseBackupTests extends ApplicationTests {
+public class PostgresDatabaseTypeBackupTests extends ApplicationTests {
     private TestUtils testUtils;
 
     private JdbcTemplate jdbcMasterTemplate;

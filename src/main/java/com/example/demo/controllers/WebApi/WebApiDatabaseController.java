@@ -1,7 +1,8 @@
 package com.example.demo.controllers.WebApi;
 
-import com.example.demo.entities.database.Database;
+import com.example.demo.controllers.WebApi.Errors.ValidationError;
 import com.example.demo.entities.database.DatabaseSettings;
+import com.example.demo.entities.database.DatabaseType;
 import com.example.demo.entities.database.PostgresSettings;
 import com.example.demo.manager.DatabaseSettingsManager;
 import com.example.demo.webUI.formTransfer.WebAddDatabaseRequest;
@@ -30,19 +31,55 @@ public class WebApiDatabaseController {
     }
 
     @DeleteMapping
-    public String deleteDatabase(@RequestParam(value = "id") int id) {
-        logger.info("deleteDatabase(): Got database configuration deletion job. Database ID: {}", id);
+    public String deleteDatabase(@RequestParam(value = "id") Optional<Integer> optionalId) {
+        if (!optionalId.isPresent()) {
+            throw new ValidationError("Please, provide database ID to delete");
+        }
+
+        Integer id = optionalId.get();
+
+        logger.info("deleteDatabase(): Got database deletion job. Database ID: {}", id);
 
         databaseSettingsManager.deleteById(id);
 
         return "redirect:/dashboard";
     }
 
+    private String validateAddDatabaseRequest(WebAddDatabaseRequest addDatabaseRequest) {
+        String databaseTypeAsString = addDatabaseRequest.getDatabaseType();
+        if (databaseTypeAsString == null || databaseTypeAsString.isEmpty()) {
+            return "Please, specify database type";
+        }
+        Optional<DatabaseType> optionalDatabaseType = DatabaseType.of(databaseTypeAsString);
+        if (!optionalDatabaseType.isPresent()) {
+            return "Please, provide proper database type";
+        }
+        DatabaseType databaseType = optionalDatabaseType.get();
+        switch (databaseType) {
+            case POSTGRES: {
+                break;
+            }
+        }
+
+        if (addDatabaseRequest.getHost().isEmpty() || addDatabaseRequest.getPort().isEmpty() ||
+                addDatabaseRequest.getName().isEmpty() || addDatabaseRequest.getLogin().isEmpty() ||
+                addDatabaseRequest.getPassword().isEmpty()) {
+            return "Invalid database settings";
+        }
+
+        return "";
+    }
+
     @PostMapping
     public String createDatabase(@Valid WebAddDatabaseRequest createDatabaseRequest) {
         logger.info("createDatabase(): Got database configuration creation job");
 
-        Optional<Database> databaseType = Database.of(createDatabaseRequest.getDatabaseType());
+        String error = validateAddDatabaseRequest(createDatabaseRequest);
+        if (!error.isEmpty()) {
+            throw new ValidationError(error);
+        }
+
+        Optional<DatabaseType> databaseType = DatabaseType.of(createDatabaseRequest.getDatabaseType());
         if (databaseType.isPresent()) {
             switch (databaseType.get()) {
                 case POSTGRES: {
@@ -62,7 +99,6 @@ public class WebApiDatabaseController {
         } else {
             throw new RuntimeException("Can't create database configuration. Error: Unknown database type");
         }
-
 
         return "redirect:/dashboard";
     }

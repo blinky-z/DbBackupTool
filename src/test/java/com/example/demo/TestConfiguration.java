@@ -1,6 +1,6 @@
 package com.example.demo;
 
-import com.example.demo.entities.database.Database;
+import com.example.demo.entities.database.DatabaseType;
 import com.example.demo.entities.database.DatabaseSettings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -35,11 +35,11 @@ public class TestConfiguration {
 
     @Bean
     public DatabaseSettings masterDatabaseSettings() {
-        return testUtils.buildDatabaseSettings(Database.POSTGRES, masterDataSource);
+        return testUtils.buildDatabaseSettings(DatabaseType.POSTGRES, masterDataSource);
     }
 
     @Bean
     public DatabaseSettings copyDatabaseSettings() {
-        return testUtils.buildDatabaseSettings(Database.POSTGRES, copyDataSource);
+        return testUtils.buildDatabaseSettings(DatabaseType.POSTGRES, copyDataSource);
     }
 }

@@ -1,17 +1,17 @@
 package com.example.demo.webUI.renderModels;
 
-import com.example.demo.entities.database.Database;
+import com.example.demo.entities.database.DatabaseType;
 
 public class WebDatabaseItem {
     private int id;
 
-    private Database type;
+    private DatabaseType type;
 
     private String desc;
 
     private String time;
 
-    public WebDatabaseItem(Database type, int id, String desc, String time) {
+    public WebDatabaseItem(DatabaseType type, int id, String desc, String time) {
         this.type = type;
         this.id = id;
         this.desc = desc;
@@ -26,11 +26,11 @@ public class WebDatabaseItem {
         this.id = id;
     }
 
-    public Database getType() {
+    public DatabaseType getType() {
         return type;
     }
 
-    public void setType(Database type) {
+    public void setType(DatabaseType type) {
         this.type = type;
     }
 

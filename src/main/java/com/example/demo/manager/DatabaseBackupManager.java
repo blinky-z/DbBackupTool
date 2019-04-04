@@ -1,6 +1,6 @@
 package com.example.demo.manager;
 
-import com.example.demo.entities.database.Database;
+import com.example.demo.entities.database.DatabaseType;
 import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.service.databaseBackup.PostgresDatabaseBackup;
 import org.jetbrains.annotations.NotNull;
@@ -21,7 +21,7 @@ public class DatabaseBackupManager {
 
         InputStream backupStream;
 
-        Database databaseType = databaseSettings.getType();
+        DatabaseType databaseType = databaseSettings.getType();
         switch (databaseType) {
             case POSTGRES: {
                 PostgresDatabaseBackup postgresBackupCreator = new PostgresDatabaseBackup(databaseSettings);
@@ -41,7 +41,7 @@ public class DatabaseBackupManager {
     public void restoreBackup(@NotNull InputStream backup, @NotNull DatabaseSettings databaseSettings) {
         logger.info("Restoring backup to database {}... Database Settings: {}", databaseSettings.getName(), databaseSettings);
 
-        Database databaseType = databaseSettings.getType();
+        DatabaseType databaseType = databaseSettings.getType();
         switch (databaseType) {
             case POSTGRES: {
                 PostgresDatabaseBackup postgresDatabaseBackup = new PostgresDatabaseBackup(databaseSettings);

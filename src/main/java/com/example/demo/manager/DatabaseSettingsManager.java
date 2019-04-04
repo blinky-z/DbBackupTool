@@ -1,6 +1,6 @@
 package com.example.demo.manager;
 
-import com.example.demo.entities.database.Database;
+import com.example.demo.entities.database.DatabaseType;
 import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.repositories.DatabaseSettingsRepository;
 import org.jetbrains.annotations.NotNull;
@@ -34,7 +34,7 @@ public class DatabaseSettingsManager {
         return databaseSettingsRepository.findById(id);
     }
 
-    public Iterable<DatabaseSettings> getAllByType(@NotNull Database type) {
+    public Iterable<DatabaseSettings> getAllByType(@NotNull DatabaseType type) {
         return databaseSettingsRepository.getAllByType(type);
     }
 }

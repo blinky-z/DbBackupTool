@@ -23,7 +23,6 @@ public class FileSystemStorage implements Storage {
 
     /**
      * Uploads backup to Local File System
-     *
      */
     @Override
     public void uploadBackup(InputStream in, StorageSettings storageSettings, String backupName) {
@@ -44,8 +43,9 @@ public class FileSystemStorage implements Storage {
 
             File backupFolder = new File(backupFolderPath);
             if (!backupFolder.mkdir()) {
-                throw new RuntimeException(
-                        "Can't upload backup to Local File System storage: error creating backup folder to save backup to");
+                throw new RuntimeException(String.format(
+                        "Can't upload backup to Local File System storage: error creating backup folder to save backup to. " +
+                                "Backup folder: %s", backupFolderPath));
             }
 
             while (bytesRead != -1) {

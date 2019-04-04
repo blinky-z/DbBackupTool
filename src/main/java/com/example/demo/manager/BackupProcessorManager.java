@@ -25,7 +25,7 @@ public class BackupProcessorManager {
         int processorsAmount = processorList.size();
         for (int currentProcessor = 0; currentProcessor < processorsAmount; currentProcessor++) {
             String processorName = processorList.get(currentProcessor);
-            logger.info("Applying processor [{}/{}]: {}", currentProcessor, processorsAmount, processorName);
+            logger.info("Applying processor [{}/{}]: {}", currentProcessor + 1, processorsAmount, processorName);
             for (Processor processor : processors) {
                 if (processor.getName().equals(processorName)) {
                     in = processor.process(in);
@@ -41,7 +41,7 @@ public class BackupProcessorManager {
         int processorsAmount = processorList.size();
         for (int currentProcessor = 0; currentProcessor < processorsAmount; currentProcessor++) {
             String processorName = processorList.get(currentProcessor);
-            logger.info("Applying deprocessor [{}/{}]: {}", currentProcessor, processorsAmount, processorName);
+            logger.info("Applying deprocessor [{}/{}]: {}", currentProcessor + 1, processorsAmount, processorName);
             for (Processor processor : processors) {
                 if (processor.getName().equals(processorName)) {
                     in = processor.deprocess(in);

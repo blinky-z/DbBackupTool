@@ -17,7 +17,7 @@ public class DatabaseSettings {
 
     @Enumerated(EnumType.STRING)
     @Column(updatable = false)
-    private Database type;
+    private DatabaseType type;
 
     private String host;
 
@@ -40,7 +40,7 @@ public class DatabaseSettings {
         return id;
     }
 
-    public Database getType() {
+    public DatabaseType getType() {
         return type;
     }
 
@@ -75,7 +75,7 @@ public class DatabaseSettings {
         this.id = id;
     }
 
-    void setType(Database type) {
+    void setType(DatabaseType type) {
         this.type = type;
     }
 
@@ -111,7 +111,7 @@ public class DatabaseSettings {
         return Optional.ofNullable(additionalDatabaseSettings.getPostgresSettings());
     }
 
-    private DatabaseSettings(@NotNull Database type, @NotNull String host, int port, @NotNull String name,
+    private DatabaseSettings(@NotNull DatabaseType type, @NotNull String host, int port, @NotNull String name,
                              @NotNull String login, @NotNull String password,
                              @NotNull AdditionalDatabaseSettings additionalDatabaseSettings) {
         this.type = Objects.requireNonNull(type);
@@ -124,7 +124,7 @@ public class DatabaseSettings {
     }
 
     public static final class Builder {
-        private Database type;
+        private DatabaseType type;
         private String host;
         private int port;
         private String name;
@@ -168,7 +168,7 @@ public class DatabaseSettings {
 
     public static Builder postgresSettings(@NotNull PostgresSettings postgresSettings) {
         Builder builder = new Builder();
-        builder.type = Database.POSTGRES;
+        builder.type = DatabaseType.POSTGRES;
         builder.postgresSettings = Objects.requireNonNull(postgresSettings);
         return builder;
     }
