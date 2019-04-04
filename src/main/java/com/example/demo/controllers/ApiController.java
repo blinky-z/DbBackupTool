@@ -171,8 +171,8 @@ public class ApiController {
 
         logger.info("createBackup(): Database settings: {}", databaseSettings);
 
-        for (WebCreateBackupRequest.StorageProperties storageProperties : createBackupRequest.getStorageProperties()) {
-            int storageId = storageProperties.getId();
+        for (WebCreateBackupRequest.BackupCreationProperties backupCreationProperties : createBackupRequest.getBackupCreationProperties()) {
+            int storageId = backupCreationProperties.getId();
             StorageSettings storageSettings = storageSettingsManager.getById(storageId).orElseThrow(() -> new RuntimeException(
                     String.format("createBackup(): Can't retrieve storage settings. Error: no storage settings with ID %d",
                             storageId)));
@@ -182,7 +182,7 @@ public class ApiController {
             logger.info("createBackup(): Creating backup...");
             InputStream backupStream = databaseBackupManager.createBackup(databaseSettings);
 
-            List<String> processorList = storageProperties.getProcessors();
+            List<String> processorList = backupCreationProperties.getProcessors();
             logger.info("createBackup(): Applying processors on created backup. Processors: {}", processorList);
             InputStream processedBackupStream = backupProcessorManager.process(backupStream, processorList);
 

@@ -299,7 +299,7 @@
                             <tr th:each="storage, iterStat: ${storageList}" class="storageItem">
                                 <td>
                                     <div class="input-group">
-                                        <input type="checkbox" th:name="|storageProperties[${iterStat.index}].id|" th:value="${storage.id}">
+                                        <input type="checkbox" th:name="|backupCreationProperties[${iterStat.index}].id|" th:value="${storage.id}">
                                     </div>
                                 </td>
                                 <th scope="row" th:text="${storage.type}"></th>
@@ -308,7 +308,7 @@
                                 <td>
                                     <div class="form-check form-group">
                                         <input type="checkbox" class="form-check-input"
-                                               th:name="|storageProperties[${iterStat.index}].processors|" th:value="'Compressor'">
+                                               th:name="|backupCreationProperties[${iterStat.index}].processors|" th:value="'Compressor'">
                                     </div>
                             </tr>
                             </tbody>
