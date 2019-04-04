@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/create-backup")
@@ -71,11 +71,10 @@ public class WebApiCreateBackupController {
             return "Please, select at least one storage to upload backup to";
         }
 
-        Set<Integer> storages = backupCreationProperties.keySet();
-        for (Integer currentStorageId : storages) {
-            WebCreateBackupRequest.BackupCreationProperties currentBackupCreationProperties = backupCreationProperties.get(currentStorageId);
+        for (Map.Entry<Integer, WebCreateBackupRequest.BackupCreationProperties> entry : backupCreationProperties.entrySet()) {
+            WebCreateBackupRequest.BackupCreationProperties currentBackupCreationProperties = entry.getValue();
             if (currentBackupCreationProperties == null) {
-                return "Invalid Storage settings with ID " + currentStorageId;
+                return "Invalid Storage settings with ID " + entry.getKey();
             }
         }
 
