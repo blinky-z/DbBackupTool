@@ -6,8 +6,8 @@ import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.entities.database.PostgresSettings;
 import com.example.demo.entities.storage.DropboxSettings;
 import com.example.demo.entities.storage.LocalFileSystemSettings;
-import com.example.demo.entities.storage.StorageType;
 import com.example.demo.entities.storage.StorageSettings;
+import com.example.demo.entities.storage.StorageType;
 import com.example.demo.manager.BackupPropertiesManager;
 import com.example.demo.manager.DatabaseSettingsManager;
 import com.example.demo.manager.StorageSettingsManager;
@@ -27,8 +27,8 @@ import java.util.HashMap;
 import java.util.List;
 
 @Controller
-public class WebController {
-    private static final Logger logger = LoggerFactory.getLogger(WebController.class);
+public class WebFrontController {
+    private static final Logger logger = LoggerFactory.getLogger(WebFrontController.class);
 
     private static final String TIME_FORMAT = "dd.MM.yyyy HH:mm:ss";
 
