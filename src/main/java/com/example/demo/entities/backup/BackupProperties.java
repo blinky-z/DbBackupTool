@@ -1,7 +1,6 @@
 package com.example.demo.entities.backup;
 
 import javax.persistence.*;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -11,7 +10,7 @@ public class BackupProperties {
     @Id
     @Column(insertable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
     @Column(updatable = false)
     private Date date;
@@ -35,11 +34,11 @@ public class BackupProperties {
         this.storageSettingsId = storageSettingsId;
     }
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

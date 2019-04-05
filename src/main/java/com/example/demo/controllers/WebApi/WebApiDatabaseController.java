@@ -52,7 +52,7 @@ public class WebApiDatabaseController {
         }
         Optional<DatabaseType> optionalDatabaseType = DatabaseType.of(databaseTypeAsString);
         if (!optionalDatabaseType.isPresent()) {
-            return "Please, provide proper database type";
+            return "Invalid Database Settings";
         }
         DatabaseType databaseType = optionalDatabaseType.get();
         switch (databaseType) {
@@ -64,6 +64,12 @@ public class WebApiDatabaseController {
         if (addDatabaseRequest.getHost().isEmpty() || addDatabaseRequest.getPort().isEmpty() ||
                 addDatabaseRequest.getName().isEmpty() || addDatabaseRequest.getLogin().isEmpty() ||
                 addDatabaseRequest.getPassword().isEmpty()) {
+            return "Invalid database settings";
+        }
+
+        try {
+            Integer.valueOf(addDatabaseRequest.getPort());
+        } catch (NumberFormatException e) {
             return "Invalid database settings";
         }
 

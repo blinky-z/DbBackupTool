@@ -26,9 +26,9 @@ public class BackupCompressorTests extends ApplicationTests {
 
     private DatabaseBackupManager databaseBackupManager;
 
-    private JdbcTemplate jdbcMasterTemplate;
+    private JdbcTemplate jdbcPostgresMasterTemplate;
 
-    private DatabaseSettings masterDatabaseSettings;
+    private DatabaseSettings masterPostgresDatabaseSettings;
 
     @Autowired
     public void setTestUtils(TestUtils testUtils) {
@@ -36,8 +36,8 @@ public class BackupCompressorTests extends ApplicationTests {
     }
 
     @Autowired
-    public void setMasterDatabaseSettings(DatabaseSettings masterDatabaseSettings) {
-        this.masterDatabaseSettings = masterDatabaseSettings;
+    public void setMasterPostgresDatabaseSettings(DatabaseSettings masterPostgresDatabaseSettings) {
+        this.masterPostgresDatabaseSettings = masterPostgresDatabaseSettings;
     }
 
     @Autowired
@@ -46,8 +46,8 @@ public class BackupCompressorTests extends ApplicationTests {
     }
 
     @Autowired
-    public void setJdbcMasterTemplate(JdbcTemplate jdbcMasterTemplate) {
-        this.jdbcMasterTemplate = jdbcMasterTemplate;
+    public void setJdbcPostgresMasterTemplate(JdbcTemplate jdbcPostgresMasterTemplate) {
+        this.jdbcPostgresMasterTemplate = jdbcPostgresMasterTemplate;
     }
 
     @Autowired
@@ -57,10 +57,10 @@ public class BackupCompressorTests extends ApplicationTests {
 
     @Test
     public void whenCompressAndDecompressBackup_contentIsEqualToSource() {
-        testUtils.clearDatabase(jdbcMasterTemplate);
-        testUtils.initDatabase(jdbcMasterTemplate);
+        testUtils.clearDatabase(jdbcPostgresMasterTemplate);
+        testUtils.initDatabase(jdbcPostgresMasterTemplate);
         try (
-                InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings)
+                InputStream backupStream = databaseBackupManager.createBackup(masterPostgresDatabaseSettings)
         ) {
             byte[] streamContent = testUtils.getStreamCopyAsByteArray(backupStream);
             try (

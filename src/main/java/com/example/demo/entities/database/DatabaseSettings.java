@@ -13,7 +13,7 @@ public class DatabaseSettings {
     @Id
     @Column(insertable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
     @Enumerated(EnumType.STRING)
     @Column(updatable = false)
@@ -36,7 +36,7 @@ public class DatabaseSettings {
     @Convert(converter = AdditionalDatabaseSettingsConverter.class)
     private AdditionalDatabaseSettings additionalDatabaseSettings;
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
@@ -71,7 +71,7 @@ public class DatabaseSettings {
     DatabaseSettings() {
     }
 
-    void setId(int id) {
+    void setId(Integer id) {
         this.id = id;
     }
 

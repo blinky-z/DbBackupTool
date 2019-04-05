@@ -13,7 +13,7 @@ public class StorageSettings {
     @Id
     @Column(insertable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
     @Enumerated(EnumType.STRING)
     @Column(updatable = false)
@@ -29,7 +29,7 @@ public class StorageSettings {
     StorageSettings() {
     }
 
-    void setId(int id) {
+    void setId(Integer id) {
         this.id = id;
     }
 
@@ -50,7 +50,7 @@ public class StorageSettings {
         this.additionalStorageSettings = Objects.requireNonNull(additionalStorageSettings);
     }
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 

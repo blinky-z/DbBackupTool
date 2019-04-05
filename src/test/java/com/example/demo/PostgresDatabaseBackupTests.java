@@ -3,7 +3,6 @@ package com.example.demo;
 import com.example.demo.entities.backup.BackupProperties;
 import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.entities.storage.StorageSettings;
-import com.example.demo.entities.storage.StorageType;
 import com.example.demo.manager.BackupLoadManager;
 import com.example.demo.manager.BackupProcessorManager;
 import com.example.demo.manager.DatabaseBackupManager;
@@ -26,16 +25,20 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class PostgresDatabaseTypeBackupTests extends ApplicationTests {
+public class PostgresDatabaseBackupTests extends ApplicationTests {
     private TestUtils testUtils;
 
-    private JdbcTemplate jdbcMasterTemplate;
+    private JdbcTemplate jdbcPostgresMasterTemplate;
 
-    private JdbcTemplate jdbcCopyTemplate;
+    private JdbcTemplate jdbcPostgresCopyTemplate;
 
-    private DatabaseSettings masterDatabaseSettings;
+    private DatabaseSettings masterPostgresDatabaseSettings;
 
-    private DatabaseSettings copyDatabaseSettings;
+    private DatabaseSettings copyPostgresDatabaseSettings;
+
+    private StorageSettings dropboxStorageSettings;
+
+    private StorageSettings localFileSystemStorageSettings;
 
     private DatabaseBackupManager databaseBackupManager;
 
@@ -49,23 +52,33 @@ public class PostgresDatabaseTypeBackupTests extends ApplicationTests {
     }
 
     @Autowired
-    public void setJdbcMasterTemplate(JdbcTemplate jdbcMasterTemplate) {
-        this.jdbcMasterTemplate = jdbcMasterTemplate;
+    public void setJdbcPostgresMasterTemplate(JdbcTemplate jdbcPostgresMasterTemplate) {
+        this.jdbcPostgresMasterTemplate = jdbcPostgresMasterTemplate;
     }
 
     @Autowired
-    public void setJdbcCopyTemplate(JdbcTemplate jdbcCopyTemplate) {
-        this.jdbcCopyTemplate = jdbcCopyTemplate;
+    public void setJdbcPostgresCopyTemplate(JdbcTemplate jdbcPostgresCopyTemplate) {
+        this.jdbcPostgresCopyTemplate = jdbcPostgresCopyTemplate;
     }
 
     @Autowired
-    public void setMasterDatabaseSettings(DatabaseSettings masterDatabaseSettings) {
-        this.masterDatabaseSettings = masterDatabaseSettings;
+    public void setMasterPostgresDatabaseSettings(DatabaseSettings masterPostgresDatabaseSettings) {
+        this.masterPostgresDatabaseSettings = masterPostgresDatabaseSettings;
     }
 
     @Autowired
-    public void setCopyDatabaseSettings(DatabaseSettings copyDatabaseSettings) {
-        this.copyDatabaseSettings = copyDatabaseSettings;
+    public void setCopyPostgresDatabaseSettings(DatabaseSettings copyPostgresDatabaseSettings) {
+        this.copyPostgresDatabaseSettings = copyPostgresDatabaseSettings;
+    }
+
+    @Autowired
+    public void setDropboxStorageSettings(StorageSettings dropboxStorageSettings) {
+        this.dropboxStorageSettings = dropboxStorageSettings;
+    }
+
+    @Autowired
+    public void setLocalFileSystemStorageSettings(StorageSettings localFileSystemStorageSettings) {
+        this.localFileSystemStorageSettings = localFileSystemStorageSettings;
     }
 
     @Autowired
@@ -83,24 +96,23 @@ public class PostgresDatabaseTypeBackupTests extends ApplicationTests {
         this.backupLoadManager = backupLoadManager;
     }
 
-    private static long rowsToInsert = 10000L;
-
     @Before
     public void initDatabase() {
-        testUtils.clearDatabase(jdbcMasterTemplate);
-        testUtils.clearDatabase(jdbcCopyTemplate);
-        testUtils.initDatabase(jdbcMasterTemplate);
+        testUtils.clearDatabase(jdbcPostgresMasterTemplate);
+        testUtils.clearDatabase(jdbcPostgresCopyTemplate);
+        testUtils.initDatabase(jdbcPostgresMasterTemplate);
     }
 
     private void compareDatabases() {
         long startRangeId = 0;
         long rowsPerRequest = 10000;
+        long rowsToInsert = 10000L;
         while (startRangeId < rowsToInsert) {
             long endRangeId = startRangeId + rowsPerRequest;
-            List<Map<String, Object>> oldData = jdbcMasterTemplate.queryForList(
+            List<Map<String, Object>> oldData = jdbcPostgresMasterTemplate.queryForList(
                     "SELECT * FROM comments WHERE id BETWEEN ? AND ?",
                     startRangeId, endRangeId);
-            List<Map<String, Object>> restoredData = jdbcCopyTemplate.queryForList(
+            List<Map<String, Object>> restoredData = jdbcPostgresCopyTemplate.queryForList(
                     "SELECT * FROM comments WHERE id BETWEEN ? AND ?",
                     startRangeId, endRangeId);
             startRangeId = endRangeId;
@@ -111,19 +123,18 @@ public class PostgresDatabaseTypeBackupTests extends ApplicationTests {
 
     @Test
     public void whenCreatePostgresBackupAndUploadToLocalFileSystemAndRestore_databasesIsEqual() {
-        StorageSettings storageSettings = testUtils.buildStorageSettings(StorageType.LOCAL_FILE_SYSTEM);
-
         List<String> processors = new ArrayList<>();
 
         try (
-                InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings)
+                InputStream backupStream = databaseBackupManager.createBackup(masterPostgresDatabaseSettings)
         ) {
-            BackupProperties backupProperties = backupLoadManager.uploadBackup(backupStream, storageSettings, processors,
-                    masterDatabaseSettings.getName());
+            BackupProperties backupProperties = backupLoadManager.uploadBackup(backupStream, localFileSystemStorageSettings,
+                    processors, masterPostgresDatabaseSettings.getName());
             try (
-                    InputStream downloadedBackup = backupLoadManager.downloadBackup(storageSettings, backupProperties);
+                    InputStream downloadedBackup = backupLoadManager.downloadBackup(localFileSystemStorageSettings,
+                            backupProperties);
             ) {
-                databaseBackupManager.restoreBackup(downloadedBackup, copyDatabaseSettings);
+                databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -134,19 +145,17 @@ public class PostgresDatabaseTypeBackupTests extends ApplicationTests {
 
     @Test
     public void whenCreatePostgresBackupAndUploadToDropboxAndRestore_databasesIsEqual() {
-        StorageSettings storageSettings = testUtils.buildStorageSettings(StorageType.DROPBOX);
-
         List<String> processors = new ArrayList<>();
 
         try (
-                InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings);
+                InputStream backupStream = databaseBackupManager.createBackup(masterPostgresDatabaseSettings);
         ) {
-            BackupProperties backupProperties = backupLoadManager.uploadBackup(backupStream, storageSettings, processors,
-                    masterDatabaseSettings.getName());
+            BackupProperties backupProperties = backupLoadManager.uploadBackup(backupStream, dropboxStorageSettings, processors,
+                    masterPostgresDatabaseSettings.getName());
             try (
-                    InputStream downloadedBackup = backupLoadManager.downloadBackup(storageSettings, backupProperties)
+                    InputStream downloadedBackup = backupLoadManager.downloadBackup(dropboxStorageSettings, backupProperties)
             ) {
-                databaseBackupManager.restoreBackup(downloadedBackup, copyDatabaseSettings);
+                databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -157,22 +166,21 @@ public class PostgresDatabaseTypeBackupTests extends ApplicationTests {
 
     @Test
     public void whenCreatePostgresBackupAndCompressAndUploadToLocalFileSystemAndDecompressAndRestore_databasesIsEqual() {
-        StorageSettings storageSettings = testUtils.buildStorageSettings(StorageType.LOCAL_FILE_SYSTEM);
-
         List<String> processors = new ArrayList<>();
         processors.add("Compressor");
 
         try (
-                InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings);
+                InputStream backupStream = databaseBackupManager.createBackup(masterPostgresDatabaseSettings);
                 InputStream compressedBackup = backupProcessorManager.process(backupStream, processors);
         ) {
-            BackupProperties backupProperties = backupLoadManager.uploadBackup(compressedBackup, storageSettings, processors,
-                    masterDatabaseSettings.getName());
+            BackupProperties backupProperties = backupLoadManager.uploadBackup(compressedBackup, localFileSystemStorageSettings,
+                    processors, masterPostgresDatabaseSettings.getName());
             try (
-                    InputStream downloadedBackup = backupLoadManager.downloadBackup(storageSettings, backupProperties);
+                    InputStream downloadedBackup = backupLoadManager.downloadBackup(localFileSystemStorageSettings,
+                            backupProperties);
                     InputStream decompressedBackup = backupProcessorManager.deprocess(downloadedBackup, processors);
             ) {
-                databaseBackupManager.restoreBackup(decompressedBackup, copyDatabaseSettings);
+                databaseBackupManager.restoreBackup(decompressedBackup, copyPostgresDatabaseSettings);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -183,22 +191,20 @@ public class PostgresDatabaseTypeBackupTests extends ApplicationTests {
 
     @Test
     public void whenCreatePostgresBackupAndCompressAndUploadToDropboxAndDecompressAndRestore_databasesIsEqual() {
-        StorageSettings storageSettings = testUtils.buildStorageSettings(StorageType.DROPBOX);
-
         List<String> processors = new ArrayList<>();
         processors.add("Compressor");
 
         try (
-                InputStream backupStream = databaseBackupManager.createBackup(masterDatabaseSettings);
+                InputStream backupStream = databaseBackupManager.createBackup(masterPostgresDatabaseSettings);
                 InputStream compressedBackup = backupProcessorManager.process(backupStream, processors);
         ) {
-            BackupProperties backupProperties = backupLoadManager.uploadBackup(compressedBackup, storageSettings, processors,
-                    masterDatabaseSettings.getName());
+            BackupProperties backupProperties = backupLoadManager.uploadBackup(compressedBackup, dropboxStorageSettings, processors,
+                    masterPostgresDatabaseSettings.getName());
             try (
-                    InputStream downloadedBackup = backupLoadManager.downloadBackup(storageSettings, backupProperties);
+                    InputStream downloadedBackup = backupLoadManager.downloadBackup(dropboxStorageSettings, backupProperties);
                     InputStream decompressedBackup = backupProcessorManager.deprocess(downloadedBackup, processors);
             ) {
-                databaseBackupManager.restoreBackup(decompressedBackup, copyDatabaseSettings);
+                databaseBackupManager.restoreBackup(decompressedBackup, copyPostgresDatabaseSettings);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -209,12 +215,11 @@ public class PostgresDatabaseTypeBackupTests extends ApplicationTests {
 
     @Test
     public void whenCreatePostgresBackupAndUploadToDifferentStoragesAndRestoreEachIntoSeparateDatabases_databasesIsEqual() {
-
         List<String> processors = new ArrayList<>();
 
         byte[] createdBackupAsByteArray;
         try (
-                InputStream createdBackup = databaseBackupManager.createBackup(masterDatabaseSettings)
+                InputStream createdBackup = databaseBackupManager.createBackup(masterPostgresDatabaseSettings)
         ) {
             createdBackupAsByteArray = testUtils.getStreamCopyAsByteArray(createdBackup);
         } catch (IOException e) {
@@ -224,17 +229,16 @@ public class PostgresDatabaseTypeBackupTests extends ApplicationTests {
 
         // get backup from local file system and restore
         {
-            StorageSettings localFileSystemStorageSettings = testUtils.buildStorageSettings(StorageType.LOCAL_FILE_SYSTEM);
             try (
                     InputStream inputStream = new ByteArrayInputStream(createdBackupAsByteArray);
             ) {
                 BackupProperties backupProperties = backupLoadManager.uploadBackup(inputStream, localFileSystemStorageSettings,
-                        processors, masterDatabaseSettings.getName());
+                        processors, masterPostgresDatabaseSettings.getName());
                 try (
                         InputStream downloadedBackup = backupLoadManager.downloadBackup(localFileSystemStorageSettings,
                                 backupProperties);
                 ) {
-                    databaseBackupManager.restoreBackup(downloadedBackup, copyDatabaseSettings);
+                    databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings);
                 }
                 compareDatabases();
             } catch (IOException e) {
@@ -242,20 +246,19 @@ public class PostgresDatabaseTypeBackupTests extends ApplicationTests {
             }
         }
 
-        testUtils.clearDatabase(jdbcCopyTemplate);
+        testUtils.clearDatabase(jdbcPostgresCopyTemplate);
 
         // get backup from dropbox and restore
         {
-            StorageSettings dropboxStorageSettings = testUtils.buildStorageSettings(StorageType.DROPBOX);
             try (
                     InputStream inputStream = new ByteArrayInputStream(createdBackupAsByteArray);
             ) {
                 BackupProperties backupProperties = backupLoadManager.uploadBackup(inputStream, dropboxStorageSettings,
-                        processors, masterDatabaseSettings.getName());
+                        processors, masterPostgresDatabaseSettings.getName());
                 try (
                         InputStream downloadedBackup = backupLoadManager.downloadBackup(dropboxStorageSettings, backupProperties);
                 ) {
-                    databaseBackupManager.restoreBackup(downloadedBackup, copyDatabaseSettings);
+                    databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings);
                 }
                 compareDatabases();
             } catch (IOException e) {

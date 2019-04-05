@@ -12,8 +12,8 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
 
 @ControllerAdvice
-public class ApplicationExceptionsHandler {
-    private static final Logger logger = LoggerFactory.getLogger(ApplicationExceptionsHandler.class);
+public class WebApplicationExceptionsHandler {
+    private static final Logger logger = LoggerFactory.getLogger(WebApplicationExceptionsHandler.class);
 
     private static final String ERROR_CODE_RENDER_FIELD = "errorCode";
 
