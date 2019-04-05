@@ -66,7 +66,6 @@ public class WebApiCreateBackupController {
 
         HashMap<Integer, WebCreateBackupRequest.BackupCreationProperties> backupCreationProperties =
                 createBackupRequest.getBackupCreationProperties();
-        logger.info("Storages amount to upload backup to: {}", backupCreationProperties.size());
         if (backupCreationProperties.size() == 0) {
             return "Please, select at least one storage to upload backup to";
         }
@@ -82,7 +81,7 @@ public class WebApiCreateBackupController {
     }
 
     @PostMapping
-    public ResponseEntity createBackup(WebCreateBackupRequest createBackupRequest) {
+    public String createBackup(WebCreateBackupRequest createBackupRequest) {
         logger.info("createBackup(): Got backup creation job");
 
         String error = validateCreateBackupRequest(createBackupRequest);
@@ -99,7 +98,7 @@ public class WebApiCreateBackupController {
 
         for (WebCreateBackupRequest.BackupCreationProperties backupCreationProperties :
                 createBackupRequest.getBackupCreationProperties().values()) {
-            int storageId = backupCreationProperties.getId();
+            Integer storageId = backupCreationProperties.getId();
             StorageSettings storageSettings = storageSettingsManager.getById(storageId).orElseThrow(() -> new RuntimeException(
                     String.format("createBackup(): Can't retrieve storage settings. Error: no storage settings with ID %d",
                             storageId)));
@@ -117,6 +116,6 @@ public class WebApiCreateBackupController {
             backupLoadManager.uploadBackup(processedBackupStream, storageSettings, processorList, databaseName);
         }
 
-        return ResponseEntity.status(HttpStatus.OK).body(null);
+        return "redirect:/dashboard";
     }
 }

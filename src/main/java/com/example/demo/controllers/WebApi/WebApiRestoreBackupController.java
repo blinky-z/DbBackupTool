@@ -78,7 +78,7 @@ public class WebApiRestoreBackupController {
     }
 
     @PostMapping
-    public ResponseEntity restoreBackup(WebRestoreBackupRequest restoreBackupRequest) {
+    public String restoreBackup(WebRestoreBackupRequest restoreBackupRequest) {
         logger.info("restoreBackup(): Got backup restoration job");
 
         String error = validateRestoreBackupRequest(restoreBackupRequest);
@@ -113,6 +113,6 @@ public class WebApiRestoreBackupController {
         logger.info("restoreBackup(): Restoring backup...");
         databaseBackupManager.restoreBackup(deprocessedBackup, databaseSettings);
 
-        return ResponseEntity.status(HttpStatus.OK).body(null);
+        return "redirect:/dashboard";
     }
 }

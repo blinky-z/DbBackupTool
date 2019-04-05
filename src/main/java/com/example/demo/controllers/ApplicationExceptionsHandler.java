@@ -24,7 +24,7 @@ public class ApplicationExceptionsHandler {
     @ExceptionHandler(value = {ValidationError.class})
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
     public ModelAndView handleValidationError(HttpServletRequest request, ValidationError ex) {
-        logger.error("Exception at request {}", request.getRequestURL(), ex);
+        logger.error("Validation Exception at request {} : {}", request.getRequestURL(), ex.getMessage());
 
         ModelAndView mav = new ModelAndView();
         mav.addObject(ERROR_CODE_RENDER_FIELD, HttpStatus.BAD_REQUEST.value());
@@ -36,7 +36,7 @@ public class ApplicationExceptionsHandler {
     @ExceptionHandler(value = {RuntimeException.class})
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
     public ModelAndView handleRuntimeException(HttpServletRequest request, RuntimeException ex) {
-        logger.error("Exception at request {}", request.getRequestURL(), ex);
+        logger.error("Runtime Exception at request {}", request.getRequestURL(), ex);
 
         ModelAndView mav = new ModelAndView();
         mav.addObject(ERROR_CODE_RENDER_FIELD, HttpStatus.INTERNAL_SERVER_ERROR.value());
