@@ -3,17 +3,17 @@ package com.example.demo.webUI.renderModels;
 import com.example.demo.entities.storage.StorageType;
 
 public class WebStorageItem {
-    private StorageType type;
+    private String settingsName;
 
-    private int id;
+    private StorageType type;
 
     private String desc;
 
     private String time;
 
-    public WebStorageItem(StorageType type, int id, String desc, String time) {
+    public WebStorageItem(StorageType type, String settingsName, String desc, String time) {
         this.type = type;
-        this.id = id;
+        this.settingsName = settingsName;
         this.desc = desc;
         this.time = time;
     }
@@ -26,12 +26,12 @@ public class WebStorageItem {
         this.type = type;
     }
 
-    public int getId() {
-        return id;
+    public String getSettingsName() {
+        return settingsName;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setSettingsName(String settingsName) {
+        this.settingsName = settingsName;
     }
 
     public String getDesc() {

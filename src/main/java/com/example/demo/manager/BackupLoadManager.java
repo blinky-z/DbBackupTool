@@ -19,10 +19,9 @@ import java.util.Objects;
 
 @Component
 public class BackupLoadManager {
+    private static final Logger logger = LoggerFactory.getLogger(DatabaseBackupManager.class);
     private BackupPropertiesManager backupPropertiesManager;
-
     private DropboxStorage dropboxStorage;
-
     private FileSystemStorage fileSystemStorage;
 
     @Autowired
@@ -39,8 +38,6 @@ public class BackupLoadManager {
     public void setBackupPropertiesManager(BackupPropertiesManager backupPropertiesManager) {
         this.backupPropertiesManager = backupPropertiesManager;
     }
-
-    private static final Logger logger = LoggerFactory.getLogger(DatabaseBackupManager.class);
 
     public BackupProperties uploadBackup(@NotNull InputStream backupStream, @NotNull StorageSettings storageSettings,
                                          @NotNull List<String> processors, @NotNull String databaseName) {
@@ -65,7 +62,8 @@ public class BackupLoadManager {
 
         logger.info("Backup successfully uploaded to storage {}. Backup name: {}", storageType, backupName);
 
-        BackupProperties backupProperties = new BackupProperties(backupName, processors, creationTime, storageSettings.getId());
+        BackupProperties backupProperties = new BackupProperties(backupName, processors, creationTime,
+                storageSettings.getSettingsName());
         backupProperties = backupPropertiesManager.save(backupProperties);
 
         logger.info("Uploaded backup properties saved. Backup name: {}", backupName);

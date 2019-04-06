@@ -1,7 +1,7 @@
 package com.example.demo.manager;
 
-import com.example.demo.entities.database.DatabaseType;
 import com.example.demo.entities.database.DatabaseSettings;
+import com.example.demo.entities.database.DatabaseType;
 import com.example.demo.service.databaseBackup.PostgresDatabaseBackup;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;

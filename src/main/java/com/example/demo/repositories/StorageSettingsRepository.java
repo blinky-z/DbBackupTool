@@ -6,6 +6,6 @@ import org.springframework.data.repository.CrudRepository;
 
 import java.util.Collection;
 
-public interface StorageSettingsRepository extends CrudRepository<StorageSettings, Integer> {
+public interface StorageSettingsRepository extends CrudRepository<StorageSettings, String> {
     Collection<StorageSettings> getAllByType(StorageType storageType);
 }

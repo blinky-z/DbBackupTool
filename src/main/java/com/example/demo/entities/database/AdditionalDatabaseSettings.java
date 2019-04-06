@@ -8,19 +8,19 @@ class AdditionalDatabaseSettings {
 
     private PostgresSettings postgresSettings;
 
+    @JsonCreator
+    AdditionalDatabaseSettings(@JsonProperty("type") DatabaseType type,
+                               @JsonProperty("postgresSettings") PostgresSettings postgresSettings) {
+        this.type = type;
+        this.postgresSettings = postgresSettings;
+    }
+
     public DatabaseType getType() {
         return type;
     }
 
     public PostgresSettings getPostgresSettings() {
         return postgresSettings;
-    }
-
-    @JsonCreator
-    AdditionalDatabaseSettings(@JsonProperty("type") DatabaseType type,
-                               @JsonProperty("postgresSettings") PostgresSettings postgresSettings) {
-        this.type = type;
-        this.postgresSettings = postgresSettings;
     }
 
     @Override

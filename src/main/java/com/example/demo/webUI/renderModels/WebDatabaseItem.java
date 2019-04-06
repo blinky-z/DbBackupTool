@@ -3,7 +3,7 @@ package com.example.demo.webUI.renderModels;
 import com.example.demo.entities.database.DatabaseType;
 
 public class WebDatabaseItem {
-    private int id;
+    private String settingsName;
 
     private DatabaseType type;
 
@@ -11,19 +11,19 @@ public class WebDatabaseItem {
 
     private String time;
 
-    public WebDatabaseItem(DatabaseType type, int id, String desc, String time) {
+    public WebDatabaseItem(DatabaseType type, String settingsName, String desc, String time) {
         this.type = type;
-        this.id = id;
+        this.settingsName = settingsName;
         this.desc = desc;
         this.time = time;
     }
 
-    public int getId() {
-        return id;
+    public String getSettingsName() {
+        return settingsName;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setSettingsName(String settingsName) {
+        this.settingsName = settingsName;
     }
 
     public DatabaseType getType() {

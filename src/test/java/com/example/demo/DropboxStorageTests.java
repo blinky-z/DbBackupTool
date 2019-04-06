@@ -90,7 +90,7 @@ public class DropboxStorageTests extends ApplicationTests {
             byte[] streamContent = testUtils.getStreamCopyAsByteArray(backupStream);
             try (
                     InputStream inputStream = new ByteArrayInputStream(streamContent);
-                    InputStream copyInputStream = new ByteArrayInputStream(streamContent);
+                    InputStream copyInputStream = new ByteArrayInputStream(streamContent)
             ) {
                 BackupProperties backupProperties = backupLoadManager.uploadBackup(copyInputStream, dropboxStorageSettings, processors,
                         masterPostgresDatabaseSettings.getName());
@@ -111,12 +111,12 @@ public class DropboxStorageTests extends ApplicationTests {
         processors.add("Processor");
         try (
                 InputStream backupStream = databaseBackupManager.createBackup(masterPostgresDatabaseSettings);
-                InputStream compressedBackup = backupProcessorManager.process(backupStream, processors);
+                InputStream compressedBackup = backupProcessorManager.process(backupStream, processors)
         ) {
             byte[] compressedBackupContent = testUtils.getStreamCopyAsByteArray(compressedBackup);
             try (
                     InputStream inputStream = new ByteArrayInputStream(compressedBackupContent);
-                    InputStream copyInputStream = new ByteArrayInputStream(compressedBackupContent);
+                    InputStream copyInputStream = new ByteArrayInputStream(compressedBackupContent)
             ) {
                 BackupProperties backupProperties = backupLoadManager.uploadBackup(copyInputStream, dropboxStorageSettings, processors,
                         masterPostgresDatabaseSettings.getName());
@@ -148,7 +148,7 @@ public class DropboxStorageTests extends ApplicationTests {
                         masterPostgresDatabaseSettings.getName());
                 try (
                         InputStream downloadedBackup = backupLoadManager.downloadBackup(dropboxStorageSettings, backupProperties);
-                        InputStream decompressedBackup = backupProcessorManager.deprocess(downloadedBackup, processors);
+                        InputStream decompressedBackup = backupProcessorManager.deprocess(downloadedBackup, processors)
                 ) {
                     assertTrue(testUtils.streamsContentEquals(inputStream, decompressedBackup));
                 }

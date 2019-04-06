@@ -40,7 +40,7 @@ public class WebApplicationExceptionsHandler {
 
         ModelAndView mav = new ModelAndView();
         mav.addObject(ERROR_CODE_RENDER_FIELD, HttpStatus.INTERNAL_SERVER_ERROR.value());
-        mav.addObject(ERROR_MESSAGE_RENDER_FIELD, ex.getMessage());
+        mav.addObject(ERROR_MESSAGE_RENDER_FIELD, HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
         mav.setViewName(ERROR_VIEW);
         return mav;
     }

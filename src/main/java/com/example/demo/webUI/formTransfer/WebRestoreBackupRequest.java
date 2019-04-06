@@ -3,7 +3,7 @@ package com.example.demo.webUI.formTransfer;
 public class WebRestoreBackupRequest {
     private Integer backupId;
 
-    private Integer databaseId;
+    private String databaseSettingsName;
 
     public Integer getBackupId() {
         return backupId;
@@ -13,11 +13,11 @@ public class WebRestoreBackupRequest {
         this.backupId = backupId;
     }
 
-    public Integer getDatabaseId() {
-        return databaseId;
+    public String getDatabaseSettingsName() {
+        return databaseSettingsName;
     }
 
-    public void setDatabaseId(Integer databaseId) {
-        this.databaseId = databaseId;
+    public void setDatabaseSettingsName(String databaseSettingsName) {
+        this.databaseSettingsName = databaseSettingsName;
     }
 }

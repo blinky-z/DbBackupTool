@@ -10,6 +10,15 @@ class AdditionalStorageSettings {
 
     private DropboxSettings dropboxSettings;
 
+    @JsonCreator
+    AdditionalStorageSettings(@JsonProperty("type") StorageType type,
+                              @JsonProperty("localFileSystemSettings") LocalFileSystemSettings localFileSystemSettings,
+                              @JsonProperty("dropboxSettings") DropboxSettings dropboxSettings) {
+        this.type = type;
+        this.localFileSystemSettings = localFileSystemSettings;
+        this.dropboxSettings = dropboxSettings;
+    }
+
     public StorageType getType() {
         return type;
     }
@@ -20,15 +29,6 @@ class AdditionalStorageSettings {
 
     public DropboxSettings getDropboxSettings() {
         return dropboxSettings;
-    }
-
-    @JsonCreator
-    AdditionalStorageSettings(@JsonProperty("type") StorageType type,
-                              @JsonProperty("localFileSystemSettings") LocalFileSystemSettings localFileSystemSettings,
-                              @JsonProperty("dropboxSettings") DropboxSettings dropboxSettings) {
-        this.type = type;
-        this.localFileSystemSettings = localFileSystemSettings;
-        this.dropboxSettings = dropboxSettings;
     }
 
     @Override

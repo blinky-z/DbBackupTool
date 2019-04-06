@@ -119,7 +119,7 @@ public class FileSystemStorageTests extends ApplicationTests {
             byte[] compressedBackupContent = testUtils.getStreamCopyAsByteArray(compressedBackup);
             try (
                     InputStream inputStream = new ByteArrayInputStream(compressedBackupContent);
-                    InputStream copyInputStream = new ByteArrayInputStream(compressedBackupContent);
+                    InputStream copyInputStream = new ByteArrayInputStream(compressedBackupContent)
             ) {
                 BackupProperties backupProperties = backupLoadManager.uploadBackup(copyInputStream, localFileSystemStorageSettings, processors,
                         masterPostgresDatabaseSettings.getName());
@@ -152,7 +152,7 @@ public class FileSystemStorageTests extends ApplicationTests {
                         masterPostgresDatabaseSettings.getName());
                 try (
                         InputStream downloadedBackup = backupLoadManager.downloadBackup(localFileSystemStorageSettings, backupProperties);
-                        InputStream decompressedBackup = backupProcessorManager.deprocess(downloadedBackup, processors);
+                        InputStream decompressedBackup = backupProcessorManager.deprocess(downloadedBackup, processors)
                 ) {
                     assertTrue(testUtils.streamsContentEquals(inputStream, decompressedBackup));
                 }

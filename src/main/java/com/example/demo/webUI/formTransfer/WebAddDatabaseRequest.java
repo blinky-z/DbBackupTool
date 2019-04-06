@@ -5,11 +5,13 @@ import com.example.demo.webUI.formTransfer.database.WebPostgresSettings;
 public class WebAddDatabaseRequest {
     private String databaseType;
 
+    private String settingsName;
+
     private String host;
 
     private String port;
 
-    private String name;
+    private String databaseName;
 
     private String login;
 
@@ -23,6 +25,14 @@ public class WebAddDatabaseRequest {
 
     public void setDatabaseType(String databaseType) {
         this.databaseType = databaseType;
+    }
+
+    public String getSettingsName() {
+        return settingsName;
+    }
+
+    public void setSettingsName(String settingsName) {
+        this.settingsName = settingsName;
     }
 
     public String getHost() {
@@ -41,12 +51,12 @@ public class WebAddDatabaseRequest {
         this.port = port;
     }
 
-    public String getName() {
-        return name;
+    public String getDatabaseName() {
+        return databaseName;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setDatabaseName(String databaseName) {
+        this.databaseName = databaseName;
     }
 
     public String getLogin() {

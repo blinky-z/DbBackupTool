@@ -1,18 +1,14 @@
 package com.example.demo.controllers.WebApi;
 
 import com.example.demo.controllers.WebApi.Errors.ValidationError;
-import com.example.demo.controllers.WebFrontController;
 import com.example.demo.entities.backup.BackupProperties;
 import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.entities.storage.StorageSettings;
 import com.example.demo.manager.*;
-import com.example.demo.webUI.formTransfer.WebCreateBackupRequest;
 import com.example.demo.webUI.formTransfer.WebRestoreBackupRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -70,7 +66,7 @@ public class WebApiRestoreBackupController {
         if (restoreBackupRequest.getBackupId() == null) {
             return "Please, provide backup to restore";
         }
-        if (restoreBackupRequest.getDatabaseId() == null) {
+        if (restoreBackupRequest.getDatabaseSettingsName() == null) {
             return "Please, provide database to restore backup to";
         }
 
@@ -91,15 +87,16 @@ public class WebApiRestoreBackupController {
                 new RuntimeException(String.format(
                         "Can't retrieve backup properties. Error: no backup properties with ID %d", backupId)));
 
-        Integer storageSettingsId = backupProperties.getStorageSettingsId();
-        StorageSettings storageSettings = storageSettingsManager.getById(storageSettingsId).
+        String storageSettingsName = backupProperties.getStorageSettingsName();
+        StorageSettings storageSettings = storageSettingsManager.getById(storageSettingsName).
                 orElseThrow(() ->
                         new RuntimeException(String.format(
-                                "Can't retrieve storage settings. Error: no storage settings with ID %d", storageSettingsId)));
+                                "Can't retrieve storage settings. Error: no storage settings with name %d", storageSettingsName)));
 
-        Integer databaseId = restoreBackupRequest.getDatabaseId();
-        DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseId).orElseThrow(() -> new RuntimeException(
-                String.format("Can't retrieve database settings. Error: no database settings with ID %d", databaseId)));
+        String databaseSettingsName = restoreBackupRequest.getDatabaseSettingsName();
+        DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseSettingsName).orElseThrow(() ->
+                new RuntimeException(
+                        String.format("Can't retrieve database settings. Error: no database settings with name %d", databaseSettingsName)));
 
         logger.info("restoreBackup(): Backup properties: {}", backupProperties);
         logger.info("restoreBackup(): Database settings: {}", databaseSettings);

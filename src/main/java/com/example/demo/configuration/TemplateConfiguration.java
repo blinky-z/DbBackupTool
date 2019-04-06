@@ -36,7 +36,6 @@ public class TemplateConfiguration {
     public ThymeleafViewResolver viewResolver() {
         ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
         viewResolver.setTemplateEngine(templateEngine());
-        viewResolver.setOrder(1);
         viewResolver.setViewNames(new String[]{".html"});
         return viewResolver;
     }

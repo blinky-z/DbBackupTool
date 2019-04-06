@@ -12,30 +12,12 @@ import java.util.List;
  * This class class handles PostgreSQL database backups
  */
 public class PostgresDatabaseBackup implements DatabaseBackup {
+    private static final Logger logger = LoggerFactory.getLogger(PostgresDatabaseBackup.class);
     private DatabaseSettings databaseSettings;
 
     public PostgresDatabaseBackup(DatabaseSettings databaseSettings) {
         this.databaseSettings = databaseSettings;
     }
-
-    private enum JobType {
-        BACKUP,
-        RESTORE;
-
-        public String getJobPrefix() {
-            switch (this) {
-                case BACKUP:
-                    return "[BACKUP]";
-                case RESTORE:
-                    return "[RESTORE]";
-                default: {
-                    throw new RuntimeException("No such PostgreSQL database backup Job Type");
-                }
-            }
-        }
-    }
-
-    private static final Logger logger = LoggerFactory.getLogger(PostgresDatabaseBackup.class);
 
     private ArrayList<String> addCommandParam(ArrayList<String> command, String paramName, String paramValue) {
         command.add(paramName);
@@ -79,69 +61,6 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
         command = addCommandParam(command, "-d", databaseSettings.getName());
 
         return command;
-    }
-
-    private static final class ProcessStdoutReadWorker implements Runnable {
-        InputStream outputStream;
-
-        private String STDOUT_PRINT_FORMAT;
-
-        private JobType jobType;
-
-        ProcessStdoutReadWorker(InputStream outputStream, JobType jobType) {
-            this.outputStream = outputStream;
-            this.jobType = jobType;
-            this.STDOUT_PRINT_FORMAT = jobType.getJobPrefix() + " stdout: {}";
-        }
-
-        public void run() {
-            logger.info("Reading process standard output stream...");
-            try (
-                    BufferedReader outputStreamReader = new BufferedReader(new InputStreamReader(outputStream))
-            ) {
-                String currentLine;
-                while ((currentLine = outputStreamReader.readLine()) != null) {
-                    logger.info(STDOUT_PRINT_FORMAT, currentLine);
-                }
-            } catch (IOException ex) {
-                throw new RuntimeException("Error occurred while reading process standard output stream", ex);
-            }
-        }
-    }
-
-    private static final class ProcessStderrStreamReadWorker implements Runnable {
-        InputStream errorStream;
-
-        private JobType jobType;
-
-        private String STDERR_PRINT_FORMAT;
-
-        private ProcessStderrStreamReadWorker(InputStream errorStream, JobType jobType) {
-            this.errorStream = errorStream;
-            this.jobType = jobType;
-            this.STDERR_PRINT_FORMAT = jobType.getJobPrefix() + " stderr: {}";
-        }
-
-        public void run() {
-            logger.info("Reading process standard error stream...");
-            try (
-                    BufferedReader errorStreamReader = new BufferedReader(new InputStreamReader(errorStream))
-            ) {
-                boolean isErrorOccurred = false;
-                String error;
-                while ((error = errorStreamReader.readLine()) != null) {
-                    isErrorOccurred = true;
-                    logger.error(STDERR_PRINT_FORMAT, error);
-                }
-                if (isErrorOccurred) {
-                    throw new RuntimeException(String.format(
-                            "Error occurred while executing PostgreSQL database job. Job Type: %s. See process's stderr for details",
-                            jobType.toString()));
-                }
-            } catch (IOException ex) {
-                throw new RuntimeException("Error occurred while reading process standard error stream", ex);
-            }
-        }
     }
 
     /**
@@ -245,5 +164,85 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
         process.destroy();
 
         logger.info("PostgreSQL database backup successfully restored. Restored to database {}", databaseSettings.getName());
+    }
+
+    private enum JobType {
+        BACKUP,
+        RESTORE;
+
+        public String getJobPrefix() {
+            switch (this) {
+                case BACKUP:
+                    return "[BACKUP]";
+                case RESTORE:
+                    return "[RESTORE]";
+                default: {
+                    throw new RuntimeException("No such PostgreSQL database backup Job Type");
+                }
+            }
+        }
+    }
+
+    private static final class ProcessStdoutReadWorker implements Runnable {
+        InputStream outputStream;
+
+        private String STDOUT_PRINT_FORMAT;
+
+        private JobType jobType;
+
+        ProcessStdoutReadWorker(InputStream outputStream, JobType jobType) {
+            this.outputStream = outputStream;
+            this.jobType = jobType;
+            this.STDOUT_PRINT_FORMAT = jobType.getJobPrefix() + " stdout: {}";
+        }
+
+        public void run() {
+            logger.info("Reading process standard output stream...");
+            try (
+                    BufferedReader outputStreamReader = new BufferedReader(new InputStreamReader(outputStream))
+            ) {
+                String currentLine;
+                while ((currentLine = outputStreamReader.readLine()) != null) {
+                    logger.info(STDOUT_PRINT_FORMAT, currentLine);
+                }
+            } catch (IOException ex) {
+                throw new RuntimeException("Error occurred while reading process standard output stream", ex);
+            }
+        }
+    }
+
+    private static final class ProcessStderrStreamReadWorker implements Runnable {
+        InputStream errorStream;
+
+        private JobType jobType;
+
+        private String STDERR_PRINT_FORMAT;
+
+        private ProcessStderrStreamReadWorker(InputStream errorStream, JobType jobType) {
+            this.errorStream = errorStream;
+            this.jobType = jobType;
+            this.STDERR_PRINT_FORMAT = jobType.getJobPrefix() + " stderr: {}";
+        }
+
+        public void run() {
+            logger.info("Reading process standard error stream...");
+            try (
+                    BufferedReader errorStreamReader = new BufferedReader(new InputStreamReader(errorStream))
+            ) {
+                boolean isErrorOccurred = false;
+                String error;
+                while ((error = errorStreamReader.readLine()) != null) {
+                    isErrorOccurred = true;
+                    logger.error(STDERR_PRINT_FORMAT, error);
+                }
+                if (isErrorOccurred) {
+                    throw new RuntimeException(String.format(
+                            "Error occurred while executing PostgreSQL database job. Job Type: %s. See process's stderr for details",
+                            jobType.toString()));
+                }
+            } catch (IOException ex) {
+                throw new RuntimeException("Error occurred while reading process standard error stream", ex);
+            }
+        }
     }
 }

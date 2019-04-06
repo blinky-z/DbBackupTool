@@ -9,6 +9,7 @@ import com.example.demo.webUI.formTransfer.WebAddDatabaseRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.NonTransientDataAccessException;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,16 +32,23 @@ public class WebApiDatabaseController {
     }
 
     @DeleteMapping
-    public String deleteDatabase(@RequestParam(value = "id") Optional<Integer> optionalId) {
-        if (!optionalId.isPresent()) {
-            throw new ValidationError("Please, provide database ID to delete");
+    public String deleteDatabase(@RequestParam(value = "settingsName") Optional<String> optionalSettingsName) {
+        if (!optionalSettingsName.isPresent()) {
+            throw new ValidationError("Please, provide database settings name to delete");
         }
 
-        Integer id = optionalId.get();
+        String settingsName = optionalSettingsName.get();
+        if (settingsName.isEmpty()) {
+            throw new ValidationError("Please, provide database settings name to delete");
+        }
 
-        logger.info("deleteDatabase(): Got database deletion job. Database ID: {}", id);
+        logger.info("deleteDatabase(): Got database settings deletion job. Settings name: {}", settingsName);
 
-        databaseSettingsManager.deleteById(id);
+        try {
+            databaseSettingsManager.deleteById(settingsName);
+        } catch (NonTransientDataAccessException ignored) {
+
+        }
 
         return "redirect:/dashboard";
     }
@@ -61,9 +69,9 @@ public class WebApiDatabaseController {
             }
         }
 
-        if (addDatabaseRequest.getHost().isEmpty() || addDatabaseRequest.getPort().isEmpty() ||
-                addDatabaseRequest.getName().isEmpty() || addDatabaseRequest.getLogin().isEmpty() ||
-                addDatabaseRequest.getPassword().isEmpty()) {
+        if (addDatabaseRequest.getHost().isEmpty() || addDatabaseRequest.getSettingsName().isEmpty() ||
+                addDatabaseRequest.getPort().isEmpty() || addDatabaseRequest.getDatabaseName().isEmpty() ||
+                addDatabaseRequest.getLogin().isEmpty() || addDatabaseRequest.getPassword().isEmpty()) {
             return "Invalid database settings";
         }
 
@@ -77,26 +85,32 @@ public class WebApiDatabaseController {
     }
 
     @PostMapping
-    public String createDatabase(@Valid WebAddDatabaseRequest createDatabaseRequest) {
+    public String createDatabase(@Valid WebAddDatabaseRequest addDatabaseRequest) {
         logger.info("createDatabase(): Got database configuration creation job");
 
-        String error = validateAddDatabaseRequest(createDatabaseRequest);
+        String error = validateAddDatabaseRequest(addDatabaseRequest);
         if (!error.isEmpty()) {
             throw new ValidationError(error);
         }
 
-        Optional<DatabaseType> databaseType = DatabaseType.of(createDatabaseRequest.getDatabaseType());
+        String settingsName = addDatabaseRequest.getSettingsName();
+        if (databaseSettingsManager.existsById(settingsName)) {
+            throw new ValidationError("Database settings with name '" + settingsName + "' already exists");
+        }
+
+        Optional<DatabaseType> databaseType = DatabaseType.of(addDatabaseRequest.getDatabaseType());
         if (databaseType.isPresent()) {
             switch (databaseType.get()) {
                 case POSTGRES: {
                     PostgresSettings postgresSettings = new PostgresSettings();
 
                     DatabaseSettings databaseSettings = DatabaseSettings.postgresSettings(postgresSettings)
-                            .withHost(createDatabaseRequest.getHost())
-                            .withPort(Integer.valueOf(createDatabaseRequest.getPort()))
-                            .withName(createDatabaseRequest.getName())
-                            .withLogin(createDatabaseRequest.getLogin())
-                            .withPassword(createDatabaseRequest.getPassword())
+                            .withHost(addDatabaseRequest.getHost())
+                            .withPort(Integer.valueOf(addDatabaseRequest.getPort()))
+                            .withDatabaseName(addDatabaseRequest.getDatabaseName())
+                            .withLogin(addDatabaseRequest.getLogin())
+                            .withPassword(addDatabaseRequest.getPassword())
+                            .withSettingsName(addDatabaseRequest.getSettingsName())
                             .build();
                     databaseSettingsManager.save(databaseSettings);
                     break;

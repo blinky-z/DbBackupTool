@@ -11,9 +11,7 @@ import java.util.Optional;
 @Table(name = "database_settings")
 public class DatabaseSettings {
     @Id
-    @Column(insertable = false, updatable = false)
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private String settingsName;
 
     @Enumerated(EnumType.STRING)
     @Column(updatable = false)
@@ -36,67 +34,87 @@ public class DatabaseSettings {
     @Convert(converter = AdditionalDatabaseSettingsConverter.class)
     private AdditionalDatabaseSettings additionalDatabaseSettings;
 
-    public Integer getId() {
-        return id;
+    DatabaseSettings() {
+    }
+
+    private DatabaseSettings(@NotNull DatabaseType type, @NotNull String settingsName, @NotNull String host, int port,
+                             @NotNull String name, @NotNull String login, @NotNull String password,
+                             @NotNull AdditionalDatabaseSettings additionalDatabaseSettings) {
+        this.type = Objects.requireNonNull(type);
+        this.settingsName = settingsName;
+        this.host = Objects.requireNonNull(host);
+        this.port = port;
+        this.name = Objects.requireNonNull(name);
+        this.login = Objects.requireNonNull(login);
+        this.password = Objects.requireNonNull(password);
+        this.additionalDatabaseSettings = Objects.requireNonNull(additionalDatabaseSettings);
+    }
+
+    public static Builder postgresSettings(@NotNull PostgresSettings postgresSettings) {
+        Builder builder = new Builder();
+        builder.type = DatabaseType.POSTGRES;
+        builder.postgresSettings = Objects.requireNonNull(postgresSettings);
+        return builder;
     }
 
     public DatabaseType getType() {
         return type;
     }
 
-    public String getHost() {
-        return host;
-    }
-
-    public int getPort() {
-        return port;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getLogin() {
-        return login;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public Date getDate() {
-        return date;
-    }
-
-    DatabaseSettings() {
-    }
-
-    void setId(Integer id) {
-        this.id = id;
-    }
-
     void setType(DatabaseType type) {
         this.type = type;
+    }
+
+    public String getSettingsName() {
+        return settingsName;
+    }
+
+    public void setSettingsName(String settingsName) {
+        this.settingsName = settingsName;
+    }
+
+    public String getHost() {
+        return host;
     }
 
     void setHost(String host) {
         this.host = host;
     }
 
+    public int getPort() {
+        return port;
+    }
+
     void setPort(int port) {
         this.port = port;
+    }
+
+    public String getName() {
+        return name;
     }
 
     void setName(String name) {
         this.name = name;
     }
 
+    public String getLogin() {
+        return login;
+    }
+
     void setLogin(String login) {
         this.login = login;
     }
 
+    public String getPassword() {
+        return password;
+    }
+
     void setPassword(String password) {
         this.password = password;
+    }
+
+    public Date getDate() {
+        return date;
     }
 
     void setDate(Date date) {
@@ -111,23 +129,27 @@ public class DatabaseSettings {
         return Optional.ofNullable(additionalDatabaseSettings.getPostgresSettings());
     }
 
-    private DatabaseSettings(@NotNull DatabaseType type, @NotNull String host, int port, @NotNull String name,
-                             @NotNull String login, @NotNull String password,
-                             @NotNull AdditionalDatabaseSettings additionalDatabaseSettings) {
-        this.type = Objects.requireNonNull(type);
-        this.host = Objects.requireNonNull(host);
-        this.port = port;
-        this.name = Objects.requireNonNull(name);
-        this.login = Objects.requireNonNull(login);
-        this.password = Objects.requireNonNull(password);
-        this.additionalDatabaseSettings = Objects.requireNonNull(additionalDatabaseSettings);
+    @Override
+    public String toString() {
+        return "DatabaseSettings{" +
+                ", settingsName=" + settingsName +
+                ", type=" + type +
+                ", host='" + host + '\'' +
+                ", port='" + port + '\'' +
+                ", databaseName='" + name + '\'' +
+                ", login=***'" + '\'' +
+                ", password=***'" + '\'' +
+                ", date=" + date +
+                ", additionalDatabaseSettings=" + additionalDatabaseSettings +
+                '}';
     }
 
     public static final class Builder {
         private DatabaseType type;
+        private String settingsName;
         private String host;
         private int port;
-        private String name;
+        private String databaseName;
         private String login;
         private String password;
         private PostgresSettings postgresSettings;
@@ -145,8 +167,8 @@ public class DatabaseSettings {
             return this;
         }
 
-        public Builder withName(@NotNull String name) {
-            this.name = Objects.requireNonNull(name);
+        public Builder withDatabaseName(@NotNull String name) {
+            this.databaseName = Objects.requireNonNull(name);
             return this;
         }
 
@@ -160,31 +182,14 @@ public class DatabaseSettings {
             return this;
         }
 
+        public Builder withSettingsName(@NotNull String settingsName) {
+            this.settingsName = settingsName;
+            return this;
+        }
+
         public DatabaseSettings build() {
             AdditionalDatabaseSettings additionalDatabaseSettings = new AdditionalDatabaseSettings(type, postgresSettings);
-            return new DatabaseSettings(type, host, port, name, login, password, additionalDatabaseSettings);
+            return new DatabaseSettings(type, settingsName, host, port, databaseName, login, password, additionalDatabaseSettings);
         }
-    }
-
-    public static Builder postgresSettings(@NotNull PostgresSettings postgresSettings) {
-        Builder builder = new Builder();
-        builder.type = DatabaseType.POSTGRES;
-        builder.postgresSettings = Objects.requireNonNull(postgresSettings);
-        return builder;
-    }
-
-    @Override
-    public String toString() {
-        return "DatabaseSettings{" +
-                "id=" + id +
-                ", type=" + type +
-                ", host='" + host + '\'' +
-                ", port='" + port + '\'' +
-                ", name='" + name + '\'' +
-                ", login=***'" + '\'' +
-                ", password=***'" + '\'' +
-                ", date=" + date +
-                ", additionalDatabaseSettings=" + additionalDatabaseSettings +
-                '}';
     }
 }

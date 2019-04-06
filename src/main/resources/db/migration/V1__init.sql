@@ -1,7 +1,7 @@
 create table if not exists database_settings
 (
-    ID                SERIAL PRIMARY KEY,
     TYPE              VARCHAR(64)               not null,
+    SETTINGS_NAME     varchar(128)              not null unique,
     HOST              VARCHAR(256)              not null,
     PORT              INTEGER                   not null,
     NAME              VARCHAR(1024)             not null,
@@ -13,17 +13,17 @@ create table if not exists database_settings
 
 create table if not exists storage_settings
 (
-    ID                SERIAL PRIMARY KEY,
     TYPE              VARCHAR(64)               not null,
+    SETTINGS_NAME     varchar(128)              not null,
     DATE              TIMESTAMPTZ DEFAULT NOW() not null,
     ADDITIONAL_FIELDS varchar(8192)             not null
 );
 
 create table if not exists backup_properties
 (
-    ID                  SERIAL PRIMARY KEY,
-    DATE                TIMESTAMPTZ DEFAULT NOW() not null,
-    BACKUP_NAME         varchar(1024)             not null,
-    STORAGE_SETTINGS_ID integer                   not null,
-    PROCESSORS          varchar(1024)             not null
+    ID                    SERIAL PRIMARY KEY,
+    DATE                  TIMESTAMPTZ DEFAULT NOW() not null,
+    BACKUP_NAME           varchar(1024)             not null,
+    STORAGE_SETTINGS_NAME varchar(128)              not null,
+    PROCESSORS            varchar(1024)             not null
 );

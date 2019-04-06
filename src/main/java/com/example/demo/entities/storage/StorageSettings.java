@@ -11,9 +11,7 @@ import java.util.Optional;
 @Table(name = "storage_settings")
 public class StorageSettings {
     @Id
-    @Column(insertable = false, updatable = false)
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private String settingsName;
 
     @Enumerated(EnumType.STRING)
     @Column(updatable = false)
@@ -29,62 +27,11 @@ public class StorageSettings {
     StorageSettings() {
     }
 
-    void setId(Integer id) {
-        this.id = id;
-    }
-
-    void setDate(Date date) {
-        this.date = date;
-    }
-
-    void setType(StorageType type) {
-        this.type = type;
-    }
-
-    void setAdditionalStorageSettings(AdditionalStorageSettings additionalStorageSettings) {
-        this.additionalStorageSettings = additionalStorageSettings;
-    }
-
-    private StorageSettings(@NotNull StorageType type, @NotNull AdditionalStorageSettings additionalStorageSettings) {
+    private StorageSettings(@NotNull StorageType type, @NotNull String settingsName,
+                            @NotNull AdditionalStorageSettings additionalStorageSettings) {
         this.type = Objects.requireNonNull(type);
+        this.settingsName = settingsName;
         this.additionalStorageSettings = Objects.requireNonNull(additionalStorageSettings);
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public StorageType getType() {
-        return type;
-    }
-
-    public Date getDate() {
-        return date;
-    }
-
-    public Optional<DropboxSettings> getDropboxSettings() {
-        return Optional.ofNullable(additionalStorageSettings.getDropboxSettings());
-    }
-
-    public Optional<LocalFileSystemSettings> getLocalFileSystemSettings() {
-        return Optional.ofNullable(additionalStorageSettings.getLocalFileSystemSettings());
-    }
-
-    public static final class Builder {
-        private StorageType type;
-
-        private LocalFileSystemSettings localFileSystemSettings;
-
-        private DropboxSettings dropboxSettings;
-
-        private Builder() {
-        }
-
-        public StorageSettings build() {
-            AdditionalStorageSettings additionalStorageSettings = new AdditionalStorageSettings(
-                    type, localFileSystemSettings, dropboxSettings);
-            return new StorageSettings(type, additionalStorageSettings);
-        }
     }
 
     public static Builder localFileSystemSettings(@NotNull LocalFileSystemSettings localFileSystemSettings) {
@@ -101,13 +48,73 @@ public class StorageSettings {
         return builder;
     }
 
+    public String getSettingsName() {
+        return settingsName;
+    }
+
+    public void setSettingsName(String settingsName) {
+        this.settingsName = settingsName;
+    }
+
+    void setAdditionalStorageSettings(AdditionalStorageSettings additionalStorageSettings) {
+        this.additionalStorageSettings = additionalStorageSettings;
+    }
+
+    public StorageType getType() {
+        return type;
+    }
+
+    void setType(StorageType type) {
+        this.type = type;
+    }
+
+    public Date getDate() {
+        return date;
+    }
+
+    void setDate(Date date) {
+        this.date = date;
+    }
+
+    public Optional<DropboxSettings> getDropboxSettings() {
+        return Optional.ofNullable(additionalStorageSettings.getDropboxSettings());
+    }
+
+    public Optional<LocalFileSystemSettings> getLocalFileSystemSettings() {
+        return Optional.ofNullable(additionalStorageSettings.getLocalFileSystemSettings());
+    }
+
     @Override
     public String toString() {
         return "StorageSettings{" +
-                "id=" + id +
+                ", settingsName=" + settingsName +
                 ", type=" + type +
                 ", date=" + date +
                 ", additionalStorageSettings=" + additionalStorageSettings +
                 '}';
+    }
+
+    public static final class Builder {
+        private StorageType type;
+
+        private String settingsName;
+
+        private LocalFileSystemSettings localFileSystemSettings;
+
+        private DropboxSettings dropboxSettings;
+
+        private Builder() {
+        }
+
+        public StorageSettings build() {
+            AdditionalStorageSettings additionalStorageSettings = new AdditionalStorageSettings(
+                    type, localFileSystemSettings, dropboxSettings);
+            return new StorageSettings(type, settingsName, additionalStorageSettings);
+        }
+
+        public Builder withSettingsName(@NotNull String settingsName) {
+            this.settingsName = settingsName;
+            return this;
+        }
     }
 }

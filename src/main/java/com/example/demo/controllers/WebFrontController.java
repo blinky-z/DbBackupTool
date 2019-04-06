@@ -1,8 +1,8 @@
 package com.example.demo.controllers;
 
 import com.example.demo.entities.backup.BackupProperties;
-import com.example.demo.entities.database.DatabaseType;
 import com.example.demo.entities.database.DatabaseSettings;
+import com.example.demo.entities.database.DatabaseType;
 import com.example.demo.entities.database.PostgresSettings;
 import com.example.demo.entities.storage.DropboxSettings;
 import com.example.demo.entities.storage.LocalFileSystemSettings;
@@ -11,6 +11,7 @@ import com.example.demo.entities.storage.StorageType;
 import com.example.demo.manager.BackupPropertiesManager;
 import com.example.demo.manager.DatabaseSettingsManager;
 import com.example.demo.manager.StorageSettingsManager;
+import com.example.demo.webUI.formTransfer.WebCreateBackupRequest;
 import com.example.demo.webUI.renderModels.WebBackupItem;
 import com.example.demo.webUI.renderModels.WebDatabaseItem;
 import com.example.demo.webUI.renderModels.WebStorageItem;
@@ -19,6 +20,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.text.SimpleDateFormat;
@@ -27,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 
 @Controller
+@ControllerAdvice
 public class WebFrontController {
     private static final Logger logger = LoggerFactory.getLogger(WebFrontController.class);
 
@@ -60,11 +64,13 @@ public class WebFrontController {
 
     @RequestMapping("/login")
     public String login() {
-        return "login.html";
+        return "login";
     }
 
-    @RequestMapping("/dashboard")
-    public String dashboard(Model model) {
+    @ModelAttribute
+    public void addLists(Model model) {
+        logger.info("Adding lists...");
+
         SimpleDateFormat dateFormat = new SimpleDateFormat(TIME_FORMAT);
 
         {
@@ -75,9 +81,10 @@ public class WebFrontController {
                         RuntimeException::new);
 
                 HashMap<String, String> storageProperties = new HashMap<>();
+                storageProperties.put("Settings name", storageSettings.getSettingsName());
                 storageProperties.put("Backup path", localFileSystemSettings.getBackupPath());
 
-                WebStorageItem storageItem = new WebStorageItem(storageSettings.getType(), storageSettings.getId(),
+                WebStorageItem storageItem = new WebStorageItem(storageSettings.getType(), storageSettings.getSettingsName(),
                         storageProperties.toString(), dateFormat.format(storageSettings.getDate()));
                 storageList.add(storageItem);
             }
@@ -85,9 +92,10 @@ public class WebFrontController {
                 DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(RuntimeException::new);
 
                 HashMap<String, String> storageProperties = new HashMap<>();
+                storageProperties.put("Settings name", storageSettings.getSettingsName());
                 storageProperties.put("Access token", dropboxSettings.getAccessToken());
 
-                WebStorageItem storageItem = new WebStorageItem(storageSettings.getType(), storageSettings.getId(),
+                WebStorageItem storageItem = new WebStorageItem(storageSettings.getType(), storageSettings.getSettingsName(),
                         storageProperties.toString(), dateFormat.format(storageSettings.getDate()));
                 storageList.add(storageItem);
             }
@@ -101,13 +109,14 @@ public class WebFrontController {
             for (DatabaseSettings databaseSettings : databaseSettingsManager.getAllByType(DatabaseType.POSTGRES)) {
                 PostgresSettings postgresSettings = databaseSettings.getPostgresSettings().orElseThrow(RuntimeException::new);
 
-                HashMap<String, String> storageProperties = new HashMap<>();
-                storageProperties.put("Host", databaseSettings.getHost());
-                storageProperties.put("Port", Integer.toString(databaseSettings.getPort()));
-                storageProperties.put("Database name", databaseSettings.getName());
+                HashMap<String, String> databaseProperties = new HashMap<>();
+                databaseProperties.put("Settings name", databaseSettings.getSettingsName());
+                databaseProperties.put("Host", databaseSettings.getHost());
+                databaseProperties.put("Port", Integer.toString(databaseSettings.getPort()));
+                databaseProperties.put("Database name", databaseSettings.getName());
 
-                WebDatabaseItem databaseItem = new WebDatabaseItem(databaseSettings.getType(), databaseSettings.getId(),
-                        storageProperties.toString(), dateFormat.format(databaseSettings.getDate()));
+                WebDatabaseItem databaseItem = new WebDatabaseItem(databaseSettings.getType(), databaseSettings.getSettingsName(),
+                        databaseProperties.toString(), dateFormat.format(databaseSettings.getDate()));
                 databaseList.add(databaseItem);
             }
 
@@ -120,10 +129,10 @@ public class WebFrontController {
             for (BackupProperties currentBackupProperties : backupPropertiesManager.getAll()) {
                 HashMap<String, String> backupProperties = new HashMap<>();
 
-                Integer storageSettingsId = currentBackupProperties.getStorageSettingsId();
-                StorageSettings storageSettings = storageSettingsManager.getById(storageSettingsId).orElseThrow(() ->
+                String storageSettingsName = currentBackupProperties.getStorageSettingsName();
+                StorageSettings storageSettings = storageSettingsManager.getById(storageSettingsName).orElseThrow(() ->
                         new RuntimeException(String.format("Error occurred while rendering page: Missing " +
-                                "storage settings with ID %d", storageSettingsId)));
+                                "storage settings with name %d", storageSettingsName)));
 
                 backupProperties.put("Processors", currentBackupProperties.getProcessors().toString());
                 backupProperties.put("Stored on", storageSettings.getType().toString());
@@ -137,7 +146,11 @@ public class WebFrontController {
 
             model.addAttribute("backupList", backupList);
         }
+    }
 
-        return "dashboard.html";
+    @RequestMapping("/dashboard")
+    public String dashboard(Model model) {
+        model.addAttribute("webCreateBackupRequest", new WebCreateBackupRequest());
+        return "dashboard";
     }
 }

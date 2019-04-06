@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
+    <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
+    <meta content="" name="description">
     <title>Dashboard - Database Backup Tool</title>
 
     <link href="css/bootstrap.css" rel="stylesheet">
@@ -13,7 +13,7 @@
 <body>
 <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
     <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">Database Backup Tool</a>
-    <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search">
+    <input aria-label="Search" class="form-control form-control-dark w-100" placeholder="Search" type="text">
     <ul class="navbar-nav px-3">
         <li class="nav-item text-nowrap">
             <a class="nav-link" href="/api/logout">Sign out</a>
@@ -27,37 +27,37 @@
             <div class="sidebar-sticky">
                 <ul class="nav nav-tabs flex-column" id="barTabs" role="tablist">
                     <li class="nav-item">
-                        <a class="nav-link active" id="dashboard-tab" data-toggle="tab" href="#dashboard" role="tab"
-                           aria-controls="dashboard" aria-selected="true">
-                            <img src="images/home-tab-icon.png" alt="" width="20px" height="20px">
+                        <a aria-controls="dashboard" aria-selected="true" class="nav-link active" data-toggle="tab" href="#dashboard"
+                           id="dashboard-tab" role="tab">
+                            <img alt="" height="20px" src="images/home-tab-icon.png" width="20px">
                             Home <span class="sr-only">(current)</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" id="storage-tab" data-toggle="tab" href="#storage" role="tab"
-                           aria-controls="storage" aria-selected="false">
-                            <img src="images/storage-tab-icon.png" alt="" width="20px" height="20px">
+                        <a aria-controls="storage" aria-selected="false" class="nav-link" data-toggle="tab" href="#storage"
+                           id="storage-tab" role="tab">
+                            <img alt="" height="20px" src="images/storage-tab-icon.png" width="20px">
                             Manage storages
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" id="database-tab" data-toggle="tab" href="#database" role="tab"
-                           aria-controls="database" aria-selected="false">
-                            <img src="images/database-tab-icon.png" alt="" width="20px" height="20px">
+                        <a aria-controls="database" aria-selected="false" class="nav-link" data-toggle="tab" href="#database"
+                           id="database-tab" role="tab">
+                            <img alt="" height="20px" src="images/database-tab-icon.png" width="20px">
                             Manage databases
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" id="create-backup-tab" data-toggle="tab" href="#create-backup" role="tab"
-                           aria-controls="create-backup" aria-selected="false">
-                            <img src="images/createBackup-tab-icon1.png" alt="" width="20px" height="20px">
+                        <a aria-controls="create-backup" aria-selected="false" class="nav-link" data-toggle="tab" href="#create-backup"
+                           id="create-backup-tab" role="tab">
+                            <img alt="" height="20px" src="images/createBackup-tab-icon1.png" width="20px">
                             Create Backup
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" id="restore-backup-tab" data-toggle="tab" href="#restore-backup" role="tab"
-                           aria-controls="restore-backup" aria-selected="false">
-                            <img src="images/restoreBackup-tab-icon.png" alt="" width="20px" height="20px">
+                        <a aria-controls="restore-backup" aria-selected="false" class="nav-link" data-toggle="tab" href="#restore-backup"
+                           id="restore-backup-tab" role="tab">
+                            <img alt="" height="20px" src="images/restoreBackup-tab-icon.png" width="20px">
                             Restore Backup
                         </a>
                     </li>
@@ -65,39 +65,28 @@
             </div>
         </nav>
 
-        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
-            <div style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: hidden; pointer-events: none; visibility: hidden; z-index: -1;"
-                 class="chartjs-size-monitor">
-                <div class="chartjs-size-monitor-expand"
-                     style="position:absolute;left:0;top:0;right:0;bottom:0;overflow:hidden;pointer-events:none;visibility:hidden;z-index:-1;">
-                    <div style="position:absolute;width:1000000px;height:1000000px;left:0;top:0"></div>
-                </div>
-                <div class="chartjs-size-monitor-shrink"
-                     style="position:absolute;left:0;top:0;right:0;bottom:0;overflow:hidden;pointer-events:none;visibility:hidden;z-index:-1;">
-                    <div style="position:absolute;width:200%;height:200%;left:0; top:0"></div>
-                </div>
-            </div>
-
+        <main class="col-md-9 ml-sm-auto col-lg-10 px-4" role="main">
             <!--Tab Content-->
             <div class="tab-content" id="barTabsContent">
-                <div class="tab-pane fade show active" id="dashboard" role="tabpanel" aria-labelledby="dashboard">
+                <div aria-labelledby="dashboard" class="tab-pane fade show active" id="dashboard" role="tabpanel">
                     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                         <h2>Dashboard</h2>
                     </div>
                 </div>
-                <div class="tab-pane fade" id="storage" role="tabpanel" aria-labelledby="storage">
+                <div aria-labelledby="storage" class="tab-pane fade" id="storage" role="tabpanel">
                     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                         <h2>Manage Storages</h2>
                     </div>
 
                     <div id="manageStoragesButtonsWrapper">
                         <div class="nav d-flex flex-row-reverse bd-highlight">
-                            <a type="button" data-toggle="tab" href="#configureStorageFormWrapper" aria-selected="false"
-                               class="btn btn-outline-secondary" id="addNewStorageButton" role="tab">
+                            <a aria-selected="false" class="btn btn-outline-secondary" data-toggle="tab" href="#configureStorageFormWrapper"
+                               id="addNewStorageButton" role="tab" type="button">
                                 Add new storage
                             </a>
-                            <a type="button" data-toggle="tab" href="#storageListWrapper" aria-selected="true"
-                               class="btn btn-outline-primary mr-auto active" id="closeAddNewStorageFormButton" role="tab">
+                            <a aria-selected="true" class="btn btn-outline-primary mr-auto active" data-toggle="tab"
+                               href="#storageListWrapper"
+                               id="closeAddNewStorageFormButton" role="tab" type="button">
                                 Storage List
                             </a>
                         </div>
@@ -109,23 +98,25 @@
                                 <table class="table table-hover table-bordered">
                                     <thead class="thead-dark">
                                     <tr>
-                                        <th scope="col" class="col-md-2">Storage</th>
-                                        <th scope="col" class="col-md-6">Description</th>
-                                        <th scope="col" class="col-md-3">Creation time</th>
+                                        <th class="col-md-2" scope="col">Storage</th>
+                                        <th class="col-md-6" scope="col">Description</th>
+                                        <th class="col-md-3" scope="col">Creation time</th>
                                         <th scope="col"></th>
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    <tr th:each="storage: ${storageList}" th:object="${storage}" class="storageItem"
-                                        th:attr="data-id=*{id}">
+                                    <tr th:each="storage: ${storageList}" th:object="${storage}">
                                         <th scope="row" th:text="*{type}"></th>
                                         <td th:text="*{desc}"></td>
                                         <td th:text="*{time}"></td>
                                         <td>
                                             <div class="d-flex flex-row-reverse bd-highlight">
-                                                <button type="button" class="btn btn-secondary" onclick="removeStorage(this)">
-                                                    Remove
-                                                </button>
+                                                <form th:action="@{/storage}" th:method="delete">
+                                                    <input hidden th:name="settingsName" th:value="*{settingsName}" type="text">
+                                                    <button class="btn btn-secondary" type="submit">
+                                                        Remove
+                                                    </button>
+                                                </form>
                                             </div>
                                         </td>
                                     </tr>
@@ -135,14 +126,20 @@
                         </div>
 
                         <div class="tab-pane fade" id="configureStorageFormWrapper" role="tabpanel">
-                            <form id="configureStorageForm" action="/storage" method="post">
+                            <form action="/storage" id="configureStorageForm" method="post">
                                 <div class="form-group">
                                     <label for="configureStorage.selectStorage">Select Storage</label>
-                                    <select class="form-control" name="storageType" id="configureStorage.selectStorage">
-                                        <option value="" selected disabled>Select Storage</option>
-                                        <option value="localFileSystem" id="localFileSystemStorageSelect">Local File System</option>
-                                        <option value="dropbox" id="dropboxStorageSelect">Dropbox</option>
+                                    <select class="form-control" id="configureStorage.selectStorage" name="storageType">
+                                        <option disabled selected value="">Select Storage</option>
+                                        <option id="localFileSystemStorageSelect" value="localFileSystem">Local File System</option>
+                                        <option id="dropboxStorageSelect" value="dropbox">Dropbox</option>
                                     </select>
+                                </div>
+
+                                <div class="form-group" id="commonStorageInputFields">
+                                    <label for="createStorageSettingsNameInput">Settings name</label>
+                                    <input class="form-control form-control-sm" id="createStorageSettingsNameInput" name="settingsName"
+                                           placeholder="" type="text">
                                 </div>
 
                                 <!--Storage select based content-->
@@ -150,12 +147,13 @@
                                     <div class="localFileSystemStorageSelect box">
                                         <div class="form-group">
                                             <label for="localFileSystemStorageBackupPathInput">Backup location</label>
-                                            <input type="text" class="form-control form-control-sm"
+                                            <input aria-describedby="localFileSystemStorageBackupPathHelp"
+                                                   class="form-control form-control-sm"
                                                    id="localFileSystemStorageBackupPathInput"
                                                    name="localFileSystemSettings.backupPath"
-                                                   aria-describedby="localFileSystemStorageBackupPathHelp"
-                                                   placeholder="">
-                                            <small id="localFileSystemStorageBackupPathHelp" class="form-text text-muted">
+                                                   placeholder=""
+                                                   type="text">
+                                            <small class="form-text text-muted" id="localFileSystemStorageBackupPathHelp">
                                                 Absolute path to folder where backup should be saved into
                                             </small>
                                         </div>
@@ -163,33 +161,36 @@
                                     <div class="dropboxStorageSelect box">
                                         <div class="form-group">
                                             <label for="dropboxStorageAccessTokenInput">Dropbox access token</label>
-                                            <input type="text" class="form-control form-control-sm" id="dropboxStorageAccessTokenInput"
-                                                   name="dropboxSettings.accessToken" aria-describedby="dropboxStorageAccessTokenHelp"
-                                                   placeholder="">
-                                            <small id="dropboxStorageAccessTokenHelp" class="form-text text-muted">
+                                            <input aria-describedby="dropboxStorageAccessTokenHelp" class="form-control form-control-sm"
+                                                   id="dropboxStorageAccessTokenInput"
+                                                   name="dropboxSettings.accessToken" placeholder=""
+                                                   type="text">
+                                            <small class="form-text text-muted" id="dropboxStorageAccessTokenHelp">
                                                 You can get access token from the app page on Dropbox
                                             </small>
                                         </div>
                                     </div>
                                 </div>
-                                <button type="submit" class="btn btn-primary">Create storage</button>
+                                <button class="btn btn-primary" type="submit">Create storage</button>
                             </form>
                         </div>
                     </div>
                 </div>
-                <div class="tab-pane fade" id="database" role="tabpanel" aria-labelledby="database">
+                <div aria-labelledby="database" class="tab-pane fade" id="database" role="tabpanel">
                     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                         <h2>Manage Databases</h2>
                     </div>
 
                     <div id="manageDatabasesButtonsWrapper">
                         <div class="nav d-flex flex-row-reverse bd-highlight">
-                            <a type="button" data-toggle="tab" href="#configureDatabaseFormWrapper" aria-selected="false"
-                               class="btn btn-outline-secondary" id="addNewDatabaseButton" role="tab">
+                            <a aria-selected="false" class="btn btn-outline-secondary" data-toggle="tab"
+                               href="#configureDatabaseFormWrapper"
+                               id="addNewDatabaseButton" role="tab" type="button">
                                 Add new database
                             </a>
-                            <a type="button" data-toggle="tab" href="#databaseListWrapper" aria-selected="true"
-                               class="btn btn-outline-primary mr-auto active" id="closeAddNewDatabaseFormButton" role="tab">
+                            <a aria-selected="true" class="btn btn-outline-primary mr-auto active" data-toggle="tab"
+                               href="#databaseListWrapper"
+                               id="closeAddNewDatabaseFormButton" role="tab" type="button">
                                 Database List
                             </a>
                         </div>
@@ -201,23 +202,25 @@
                                 <table class="table table-hover table-bordered">
                                     <thead class="thead-dark">
                                     <tr>
-                                        <th scope="col" class="col-md-2">Database</th>
-                                        <th scope="col" class="col-md-6">Description</th>
-                                        <th scope="col" class="col-md-3">Creation time</th>
+                                        <th class="col-md-2" scope="col">Database</th>
+                                        <th class="col-md-6" scope="col">Description</th>
+                                        <th class="col-md-3" scope="col">Creation time</th>
                                         <th scope="col"></th>
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    <tr th:each="database: ${databaseList}" th:object="${database}" class="databaseItem"
-                                        th:attr="data-id=*{id}">
+                                    <tr th:each="database: ${databaseList}" th:object="${database}">
                                         <th scope="row" th:text="*{type}"></th>
                                         <td th:text="*{desc}"></td>
                                         <td th:text="*{time}"></td>
                                         <td>
                                             <div class="d-flex flex-row-reverse bd-highlight">
-                                                <button type="button" class="btn btn-secondary" onclick="removeDatabase(this)">
-                                                    Remove
-                                                </button>
+                                                <form th:action="@{/database}" th:method="delete">
+                                                    <input hidden th:name="settingsName" th:value="*{settingsName}" type="text">
+                                                    <button class="btn btn-secondary" type="submit">
+                                                        Remove
+                                                    </button>
+                                                </form>
                                             </div>
                                         </td>
                                     </tr>
@@ -227,32 +230,35 @@
                         </div>
 
                         <div class="tab-pane fade" id="configureDatabaseFormWrapper" role="tabpanel">
-                            <form id="configureDatabaseForm" action="/database" method="post">
+                            <form action="/database" id="configureDatabaseForm" method="post">
                                 <div class="form-group">
                                     <label for="configureDatabase-selectDatabase">Select Database</label>
-                                    <select class="form-control" name="databaseType" id="configureDatabase-selectDatabase">
-                                        <option value="" selected disabled>Select Database</option>
-                                        <option value="postgres" id="postgresDatabaseSelect">Postgres</option>
+                                    <select class="form-control" id="configureDatabase-selectDatabase" name="databaseType">
+                                        <option disabled selected value="">Select Database</option>
+                                        <option id="postgresDatabaseSelect" value="postgres">Postgres</option>
                                     </select>
                                 </div>
 
                                 <div class="form-group" id="commonDatabaseInputFields">
+                                    <label for="createDatabaseSettingsNameInput">Settings name</label>
+                                    <input class="form-control form-control-sm" id="createDatabaseSettingsNameInput" name="settingsName"
+                                           placeholder="" type="text">
                                     <label for="createDatabaseHostInput">Host</label>
-                                    <input type="text" class="form-control form-control-sm" id="createDatabaseHostInput"
-                                           name="host" placeholder="">
+                                    <input class="form-control form-control-sm" id="createDatabaseHostInput" name="host"
+                                           placeholder="" type="text">
                                     <label for="createDatabasePortInput">Port</label>
-                                    <input type="text" class="form-control form-control-sm" id="createDatabasePortInput"
-                                           name="port" placeholder="">
+                                    <input class="form-control form-control-sm" id="createDatabasePortInput" name="port"
+                                           placeholder="" type="text">
                                     <label for="createDatabaseNameInput">Database name</label>
-                                    <input type="text" class="form-control form-control-sm" id="createDatabaseNameInput"
-                                           name="name" placeholder="">
+                                    <input class="form-control form-control-sm" id="createDatabaseNameInput" name="databaseName"
+                                           placeholder="" type="text">
                                     <label for="createDatabaseLoginInput">Database login</label>
-                                    <input type="text" class="form-control form-control-sm" id="createDatabaseLoginInput"
-                                           name="login" placeholder="">
+                                    <input class="form-control form-control-sm" id="createDatabaseLoginInput" name="login"
+                                           placeholder="" type="text">
                                     <label for="createDatabasePasswordInput">Database password</label>
-                                    <input type="text" class="form-control form-control-sm" id="createDatabasePasswordInput"
-                                           name="password"
-                                           placeholder="">
+                                    <input class="form-control form-control-sm" id="createDatabasePasswordInput" name="password"
+                                           placeholder=""
+                                           type="text">
                                 </div>
 
                                 <!--Database select based content-->
@@ -261,27 +267,31 @@
 
                                     </div>
                                 </div>
-                                <button type="submit" class="btn btn-primary">Create database</button>
+                                <button class="btn btn-primary" type="submit">Create database</button>
                             </form>
                         </div>
                     </div>
                 </div>
-                <div class="tab-pane fade" id="create-backup" role="tabpanel" aria-labelledby="create-backup">
+                <div aria-labelledby="create-backup" class="tab-pane fade" id="create-backup" role="tabpanel">
                     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                         <h2>Create Backup</h2>
                     </div>
 
-                    <form id="createBackupForm" th:action="@{/create-backup}" method="post">
+                    <form action="#" id="createBackupForm" method="post" th:action="@{/create-backup}"
+                          th:object="${webCreateBackupRequest}">
                         <div class="form-group">
                             <label for="createBackup-selectDatabase">Select database to backup</label>
-                            <select class="form-control" name="databaseId" id="createBackup-selectDatabase">
-                                <option value="" disabled selected>Select Database</option>
-                                <option th:each="database: ${databaseList}" th:object="${database}" th:value="*{id}"
-                                        th:text="${'Database: ' + database.type +
+                            <select th:class="'form-control ' + (${#fields.hasErrors('databaseSettingsName')} ? 'is-invalid')"
+                                    id="createBackup-selectDatabase" th:field="*{databaseSettingsName}">
+                                <option selected value="">Select Database</option>
+                                <option th:each="database: ${databaseList}" th:text="${'Database: ' + database.type +
                                         ' | Details: ' + database.desc +
-                                        ' | Creation time: ' + database.time}">
+                                        ' | Creation time: ' + database.time}"
+                                        th:value="${database.settingsName}">
                                 </option>
                             </select>
+                            <div th:if="${#fields.hasErrors('databaseSettingsName')}" th:errors="*{databaseSettingsName}"
+                                 class="invalid-feedback"></div>
                         </div>
 
                         <label for="selectStorageForBackupList">Select storage</label>
@@ -289,17 +299,19 @@
                             <thead class="thead-dark">
                             <tr>
                                 <th scope="col"></th>
-                                <th scope="col" class="col-md-2">Storage</th>
-                                <th scope="col" class="col-md-5">Description</th>
-                                <th scope="col" class="col-md-3">Creation time</th>
-                                <th scope="col" class="col-md-1">Compress</th>
+                                <th class="col-md-2" scope="col">Storage</th>
+                                <th class="col-md-5" scope="col">Description</th>
+                                <th class="col-md-3" scope="col">Creation time</th>
+                                <th class="col-md-1" scope="col">Compress</th>
                             </tr>
                             </thead>
                             <tbody>
-                            <tr th:each="storage, iterStat: ${storageList}" class="storageItem">
+                            <tr th:each="storage, iterStat: ${storageList}">
                                 <td>
                                     <div class="input-group">
-                                        <input type="checkbox" th:name="|backupCreationProperties[${storage.id}].id|" th:value="${storage.id}">
+                                        <input th:name="|backupCreationProperties[${storage.settingsName}].storageSettingsName|"
+                                               th:value="${storage.settingsName}"
+                                               type="checkbox">
                                     </div>
                                 </td>
                                 <th scope="row" th:text="${storage.type}"></th>
@@ -307,44 +319,47 @@
                                 <td th:text="${storage.time}"></td>
                                 <td>
                                     <div class="form-check form-group">
-                                        <input type="checkbox" class="form-check-input"
-                                               th:name="|backupCreationProperties[${storage.id}].processors|" th:value="'Compressor'">
+                                        <input class="form-check-input"
+                                               th:name="|backupCreationProperties[${storage.settingsName}].processors|"
+                                               th:value="'Compressor'"
+                                               type="checkbox">
                                     </div>
                             </tr>
                             </tbody>
                         </table>
-                        <button type="submit" class="btn btn-primary">Backup</button>
+                        <button class="btn btn-primary" type="submit">Backup</button>
                     </form>
                 </div>
-                <div class="tab-pane fade" id="restore-backup" role="tabpanel" aria-labelledby="restore-backup">
+                <div aria-labelledby="restore-backup" class="tab-pane fade" id="restore-backup" role="tabpanel">
                     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                         <h2>Restore Backup</h2>
                     </div>
 
-                    <form id="restoreBackupForm" th:action="@{/restore-backup}" method="post">
+                    <form id="restoreBackupForm" method="post" th:action="@{/restore-backup}">
 
                         <div class="form-group">
                             <label for="restoreBackup-selectBackup">Select backup to restore from</label>
-                            <select class="form-control" name="backupId" id="restoreBackup-selectBackup">
-                                <option value="" disabled selected>Select Backup</option>
-                                <option th:each="backup: ${backupList}" th:object="${backup}" th:value="*{id}"
-                                        th:text="${'Backup name: ' + backup.name + ' | Details: ' + backup.desc +
-                                        ' | Creation time: ' + backup.time}">
+                            <select class="form-control" id="restoreBackup-selectBackup" name="backupId">
+                                <option disabled selected value="">Select Backup</option>
+                                <option th:each="backup: ${backupList}" th:object="${backup}" th:text="${'Backup name: ' + backup.name + ' | Details: ' + backup.desc +
+                                        ' | Creation time: ' + backup.time}"
+                                        th:value="*{id}">
                                 </option>
                             </select>
                         </div>
 
                         <div class="form-group">
                             <label for="restoreBackup-selectDatabase">Select database to restore to</label>
-                            <select class="form-control" name="databaseId" id="restoreBackup-selectDatabase">
-                                <option value="" disabled selected>Select Database</option>
-                                <option th:each="database: ${databaseList}" th:object="${database}" th:value="*{id}"
-                                        th:text="${'Database type: ' + database.type.toString() + ' | Details: ' + database.desc}">
+                            <select class="form-control" id="restoreBackup-selectDatabase" name="databaseSettingsName">
+                                <option disabled selected value="">Select Database</option>
+                                <option th:each="database: ${databaseList}" th:object="${database}"
+                                        th:text="${'Database type: ' + database.type.toString() + ' | Details: ' + database.desc}"
+                                        th:value="*{settingsName}">
                                 </option>
                             </select>
                         </div>
 
-                        <button type="submit" class="btn btn-primary">Restore</button>
+                        <button class="btn btn-primary" type="submit">Restore</button>
                     </form>
                 </div>
             </div>
@@ -353,7 +368,6 @@
 </div>
 <script src="js/jquery-3.3.1.min.js"></script>
 <script src="js/bootstrap.js"></script>
-<script src="js/dashboard.js"></script>
 <script src="js/selectContentShow.js"></script>
 </body>
 </html>

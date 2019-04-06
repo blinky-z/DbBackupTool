@@ -27,14 +27,21 @@ import java.util.Objects;
 @Configuration
 public class TestConfiguration {
     private static final Logger logger = LoggerFactory.getLogger(TestConfiguration.class);
-
+    private static final String dropboxAccessToken = "tzFnUqsYFXAAAAAAAAAAG-irDd6KaODXHm7TlYvPwBytOxGRTJz-F0u4grmndSg3";
+    private static final String localFileSystemBackupPath =
+            FileSystems.getDefault().getPath("src/test").toAbsolutePath().toString();
     @Autowired
     private StorageSettingsRepository storageSettingsRepository;
-
     @Autowired
     private DatabaseSettingsRepository databaseSettingsRepository;
+    @Autowired
+    @Qualifier("masterPostgresDataSource")
+    private DataSource masterPostgresDataSource;
+    @Autowired
+    @Qualifier("copyPostgresDataSource")
+    private DataSource copyPostgresDataSource;
 
-    private DatabaseSettings buildDatabaseSettings(@NotNull DatabaseType databaseType,
+    private DatabaseSettings buildDatabaseSettings(@NotNull DatabaseType databaseType, @NotNull String settingsName,
                                                    @NotNull DataSource dataSource) throws SQLException {
         DatabaseMetaData metadata = dataSource.getConnection().getMetaData();
         DatabaseSettings createdDatabaseSettings;
@@ -50,9 +57,10 @@ public class TestConfiguration {
                 DatabaseSettings postgresDatabaseSettings = DatabaseSettings.postgresSettings(postgresSettings)
                         .withHost(parsedConnUrl.getHost())
                         .withPort(parsedConnUrl.getPort())
-                        .withName(parsedConnUrl.getPath().substring(parsedConnUrl.getPath().lastIndexOf("/") + 1))
+                        .withDatabaseName(parsedConnUrl.getPath().substring(parsedConnUrl.getPath().lastIndexOf("/") + 1))
                         .withLogin("postgres")
                         .withPassword("postgres")
+                        .withSettingsName(settingsName)
                         .build();
 
                 createdDatabaseSettings = databaseSettingsRepository.save(postgresDatabaseSettings);
@@ -69,19 +77,6 @@ public class TestConfiguration {
         return Objects.requireNonNull(createdDatabaseSettings);
     }
 
-    private static final String dropboxAccessToken = "tzFnUqsYFXAAAAAAAAAAG-irDd6KaODXHm7TlYvPwBytOxGRTJz-F0u4grmndSg3";
-
-    private static final String localFileSystemBackupPath =
-            FileSystems.getDefault().getPath("src/test").toAbsolutePath().toString();
-
-    @Autowired
-    @Qualifier("masterPostgresDataSource")
-    private DataSource masterPostgresDataSource;
-
-    @Autowired
-    @Qualifier("copyPostgresDataSource")
-    private DataSource copyPostgresDataSource;
-
     @Bean
     public JdbcTemplate jdbcPostgresMasterTemplate() {
         return new JdbcTemplate(masterPostgresDataSource);
@@ -94,19 +89,23 @@ public class TestConfiguration {
 
     @Bean
     public DatabaseSettings masterPostgresDatabaseSettings() throws SQLException {
-        return buildDatabaseSettings(DatabaseType.POSTGRES, masterPostgresDataSource);
+        return buildDatabaseSettings(DatabaseType.POSTGRES, "masterPostgresTestDatabaseSettings",
+                masterPostgresDataSource);
     }
 
     @Bean
     public DatabaseSettings copyPostgresDatabaseSettings() throws SQLException {
-        return buildDatabaseSettings(DatabaseType.POSTGRES, copyPostgresDataSource);
+        return buildDatabaseSettings(DatabaseType.POSTGRES, "copyPostgresTestDatabaseSettings",
+                copyPostgresDataSource);
     }
 
     @Bean
     public StorageSettings dropboxStorageSettings() {
         DropboxSettings dropboxSettings = new DropboxSettings();
         dropboxSettings.setAccessToken(dropboxAccessToken);
-        return Objects.requireNonNull(storageSettingsRepository.save(StorageSettings.dropboxSettings(dropboxSettings).build()));
+        return Objects.requireNonNull(storageSettingsRepository.save(StorageSettings.dropboxSettings(dropboxSettings)
+                .withSettingsName("testDropboxStorageSettings")
+                .build()));
     }
 
     @Bean
@@ -114,6 +113,8 @@ public class TestConfiguration {
         LocalFileSystemSettings localFileSystemSettings = new LocalFileSystemSettings();
         localFileSystemSettings.setBackupPath(localFileSystemBackupPath);
         return Objects.requireNonNull(
-                storageSettingsRepository.save(StorageSettings.localFileSystemSettings(localFileSystemSettings).build()));
+                storageSettingsRepository.save(StorageSettings.localFileSystemSettings(localFileSystemSettings)
+                        .withSettingsName("testLocalFileSystemStorageSettings")
+                        .build()));
     }
 }

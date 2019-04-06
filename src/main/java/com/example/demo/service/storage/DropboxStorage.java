@@ -26,7 +26,7 @@ public class DropboxStorage implements Storage {
 
     /**
      * Uploads backup to Dropbox
-     *
+     * <p>
      * Backup is saved into root folder, which is usually is an app folder
      */
     public void uploadBackup(@NotNull InputStream in, @NotNull StorageSettings storageSettings, @NotNull String backupName) {
@@ -76,6 +76,40 @@ public class DropboxStorage implements Storage {
         logger.info("Backup successfully saved on Dropbox. Backup folder: {}", backupFolderPath);
     }
 
+    /**
+     * Downloads backup from Dropbox
+     */
+    public InputStream downloadBackup(@NotNull StorageSettings storageSettings, @NotNull String backupName) {
+        String backupFolderPath = "/" + backupName;
+        logger.info("Downloading backup from Dropbox. Backup folder: {}", backupFolderPath);
+        DbxRequestConfig config = DbxRequestConfig.newBuilder("dbBackupDownloader").build();
+        DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(() -> new RuntimeException(
+                "Can't download backup from Dropbox storage: Missing Dropbox Settings"));
+        DbxClientV2 dbxClient = new DbxClientV2(config, dropboxSettings.getAccessToken());
+
+        long filesCount;
+        try {
+            ListFolderResult listFolderResult = dbxClient.files().listFolder(backupFolderPath);
+            List<Metadata> listFolderMetadata = listFolderResult.getEntries();
+            filesCount = listFolderMetadata.size();
+        } catch (DbxException ex) {
+            throw new RuntimeException(String.format("Error listing Dropbox backup folder. Backup folder: %s", backupFolderPath), ex);
+        }
+
+        try {
+            PipedOutputStream out = new PipedOutputStream();
+            PipedInputStream in = new PipedInputStream();
+            in.connect(out);
+
+            Thread backupDownloader = new Thread(new BackupDownloader(out, dbxClient, backupFolderPath, backupName, filesCount));
+            backupDownloader.start();
+
+            return in;
+        } catch (IOException ex) {
+            throw new RuntimeException("Error occurred while initializing backup downloading from Dropbox", ex);
+        }
+    }
+
     private class BackupDownloader implements Runnable {
         private OutputStream out;
 
@@ -112,40 +146,6 @@ public class DropboxStorage implements Storage {
                         String.format("Error occurred while downloading backup from Dropbox. Backup folder: %s",
                                 backupFolderPath), ex);
             }
-        }
-    }
-
-    /**
-     * Downloads backup from Dropbox
-     */
-    public InputStream downloadBackup(@NotNull StorageSettings storageSettings, @NotNull String backupName) {
-        String backupFolderPath = "/" + backupName;
-        logger.info("Downloading backup from Dropbox. Backup folder: {}", backupFolderPath);
-        DbxRequestConfig config = DbxRequestConfig.newBuilder("dbBackupDownloader").build();
-        DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(() -> new RuntimeException(
-                "Can't download backup from Dropbox storage: Missing Dropbox Settings"));
-        DbxClientV2 dbxClient = new DbxClientV2(config, dropboxSettings.getAccessToken());
-
-        long filesCount;
-        try {
-            ListFolderResult listFolderResult = dbxClient.files().listFolder(backupFolderPath);
-            List<Metadata> listFolderMetadata = listFolderResult.getEntries();
-            filesCount = listFolderMetadata.size();
-        } catch (DbxException ex) {
-            throw new RuntimeException(String.format("Error listing Dropbox backup folder. Backup folder: %s", backupFolderPath), ex);
-        }
-
-        try {
-            PipedOutputStream out = new PipedOutputStream();
-            PipedInputStream in = new PipedInputStream();
-            in.connect(out);
-
-            Thread backupDownloader = new Thread(new BackupDownloader(out, dbxClient, backupFolderPath, backupName, filesCount));
-            backupDownloader.start();
-
-            return in;
-        } catch (IOException ex) {
-            throw new RuntimeException("Error occurred while initializing backup downloading from Dropbox", ex);
         }
     }
 }

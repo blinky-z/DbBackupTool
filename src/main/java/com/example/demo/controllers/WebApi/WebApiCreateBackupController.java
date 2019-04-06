@@ -1,6 +1,7 @@
 package com.example.demo.controllers.WebApi;
 
 import com.example.demo.controllers.WebApi.Errors.ValidationError;
+import com.example.demo.controllers.WebApi.Validator.WebCreateBackupRequestValidator;
 import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.entities.storage.StorageSettings;
 import com.example.demo.manager.*;
@@ -8,12 +9,13 @@ import com.example.demo.webUI.formTransfer.WebCreateBackupRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import javax.validation.Valid;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +35,8 @@ public class WebApiCreateBackupController {
     private BackupLoadManager backupLoadManager;
 
     private BackupProcessorManager backupProcessorManager;
+
+    private WebCreateBackupRequestValidator webCreateBackupRequestValidator;
 
     @Autowired
     public void setDatabaseBackupManager(DatabaseBackupManager databaseBackupManager) {
@@ -59,21 +63,26 @@ public class WebApiCreateBackupController {
         this.backupProcessorManager = backupProcessorManager;
     }
 
+    @Autowired
+    public void setWebCreateBackupRequestValidator(WebCreateBackupRequestValidator webCreateBackupRequestValidator) {
+        this.webCreateBackupRequestValidator = webCreateBackupRequestValidator;
+    }
+
     private String validateCreateBackupRequest(WebCreateBackupRequest createBackupRequest) {
-        if (createBackupRequest.getDatabaseId() == null) {
+        if (createBackupRequest.getDatabaseSettingsName() == null) {
             return "Please, provide database to backup";
         }
 
-        HashMap<Integer, WebCreateBackupRequest.BackupCreationProperties> backupCreationProperties =
+        HashMap<String, WebCreateBackupRequest.BackupCreationProperties> backupCreationProperties =
                 createBackupRequest.getBackupCreationProperties();
         if (backupCreationProperties.size() == 0) {
             return "Please, select at least one storage to upload backup to";
         }
 
-        for (Map.Entry<Integer, WebCreateBackupRequest.BackupCreationProperties> entry : backupCreationProperties.entrySet()) {
+        for (Map.Entry<String, WebCreateBackupRequest.BackupCreationProperties> entry : backupCreationProperties.entrySet()) {
             WebCreateBackupRequest.BackupCreationProperties currentBackupCreationProperties = entry.getValue();
             if (currentBackupCreationProperties == null) {
-                return "Invalid Storage settings with ID " + entry.getKey();
+                return "Missing storage settings. Settings name: " + entry.getKey();
             }
         }
 
@@ -81,27 +90,35 @@ public class WebApiCreateBackupController {
     }
 
     @PostMapping
-    public String createBackup(WebCreateBackupRequest createBackupRequest) {
+    public String createBackup(WebCreateBackupRequest createBackupRequest, BindingResult bindingResult) {
         logger.info("createBackup(): Got backup creation job");
 
-        String error = validateCreateBackupRequest(createBackupRequest);
-        if (!error.isEmpty()) {
-            throw new ValidationError(error);
+//        String error = validateCreateBackupRequest(createBackupRequest);
+//        if (!error.isEmpty()) {
+//            throw new ValidationError(error);
+//        }
+
+        webCreateBackupRequestValidator.validate(createBackupRequest, bindingResult);
+        if (bindingResult.hasErrors()) {
+            logger.info("Has errors: {}", bindingResult.getAllErrors());
+            return "dashboard";
         }
 
-        int databaseId = createBackupRequest.getDatabaseId();
-        DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseId).orElseThrow(() -> new RuntimeException(
-                String.format("Can't retrieve database settings. Error: no database settings with ID %d", databaseId)));
+        String databaseSettingsName = createBackupRequest.getDatabaseSettingsName();
+        DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseSettingsName).orElseThrow(() ->
+                new RuntimeException(
+                        String.format("Can't retrieve database settings. Error: no database settings with name %d", databaseSettingsName)));
         String databaseName = databaseSettings.getName();
 
         logger.info("createBackup(): Database settings: {}", databaseSettings);
 
         for (WebCreateBackupRequest.BackupCreationProperties backupCreationProperties :
                 createBackupRequest.getBackupCreationProperties().values()) {
-            Integer storageId = backupCreationProperties.getId();
-            StorageSettings storageSettings = storageSettingsManager.getById(storageId).orElseThrow(() -> new RuntimeException(
-                    String.format("createBackup(): Can't retrieve storage settings. Error: no storage settings with ID %d",
-                            storageId)));
+            String storageSettingsName = backupCreationProperties.getStorageSettingsName();
+            StorageSettings storageSettings = storageSettingsManager.getById(storageSettingsName).orElseThrow(() ->
+                    new RuntimeException(
+                            String.format("createBackup(): Can't retrieve storage settings. Error: no storage settings with name %d",
+                                    storageSettingsName)));
 
             logger.info("Current storage settings: {}", storageSettings.toString());
 

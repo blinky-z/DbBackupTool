@@ -1,7 +1,7 @@
 package com.example.demo.manager;
 
-import com.example.demo.entities.storage.StorageType;
 import com.example.demo.entities.storage.StorageSettings;
+import com.example.demo.entities.storage.StorageType;
 import com.example.demo.repositories.StorageSettingsRepository;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,11 +22,15 @@ public class StorageSettingsManager {
         return storageSettingsRepository.save(storageSettings);
     }
 
-    public void deleteById(@NotNull Integer id) {
+    public boolean existsById(@NotNull String id) {
+        return storageSettingsRepository.existsById(id);
+    }
+
+    public void deleteById(@NotNull String id) {
         storageSettingsRepository.deleteById(id);
     }
 
-    public Optional<StorageSettings> getById(@NotNull Integer id) {
+    public Optional<StorageSettings> getById(@NotNull String id) {
         return storageSettingsRepository.findById(id);
     }
 

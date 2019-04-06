@@ -12,8 +12,12 @@ import com.example.demo.webUI.formTransfer.storage.WebLocalFileSystemSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.NonTransientDataAccessException;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -30,17 +34,35 @@ public class WebApiStorageController {
         this.storageSettingsManager = storageSettingsManager;
     }
 
-    @DeleteMapping
-    public String deleteStorage(@RequestParam(value = "id") Optional<Integer> optionalId) {
-        if (!optionalId.isPresent()) {
-            throw new ValidationError("Please, provide storage ID to delete");
+    public String validateDeleteStorageRequest(Optional<String> optionalSettingsName) {
+        if (!optionalSettingsName.isPresent()) {
+            return "Please, provide storage settings name to delete";
         }
 
-        Integer id = optionalId.get();
+        String settingsName = optionalSettingsName.get();
+        if (settingsName.isEmpty()) {
+           return "Please, provide storage settings name to delete";
+        }
 
-        logger.info("deleteStorage(): Got storage deletion job. Storage ID: {}", id);
+        return "";
+    }
 
-        storageSettingsManager.deleteById(id);
+    @DeleteMapping
+    public String deleteStorage(@RequestParam(value = "settingsName") Optional<String> optionalSettingsName) {
+        String error = validateDeleteStorageRequest(optionalSettingsName);
+        if (!error.isEmpty()) {
+            throw new ValidationError(error);
+        }
+
+        String settingsName = optionalSettingsName.get();
+
+        logger.info("deleteStorage(): Got storage settings deletion job. Settings name: {}", settingsName);
+
+        try {
+            storageSettingsManager.deleteById(settingsName);
+        } catch (NonTransientDataAccessException ignored) {
+
+        }
 
         return "redirect:/dashboard";
     }
@@ -52,29 +74,34 @@ public class WebApiStorageController {
         }
         Optional<StorageType> optionalStorageType = StorageType.of(storageTypeAsString);
         if (!optionalStorageType.isPresent()) {
-            return "Please, provide proper storage type";
+            return "Invalid Storage settings";
         }
+
+        if (addStorageRequest.getSettingsName().isEmpty()) {
+            return "Please, provide settings name";
+        }
+
         StorageType storageType = optionalStorageType.get();
         switch (storageType) {
             case DROPBOX: {
                 if (addStorageRequest.getDropboxSettings() == null) {
-                    return "Dropbox storage was specified, but no settings provided";
+                    return "Invalid Dropbox settings";
                 }
                 WebDropboxSettings webDropboxSettings = addStorageRequest.getDropboxSettings();
                 String accessToken = webDropboxSettings.getAccessToken();
                 if (accessToken == null || accessToken.isEmpty()) {
-                    return "Invalid Dropbox settings";
+                    return "Please, provide Dropbox access token";
                 }
                 break;
             }
             case LOCAL_FILE_SYSTEM: {
                 if (addStorageRequest.getLocalFileSystemSettings() == null) {
-                    return "Local File System storage was specified, but no settings provided";
+                    return "Invalid Local File System settings";
                 }
                 WebLocalFileSystemSettings webLocalFileSystemSettings = addStorageRequest.getLocalFileSystemSettings();
                 String backupPath = webLocalFileSystemSettings.getBackupPath();
                 if (backupPath == null || backupPath.isEmpty()) {
-                    return "Invalid Local File System settings";
+                    return "Please, provide Local File System backup path";
                 }
                 break;
             }
@@ -91,6 +118,11 @@ public class WebApiStorageController {
             throw new ValidationError(error);
         }
 
+        String settingsName = addStorageRequest.getSettingsName();
+        if (storageSettingsManager.existsById(settingsName)) {
+            throw new ValidationError("Storage settings with name '" + settingsName + "' already exists");
+        }
+
         Optional<StorageType> storageType = StorageType.of(addStorageRequest.getStorageType());
         if (storageType.isPresent()) {
             switch (storageType.get()) {
@@ -100,7 +132,9 @@ public class WebApiStorageController {
 
                     dropboxSettings.setAccessToken(webDropboxSettings.getAccessToken());
 
-                    StorageSettings storageSettings = StorageSettings.dropboxSettings(dropboxSettings).build();
+                    StorageSettings storageSettings = StorageSettings.dropboxSettings(dropboxSettings)
+                            .withSettingsName(addStorageRequest.getSettingsName())
+                            .build();
                     storageSettingsManager.save(storageSettings);
                     break;
                 }
@@ -111,7 +145,9 @@ public class WebApiStorageController {
 
                     localFileSystemSettings.setBackupPath(webLocalFileSystemSettings.getBackupPath());
 
-                    StorageSettings storageSettings = StorageSettings.localFileSystemSettings(localFileSystemSettings).build();
+                    StorageSettings storageSettings = StorageSettings.localFileSystemSettings(localFileSystemSettings)
+                            .withSettingsName(addStorageRequest.getSettingsName())
+                            .build();
                     storageSettingsManager.save(storageSettings);
                     break;
                 }

@@ -6,6 +6,8 @@ import com.example.demo.webUI.formTransfer.storage.WebLocalFileSystemSettings;
 public class WebAddStorageRequest {
     private String storageType;
 
+    private String settingsName;
+
     private WebLocalFileSystemSettings localFileSystemSettings;
 
     private WebDropboxSettings dropboxSettings;
@@ -16,6 +18,14 @@ public class WebAddStorageRequest {
 
     public void setStorageType(String storageType) {
         this.storageType = storageType;
+    }
+
+    public String getSettingsName() {
+        return settingsName;
+    }
+
+    public void setSettingsName(String settingsName) {
+        this.settingsName = settingsName;
     }
 
     public WebLocalFileSystemSettings getLocalFileSystemSettings() {

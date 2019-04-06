@@ -21,17 +21,17 @@ public class BackupProperties {
     @Convert(converter = ProcessorsFieldConverter.class)
     private List<String> processors;
 
-    private Integer storageSettingsId;
+    private String storageSettingsName;
 
     BackupProperties() {
 
     }
 
-    public BackupProperties(String backupName, List<String> processors, Date date, Integer storageSettingsId) {
+    public BackupProperties(String backupName, List<String> processors, Date date, String storageSettingsName) {
         this.backupName = backupName;
         this.processors = processors;
         this.date = date;
-        this.storageSettingsId = storageSettingsId;
+        this.storageSettingsName = storageSettingsName;
     }
 
     public Integer getId() {
@@ -66,12 +66,12 @@ public class BackupProperties {
         this.processors = processors;
     }
 
-    public Integer getStorageSettingsId() {
-        return storageSettingsId;
+    public String getStorageSettingsName() {
+        return storageSettingsName;
     }
 
-    public void setStorageSettingsId(Integer storageSettingsId) {
-        this.storageSettingsId = storageSettingsId;
+    public void setStorageSettingsName(String storageSettingsName) {
+        this.storageSettingsName = storageSettingsName;
     }
 
     @Override
@@ -81,7 +81,7 @@ public class BackupProperties {
                 ", date=" + date +
                 ", backupName='" + backupName + '\'' +
                 ", processors=" + processors +
-                ", storageSettingsId=" + storageSettingsId +
+                ", storageSettingsName=" + storageSettingsName +
                 '}';
     }
 }
