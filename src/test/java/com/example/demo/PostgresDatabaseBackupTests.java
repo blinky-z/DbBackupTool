@@ -18,10 +18,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -45,6 +43,8 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
     private BackupProcessorManager backupProcessorManager;
 
     private BackupLoadManager backupLoadManager;
+
+    private static final List<String> defaultTableNames = new ArrayList<>(Arrays.asList("comments"));
 
     @Autowired
     public void setTestUtils(TestUtils testUtils) {
@@ -97,32 +97,31 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
     }
 
     @Before
-    public void initDatabase() {
+    public void init() {
         testUtils.clearDatabase(jdbcPostgresMasterTemplate);
         testUtils.clearDatabase(jdbcPostgresCopyTemplate);
-        testUtils.initDatabase(jdbcPostgresMasterTemplate);
+        addDefaultTables(jdbcPostgresMasterTemplate);
     }
 
-    private void compareDatabases() {
-        long startRangeId = 0;
-        long rowsPerRequest = 10000;
-        long rowsToInsert = 10000L;
-        while (startRangeId < rowsToInsert) {
-            long endRangeId = startRangeId + rowsPerRequest;
-            List<Map<String, Object>> oldData = jdbcPostgresMasterTemplate.queryForList(
-                    "SELECT * FROM comments WHERE id BETWEEN ? AND ?",
-                    startRangeId, endRangeId);
-            List<Map<String, Object>> restoredData = jdbcPostgresCopyTemplate.queryForList(
-                    "SELECT * FROM comments WHERE id BETWEEN ? AND ?",
-                    startRangeId, endRangeId);
-            startRangeId = endRangeId;
+    public void addDefaultTables(JdbcTemplate jdbcTemplate) {
+        jdbcTemplate.execute("CREATE TABLE comments" +
+                "(" +
+                "ID        SERIAL PRIMARY KEY," +
+                "AUTHOR    CHARACTER VARYING(36)   not null," +
+                "DATE      TIMESTAMPTZ DEFAULT NOW()," +
+                "CONTENT   CHARACTER VARYING(2048) not null" +
+                ")");
 
-            assertEquals(oldData, restoredData);
-        }
+        final long rowsToInsert = 10000L;
+        jdbcTemplate.update("insert into comments (author, content)" +
+                " select " +
+                "    left(md5(i::text), 36)," +
+                "    left(md5(random()::text), 2048) " +
+                "from generate_series(0, ?) s(i)", rowsToInsert);
     }
 
     @Test
-    public void whenCreatePostgresBackupAndUploadToLocalFileSystemAndRestore_databasesIsEqual() {
+    public void whenCreatePostgresBackupAndUploadToLocalFileSystemAndRestore_databasesIsEqual() throws IOException {
         List<String> processors = new ArrayList<>();
 
         try (
@@ -136,15 +135,13 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
             ) {
                 databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
-        compareDatabases();
+        testUtils.compareLargeTables(defaultTableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
     }
 
     @Test
-    public void whenCreatePostgresBackupAndUploadToDropboxAndRestore_databasesIsEqual() {
+    public void whenCreatePostgresBackupAndUploadToDropboxAndRestore_databasesIsEqual() throws IOException {
         List<String> processors = new ArrayList<>();
 
         try (
@@ -157,15 +154,13 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
             ) {
                 databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
-        compareDatabases();
+        testUtils.compareLargeTables(defaultTableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
     }
 
     @Test
-    public void whenCreatePostgresBackupAndCompressAndUploadToLocalFileSystemAndDecompressAndRestore_databasesIsEqual() {
+    public void whenCreatePostgresBackupAndCompressAndUploadToLocalFileSystemAndDecompressAndRestore_databasesIsEqual() throws IOException {
         List<String> processors = new ArrayList<>();
         processors.add("Compressor");
 
@@ -182,15 +177,13 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
             ) {
                 databaseBackupManager.restoreBackup(decompressedBackup, copyPostgresDatabaseSettings);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
-        compareDatabases();
+        testUtils.compareLargeTables(defaultTableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
     }
 
     @Test
-    public void whenCreatePostgresBackupAndCompressAndUploadToDropboxAndDecompressAndRestore_databasesIsEqual() {
+    public void whenCreatePostgresBackupAndCompressAndUploadToDropboxAndDecompressAndRestore_databasesIsEqual() throws IOException {
         List<String> processors = new ArrayList<>();
         processors.add("Compressor");
 
@@ -206,15 +199,13 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
             ) {
                 databaseBackupManager.restoreBackup(decompressedBackup, copyPostgresDatabaseSettings);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
-        compareDatabases();
+        testUtils.compareLargeTables(defaultTableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
     }
 
     @Test
-    public void whenCreatePostgresBackupAndUploadToDifferentStoragesAndRestoreEachIntoSeparateDatabases_databasesIsEqual() {
+    public void whenCreateBackupAndUploadToDifferentStoragesAndRestoreEachIntoSeparateDatabases_databasesIsEqual() throws IOException {
         List<String> processors = new ArrayList<>();
 
         byte[] createdBackupAsByteArray;
@@ -222,9 +213,6 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
                 InputStream createdBackup = databaseBackupManager.createBackup(masterPostgresDatabaseSettings)
         ) {
             createdBackupAsByteArray = testUtils.getStreamCopyAsByteArray(createdBackup);
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException();
         }
 
         // get backup from local file system and restore
@@ -240,9 +228,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
                 ) {
                     databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings);
                 }
-                compareDatabases();
-            } catch (IOException e) {
-                e.printStackTrace();
+                testUtils.compareLargeTables(defaultTableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
             }
         }
 
@@ -260,10 +246,96 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
                 ) {
                     databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings);
                 }
-                compareDatabases();
-            } catch (IOException e) {
-                e.printStackTrace();
+                testUtils.compareLargeTables(defaultTableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
             }
         }
+    }
+
+    @Test
+    public void whenCreateBackupAndUploadToDifferentStoragesAndRestoreEachIntoSeparateDatabasesApplyingCompressor_databasesIsEqual() throws IOException {
+        List<String> processors = new ArrayList<>();
+        processors.add("compressor");
+
+        byte[] createdBackupAsByteArray;
+        try (
+                InputStream createdBackup = databaseBackupManager.createBackup(masterPostgresDatabaseSettings);
+                InputStream compressedBackup = backupProcessorManager.process(createdBackup, processors)
+        ) {
+            createdBackupAsByteArray = testUtils.getStreamCopyAsByteArray(compressedBackup);
+        }
+
+        // get backup from local file system and restore
+        {
+            try (
+                    InputStream inputStream = new ByteArrayInputStream(createdBackupAsByteArray)
+            ) {
+                BackupProperties backupProperties = backupLoadManager.uploadBackup(inputStream, localFileSystemStorageSettings,
+                        processors, masterPostgresDatabaseSettings.getName());
+                try (
+                        InputStream downloadedBackup = backupLoadManager.downloadBackup(localFileSystemStorageSettings,
+                                backupProperties);
+                        InputStream deprocessedBackup = backupProcessorManager.deprocess(downloadedBackup, processors)
+                ) {
+                    databaseBackupManager.restoreBackup(deprocessedBackup, copyPostgresDatabaseSettings);
+                }
+                testUtils.compareLargeTables(defaultTableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
+            }
+        }
+
+        testUtils.clearDatabase(jdbcPostgresCopyTemplate);
+
+        // get backup from dropbox and restore
+        {
+            try (
+                    InputStream inputStream = new ByteArrayInputStream(createdBackupAsByteArray)
+            ) {
+                BackupProperties backupProperties = backupLoadManager.uploadBackup(inputStream, dropboxStorageSettings,
+                        processors, masterPostgresDatabaseSettings.getName());
+                try (
+                        InputStream downloadedBackup = backupLoadManager.downloadBackup(dropboxStorageSettings, backupProperties);
+                        InputStream deprocessedBackup = backupProcessorManager.deprocess(downloadedBackup, processors)
+                ) {
+                    databaseBackupManager.restoreBackup(deprocessedBackup, copyPostgresDatabaseSettings);
+                }
+                testUtils.compareLargeTables(defaultTableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
+            }
+        }
+    }
+
+    @Test
+    public void givenAddMultipleTables_whenCreatePostgresBackupAndUploadToLocalFileSystemAndRestore_databasesIsEqual() throws IOException {
+        List<String> processors = new ArrayList<>();
+
+        jdbcPostgresMasterTemplate.execute("CREATE TABLE users" +
+                "(" +
+                "ID        SERIAL PRIMARY KEY," +
+                "NAME    CHARACTER VARYING(36)   not null," +
+                "DATE      TIMESTAMPTZ DEFAULT NOW()," +
+                "INFO   CHARACTER VARYING(16000) not null" +
+                ")");
+
+        final long rowsToInsert = 10000L;
+        jdbcPostgresMasterTemplate.update("insert into users (name, info)" +
+                " select " +
+                "    left(md5(i::text), 36)," +
+                "    left(md5(random()::text), 16000) " +
+                "from generate_series(0, ?) s(i)", rowsToInsert);
+
+        try (
+                InputStream backupStream = databaseBackupManager.createBackup(masterPostgresDatabaseSettings)
+        ) {
+            BackupProperties backupProperties = backupLoadManager.uploadBackup(backupStream, localFileSystemStorageSettings,
+                    processors, masterPostgresDatabaseSettings.getName());
+            try (
+                    InputStream downloadedBackup = backupLoadManager.downloadBackup(localFileSystemStorageSettings,
+                            backupProperties)
+            ) {
+                databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings);
+            }
+        }
+
+        List<String> tableNames = new ArrayList<>(defaultTableNames);
+        tableNames.add("users");
+        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
     }
 }

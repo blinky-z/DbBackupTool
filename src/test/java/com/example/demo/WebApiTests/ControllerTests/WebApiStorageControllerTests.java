@@ -1,4 +1,4 @@
-package com.example.demo.WebApiTests;
+package com.example.demo.WebApiTests.ControllerTests;
 
 import com.example.demo.ApplicationTests;
 import com.example.demo.repositories.StorageSettingsRepository;
@@ -24,72 +24,24 @@ public class WebApiStorageControllerTests extends ApplicationTests {
     private TestRestTemplate restTemplate;
 
     @Test
-    public void createStorage_ShouldRespondWith400Error_whenBodyNotProvided() {
-        ResponseEntity<String> responseEntity = restTemplate.exchange("/storage", HttpMethod.POST, null, String.class);
+    public void createStorage_ShouldRespondWith400Error_WhenGotRequestToSaveDropboxSettingsWithAlreadyExistingSettingsName() {
+        String settingsName =
+                "createStorage_ShouldRespondWith400Error_WhenGotRequestToSaveDropboxSettingsWithAlreadyExistingSettingsName";
 
-        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
-    }
-
-    @Test
-    public void createStorage_ShouldRespondWith400Error_whenMissingStorageType() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("storageType", "");
-        body.add("settingsName", "createStorage_ShouldRespondWith400Error_whenMissingStorageType");
+        body.add("storageType", "dropbox");
+        body.add("settingsName", settingsName);
         body.add("dropboxSettings.accessToken", "createStorageTestAccessToken");
 
         HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
 
-        ResponseEntity<String> responseEntity = restTemplate.exchange("/storage", HttpMethod.POST, entity, String.class);
-        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
-    }
-
-    @Test
-    public void createStorage_ShouldRespondWith400Error_whenSetInvalidStorageType() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("settingsName", "createStorage_ShouldRespondWith400Error_whenSetInvalidStorageType");
-        body.add("storageType", "someInvalidStorage");
-
-        HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
+        restTemplate.exchange("/storage", HttpMethod.POST, entity, String.class);
 
         ResponseEntity<String> responseEntity = restTemplate.exchange("/storage", HttpMethod.POST, entity, String.class);
-        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
-    }
 
-    @Test
-    public void createStorage_ShouldRespondWith400Error_whenSetDropboxStorageTypeButMissingSpecifiedStorageSettings() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("settingsName",
-                "createStorage_ShouldRespondWith400Error_whenSetDropboxStorageTypeButMissingSpecifiedStorageSettings");
-        body.add("storageType", "dropbox");
-
-        HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
-        ResponseEntity<String> responseEntity = restTemplate.exchange("/storage", HttpMethod.POST, entity, String.class);
-        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
-    }
-
-    @Test
-    public void createStorage_ShouldRespondWith400Error_whenSetLocalFileSystemStorageTypeButMissingSpecifiedStorageSettings() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("settingsName",
-                "createStorage_ShouldRespondWith400Error_whenSetDropboxStorageTypeButMissingSpecifiedStorageSettings");
-        body.add("storageType", "localFileSystemSettings");
-
-        HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
-        ResponseEntity<String> responseEntity = restTemplate.exchange("/storage", HttpMethod.POST, entity, String.class);
         assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
     }
 
@@ -110,7 +62,7 @@ public class WebApiStorageControllerTests extends ApplicationTests {
         ResponseEntity<String> responseEntity = restTemplate.exchange("/storage", HttpMethod.POST, entity, String.class);
         assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
 
-        assertTrue(storageSettingsRepository.findById(settingsName).isPresent());
+        assertTrue(storageSettingsRepository.existsById(settingsName));
     }
 
     @Test
@@ -131,7 +83,7 @@ public class WebApiStorageControllerTests extends ApplicationTests {
         ResponseEntity<String> responseEntity = restTemplate.exchange("/storage", HttpMethod.POST, entity, String.class);
         assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
 
-        assertTrue(storageSettingsRepository.findById(settingsName).isPresent());
+        assertTrue(storageSettingsRepository.existsById(settingsName));
     }
 
     @Test
@@ -150,13 +102,13 @@ public class WebApiStorageControllerTests extends ApplicationTests {
 
         HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
 
-        ResponseEntity<String> responseEntity =  restTemplate.exchange("/storage", HttpMethod.DELETE, entity, String.class);
+        ResponseEntity<String> responseEntity = restTemplate.exchange("/storage", HttpMethod.DELETE, entity, String.class);
         assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
     }
 
     @Test
-    public void deleteStorage_ShouldRespondWithFound_WhenStorageSettingsNameProvidedButNoSuchSettings() {
-        String settingsName = "deleteStorage_ShouldRespondWithFound_WhenStorageSettingsNameProvidedButNoSuchSettings";
+    public void deleteStorage_ShouldRespondWithFound_WhenStorageSettingsNameProvidedButNoSuchSettingsToDelete() {
+        String settingsName = "deleteStorage_ShouldRespondWithFound_WhenStorageSettingsNameProvidedButNoSuchSettingsToDelete";
 
         {
             HttpHeaders headers = new HttpHeaders();

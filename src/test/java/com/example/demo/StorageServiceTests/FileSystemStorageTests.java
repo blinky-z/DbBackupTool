@@ -1,5 +1,7 @@
-package com.example.demo;
+package com.example.demo.StorageServiceTests;
 
+import com.example.demo.ApplicationTests;
+import com.example.demo.TestUtils;
 import com.example.demo.entities.backup.BackupProperties;
 import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.entities.storage.StorageSettings;
