@@ -135,7 +135,7 @@ public class DropboxStorage implements Storage {
                 logger.info("Total files in backup folder on Dropbox: {}. Backup folder: {}", filesCount, backupFolderPath);
                 for (long currentBackupPart = 0; currentBackupPart < filesCount; currentBackupPart++) {
                     String currentFile = getCurrentFilePartAsAbsolutePath(backupFolderPath, backupName, currentBackupPart);
-                    logger.info("Downloading file [{}]: '{}'...", currentBackupPart,
+                    logger.info("Downloading file [{}]: '{}'...", currentBackupPart + 1,
                             currentFile.substring(currentFile.lastIndexOf("/") + 1));
                     dbxClient.files().downloadBuilder(currentFile).download(out);
                 }

@@ -96,7 +96,7 @@ public class FileSystemStorage implements Storage {
 
             for (long currentBackupPart = 0; currentBackupPart < filesCount; currentBackupPart++) {
                 File backupFile = new File(getCurrentFilePartAsAbsolutePath(backupFolderPath, backupName, currentBackupPart));
-                logger.info("Downloading file [{}/{}]: '{}'", currentBackupPart, filesCount, backupFile.getName());
+                logger.info("Downloading file [{}/{}]: '{}'", currentBackupPart + 1, filesCount, backupFile.getName());
                 backupFileStreamList.add(new FileInputStream(backupFile));
             }
 
