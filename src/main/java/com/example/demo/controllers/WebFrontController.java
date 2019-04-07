@@ -11,7 +11,10 @@ import com.example.demo.entities.storage.StorageType;
 import com.example.demo.manager.BackupPropertiesManager;
 import com.example.demo.manager.DatabaseSettingsManager;
 import com.example.demo.manager.StorageSettingsManager;
+import com.example.demo.webUI.formTransfer.WebAddDatabaseRequest;
+import com.example.demo.webUI.formTransfer.WebAddStorageRequest;
 import com.example.demo.webUI.formTransfer.WebCreateBackupRequest;
+import com.example.demo.webUI.formTransfer.WebRestoreBackupRequest;
 import com.example.demo.webUI.renderModels.WebBackupItem;
 import com.example.demo.webUI.renderModels.WebDatabaseItem;
 import com.example.demo.webUI.renderModels.WebStorageItem;
@@ -146,11 +149,15 @@ public class WebFrontController {
 
             model.addAttribute("backupList", backupList);
         }
+
+        model.addAttribute("webAddDatabaseRequest", new WebAddDatabaseRequest());
+        model.addAttribute("webAddStorageRequest", new WebAddStorageRequest());
+        model.addAttribute("webCreateBackupRequest", new WebCreateBackupRequest());
+        model.addAttribute("webRestoreBackupRequest", new WebRestoreBackupRequest());
     }
 
     @RequestMapping("/dashboard")
-    public String dashboard(Model model) {
-        model.addAttribute("webCreateBackupRequest", new WebCreateBackupRequest());
+    public String dashboard() {
         return "dashboard";
     }
 }

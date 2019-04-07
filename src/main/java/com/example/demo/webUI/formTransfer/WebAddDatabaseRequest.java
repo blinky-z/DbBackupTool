@@ -82,4 +82,16 @@ public class WebAddDatabaseRequest {
     public void setPostgresSettings(WebPostgresSettings postgresSettings) {
         this.postgresSettings = postgresSettings;
     }
+
+    @Override
+    public String toString() {
+        return "WebAddDatabaseRequest{" +
+                "databaseType='" + databaseType + '\'' +
+                ", settingsName='" + settingsName + '\'' +
+                ", host='" + host + '\'' +
+                ", port='" + port + '\'' +
+                ", databaseName='" + databaseName + '\'' +
+                ", postgresSettings=" + postgresSettings +
+                '}';
+    }
 }

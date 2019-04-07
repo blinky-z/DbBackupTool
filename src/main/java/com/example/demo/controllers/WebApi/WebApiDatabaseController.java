@@ -1,6 +1,8 @@
 package com.example.demo.controllers.WebApi;
 
-import com.example.demo.controllers.WebApi.Errors.ValidationError;
+import com.example.demo.controllers.Errors.DataAccessUserError;
+import com.example.demo.controllers.Errors.ValidationError;
+import com.example.demo.controllers.WebApi.Validator.WebAddDatabaseRequestValidator;
 import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.entities.database.DatabaseType;
 import com.example.demo.entities.database.PostgresSettings;
@@ -11,12 +13,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.NonTransientDataAccessException;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import javax.validation.Valid;
 import java.util.Optional;
 
 @Controller
@@ -26,21 +28,39 @@ public class WebApiDatabaseController {
 
     private DatabaseSettingsManager databaseSettingsManager;
 
+    private WebAddDatabaseRequestValidator webAddDatabaseRequestValidator;
+
     @Autowired
     public void setDatabaseSettingsManager(DatabaseSettingsManager databaseSettingsManager) {
         this.databaseSettingsManager = databaseSettingsManager;
     }
 
-    @DeleteMapping
-    public String deleteDatabase(@RequestParam(value = "settingsName") Optional<String> optionalSettingsName) {
+    @Autowired
+    public void setWebAddDatabaseRequestValidator(WebAddDatabaseRequestValidator webAddDatabaseRequestValidator) {
+        this.webAddDatabaseRequestValidator = webAddDatabaseRequestValidator;
+    }
+
+    private String validateDeleteDatabaseRequest(Optional<String> optionalSettingsName) {
         if (!optionalSettingsName.isPresent()) {
-            throw new ValidationError("Please, provide database settings name to delete");
+            return "Please, provide database settings name to delete";
         }
 
         String settingsName = optionalSettingsName.get();
         if (settingsName.isEmpty()) {
-            throw new ValidationError("Please, provide database settings name to delete");
+            return "Please, provide database settings name to delete";
         }
+
+        return "";
+    }
+
+    @DeleteMapping
+    public String deleteDatabase(@RequestParam(value = "settingsName") Optional<String> optionalSettingsName) {
+        String error = validateDeleteDatabaseRequest(optionalSettingsName);
+        if (!error.isEmpty()) {
+            throw new ValidationError(error);
+        }
+
+        String settingsName = optionalSettingsName.get();
 
         logger.info("deleteDatabase(): Got database settings deletion job. Settings name: {}", settingsName);
 
@@ -53,49 +73,20 @@ public class WebApiDatabaseController {
         return "redirect:/dashboard";
     }
 
-    private String validateAddDatabaseRequest(WebAddDatabaseRequest addDatabaseRequest) {
-        String databaseTypeAsString = addDatabaseRequest.getDatabaseType();
-        if (databaseTypeAsString == null || databaseTypeAsString.isEmpty()) {
-            return "Please, specify database type";
-        }
-        Optional<DatabaseType> optionalDatabaseType = DatabaseType.of(databaseTypeAsString);
-        if (!optionalDatabaseType.isPresent()) {
-            return "Invalid Database Settings";
-        }
-        DatabaseType databaseType = optionalDatabaseType.get();
-        switch (databaseType) {
-            case POSTGRES: {
-                break;
-            }
-        }
-
-        if (addDatabaseRequest.getHost().isEmpty() || addDatabaseRequest.getSettingsName().isEmpty() ||
-                addDatabaseRequest.getPort().isEmpty() || addDatabaseRequest.getDatabaseName().isEmpty() ||
-                addDatabaseRequest.getLogin().isEmpty() || addDatabaseRequest.getPassword().isEmpty()) {
-            return "Invalid database settings";
-        }
-
-        try {
-            Integer.valueOf(addDatabaseRequest.getPort());
-        } catch (NumberFormatException e) {
-            return "Invalid database settings";
-        }
-
-        return "";
-    }
-
     @PostMapping
-    public String createDatabase(@Valid WebAddDatabaseRequest addDatabaseRequest) {
+    public String createDatabase(WebAddDatabaseRequest addDatabaseRequest, BindingResult bindingResult) {
         logger.info("createDatabase(): Got database configuration creation job");
 
-        String error = validateAddDatabaseRequest(addDatabaseRequest);
-        if (!error.isEmpty()) {
-            throw new ValidationError(error);
+        webAddDatabaseRequestValidator.validate(addDatabaseRequest, bindingResult);
+        if (bindingResult.hasErrors()) {
+            logger.info("Has errors: {}", bindingResult.getAllErrors());
+
+            return "dashboard";
         }
 
         String settingsName = addDatabaseRequest.getSettingsName();
         if (databaseSettingsManager.existsById(settingsName)) {
-            throw new ValidationError("Database settings with name '" + settingsName + "' already exists");
+            throw new DataAccessUserError("Database settings with name '" + settingsName + "' already exists");
         }
 
         Optional<DatabaseType> databaseType = DatabaseType.of(addDatabaseRequest.getDatabaseType());

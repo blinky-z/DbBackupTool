@@ -43,4 +43,14 @@ public class WebAddStorageRequest {
     public void setDropboxSettings(WebDropboxSettings dropboxSettings) {
         this.dropboxSettings = dropboxSettings;
     }
+
+    @Override
+    public String toString() {
+        return "WebAddStorageRequest{" +
+                "storageType='" + storageType + '\'' +
+                ", settingsName='" + settingsName + '\'' +
+                ", localFileSystemSettings=" + localFileSystemSettings +
+                ", dropboxSettings=" + dropboxSettings +
+                '}';
+    }
 }

@@ -10,4 +10,11 @@ public class WebLocalFileSystemSettings {
     public void setBackupPath(String backupPath) {
         this.backupPath = backupPath;
     }
+
+    @Override
+    public String toString() {
+        return "WebLocalFileSystemSettings{" +
+                "backupPath='" + backupPath + '\'' +
+                '}';
+    }
 }

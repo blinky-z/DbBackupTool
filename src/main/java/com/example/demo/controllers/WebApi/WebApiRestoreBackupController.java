@@ -1,6 +1,6 @@
 package com.example.demo.controllers.WebApi;
 
-import com.example.demo.controllers.WebApi.Errors.ValidationError;
+import com.example.demo.controllers.WebApi.Validator.WebRestoreBackupRequestValidator;
 import com.example.demo.entities.backup.BackupProperties;
 import com.example.demo.entities.database.DatabaseSettings;
 import com.example.demo.entities.storage.StorageSettings;
@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -31,6 +32,8 @@ public class WebApiRestoreBackupController {
     private BackupLoadManager backupLoadManager;
 
     private BackupProcessorManager backupProcessorManager;
+
+    private WebRestoreBackupRequestValidator webRestoreBackupRequestValidator;
 
     @Autowired
     public void setDatabaseBackupManager(DatabaseBackupManager databaseBackupManager) {
@@ -62,27 +65,23 @@ public class WebApiRestoreBackupController {
         this.backupProcessorManager = backupProcessorManager;
     }
 
-    private String validateRestoreBackupRequest(WebRestoreBackupRequest restoreBackupRequest) {
-        if (restoreBackupRequest.getBackupId() == null) {
-            return "Please, provide backup to restore";
-        }
-        if (restoreBackupRequest.getDatabaseSettingsName() == null) {
-            return "Please, provide database to restore backup to";
-        }
-
-        return "";
+    @Autowired
+    public void setWebRestoreBackupRequestValidator(WebRestoreBackupRequestValidator webRestoreBackupRequestValidator) {
+        this.webRestoreBackupRequestValidator = webRestoreBackupRequestValidator;
     }
 
     @PostMapping
-    public String restoreBackup(WebRestoreBackupRequest restoreBackupRequest) {
+    public String restoreBackup(WebRestoreBackupRequest webRestoreBackupRequest, BindingResult bindingResult) {
         logger.info("restoreBackup(): Got backup restoration job");
 
-        String error = validateRestoreBackupRequest(restoreBackupRequest);
-        if (!error.isEmpty()) {
-            throw new ValidationError(error);
+        webRestoreBackupRequestValidator.validate(webRestoreBackupRequest, bindingResult);
+        if (bindingResult.hasErrors()) {
+            logger.info("Has errors: {}", bindingResult.getAllErrors());
+
+            return "dashboard";
         }
 
-        Integer backupId = restoreBackupRequest.getBackupId();
+        Integer backupId = Integer.valueOf(webRestoreBackupRequest.getBackupId());
         BackupProperties backupProperties = backupPropertiesManager.getById(backupId).orElseThrow(() ->
                 new RuntimeException(String.format(
                         "Can't retrieve backup properties. Error: no backup properties with ID %d", backupId)));
@@ -93,7 +92,7 @@ public class WebApiRestoreBackupController {
                         new RuntimeException(String.format(
                                 "Can't retrieve storage settings. Error: no storage settings with name %d", storageSettingsName)));
 
-        String databaseSettingsName = restoreBackupRequest.getDatabaseSettingsName();
+        String databaseSettingsName = webRestoreBackupRequest.getDatabaseSettingsName();
         DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseSettingsName).orElseThrow(() ->
                 new RuntimeException(
                         String.format("Can't retrieve database settings. Error: no database settings with name %d", databaseSettingsName)));

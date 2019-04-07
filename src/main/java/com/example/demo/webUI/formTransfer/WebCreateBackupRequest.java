@@ -5,7 +5,6 @@ import java.util.HashMap;
 
 public class WebCreateBackupRequest {
     private String databaseSettingsName;
-
     private HashMap<String, BackupCreationProperties> backupCreationProperties = new HashMap<>();
 
     public HashMap<String, BackupCreationProperties> getBackupCreationProperties() {
@@ -22,6 +21,14 @@ public class WebCreateBackupRequest {
 
     public void setDatabaseSettingsName(String databaseSettingsName) {
         this.databaseSettingsName = databaseSettingsName;
+    }
+
+    @Override
+    public String toString() {
+        return "WebCreateBackupRequest{" +
+                "databaseSettingsName='" + databaseSettingsName + '\'' +
+                ", backupCreationProperties=" + backupCreationProperties +
+                '}';
     }
 
     public static final class BackupCreationProperties {
@@ -43,6 +50,14 @@ public class WebCreateBackupRequest {
 
         public void setProcessors(ArrayList<String> processors) {
             this.processors = processors;
+        }
+
+        @Override
+        public String toString() {
+            return "BackupCreationProperties{" +
+                    "storageSettingsName='" + storageSettingsName + '\'' +
+                    ", processors=" + processors +
+                    '}';
         }
     }
 }

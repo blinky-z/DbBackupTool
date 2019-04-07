@@ -1,6 +1,8 @@
 package com.example.demo.controllers.WebApi;
 
-import com.example.demo.controllers.WebApi.Errors.ValidationError;
+import com.example.demo.controllers.Errors.DataAccessUserError;
+import com.example.demo.controllers.Errors.ValidationError;
+import com.example.demo.controllers.WebApi.Validator.WebAddStorageRequestValidator;
 import com.example.demo.entities.storage.DropboxSettings;
 import com.example.demo.entities.storage.LocalFileSystemSettings;
 import com.example.demo.entities.storage.StorageSettings;
@@ -14,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.NonTransientDataAccessException;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,19 +32,26 @@ public class WebApiStorageController {
 
     private StorageSettingsManager storageSettingsManager;
 
+    private WebAddStorageRequestValidator webAddStorageRequestValidator;
+
     @Autowired
     public void setStorageSettingsManager(StorageSettingsManager storageSettingsManager) {
         this.storageSettingsManager = storageSettingsManager;
     }
 
-    public String validateDeleteStorageRequest(Optional<String> optionalSettingsName) {
+    @Autowired
+    public void setWebAddStorageRequestValidator(WebAddStorageRequestValidator webAddStorageRequestValidator) {
+        this.webAddStorageRequestValidator = webAddStorageRequestValidator;
+    }
+
+    private String validateDeleteStorageRequest(Optional<String> optionalSettingsName) {
         if (!optionalSettingsName.isPresent()) {
             return "Please, provide storage settings name to delete";
         }
 
         String settingsName = optionalSettingsName.get();
         if (settingsName.isEmpty()) {
-           return "Please, provide storage settings name to delete";
+            return "Please, provide storage settings name to delete";
         }
 
         return "";
@@ -67,60 +77,18 @@ public class WebApiStorageController {
         return "redirect:/dashboard";
     }
 
-    private String validateAddStorageRequest(WebAddStorageRequest addStorageRequest) {
-        String storageTypeAsString = addStorageRequest.getStorageType();
-        if (storageTypeAsString == null || storageTypeAsString.isEmpty()) {
-            return "Please, specify storage type";
-        }
-        Optional<StorageType> optionalStorageType = StorageType.of(storageTypeAsString);
-        if (!optionalStorageType.isPresent()) {
-            return "Invalid Storage settings";
-        }
-
-        if (addStorageRequest.getSettingsName().isEmpty()) {
-            return "Please, provide settings name";
-        }
-
-        StorageType storageType = optionalStorageType.get();
-        switch (storageType) {
-            case DROPBOX: {
-                if (addStorageRequest.getDropboxSettings() == null) {
-                    return "Invalid Dropbox settings";
-                }
-                WebDropboxSettings webDropboxSettings = addStorageRequest.getDropboxSettings();
-                String accessToken = webDropboxSettings.getAccessToken();
-                if (accessToken == null || accessToken.isEmpty()) {
-                    return "Please, provide Dropbox access token";
-                }
-                break;
-            }
-            case LOCAL_FILE_SYSTEM: {
-                if (addStorageRequest.getLocalFileSystemSettings() == null) {
-                    return "Invalid Local File System settings";
-                }
-                WebLocalFileSystemSettings webLocalFileSystemSettings = addStorageRequest.getLocalFileSystemSettings();
-                String backupPath = webLocalFileSystemSettings.getBackupPath();
-                if (backupPath == null || backupPath.isEmpty()) {
-                    return "Please, provide Local File System backup path";
-                }
-                break;
-            }
-        }
-        return "";
-    }
-
     @PostMapping
-    public String createStorage(WebAddStorageRequest addStorageRequest) {
+    public String createStorage(WebAddStorageRequest addStorageRequest, BindingResult bindingResult) {
         logger.info("createStorage(): Got storage creation job");
 
-        String error = validateAddStorageRequest(addStorageRequest);
-        if (!error.isEmpty()) {
-            throw new ValidationError(error);
+        webAddStorageRequestValidator.validate(addStorageRequest, bindingResult);
+        if (bindingResult.hasErrors()) {
+            return "dashboard";
         }
 
         String settingsName = addStorageRequest.getSettingsName();
         if (storageSettingsManager.existsById(settingsName)) {
-            throw new ValidationError("Storage settings with name '" + settingsName + "' already exists");
+            throw new DataAccessUserError("Storage settings with name '" + settingsName + "' already exists");
         }
 
         Optional<StorageType> storageType = StorageType.of(addStorageRequest.getStorageType());

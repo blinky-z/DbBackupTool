@@ -1,15 +1,15 @@
 package com.example.demo.webUI.formTransfer;
 
 public class WebRestoreBackupRequest {
-    private Integer backupId;
+    private String backupId;
 
     private String databaseSettingsName;
 
-    public Integer getBackupId() {
+    public String getBackupId() {
         return backupId;
     }
 
-    public void setBackupId(Integer backupId) {
+    public void setBackupId(String backupId) {
         this.backupId = backupId;
     }
 
@@ -19,5 +19,13 @@ public class WebRestoreBackupRequest {
 
     public void setDatabaseSettingsName(String databaseSettingsName) {
         this.databaseSettingsName = databaseSettingsName;
+    }
+
+    @Override
+    public String toString() {
+        return "WebRestoreBackupRequest{" +
+                "backupId=" + backupId +
+                ", databaseSettingsName='" + databaseSettingsName + '\'' +
+                '}';
     }
 }

@@ -112,7 +112,7 @@
                                         <td>
                                             <div class="d-flex flex-row-reverse bd-highlight">
                                                 <form th:action="@{/storage}" th:method="delete">
-                                                    <input hidden th:name="settingsName" th:value="*{settingsName}" type="text">
+                                                    <input hidden th:name="settingsName" th:value="*{settingsName}">
                                                     <button class="btn btn-secondary" type="submit">
                                                         Remove
                                                     </button>
@@ -126,20 +126,28 @@
                         </div>
 
                         <div class="tab-pane fade" id="configureStorageFormWrapper" role="tabpanel">
-                            <form action="/storage" id="configureStorageForm" method="post">
+                            <form action="#" id="configureStorageForm" th:action="@{/storage}" th:method="post"
+                                  th:object="${webAddStorageRequest}">
                                 <div class="form-group">
                                     <label for="configureStorage.selectStorage">Select Storage</label>
-                                    <select class="form-control" id="configureStorage.selectStorage" name="storageType">
-                                        <option disabled selected value="">Select Storage</option>
+                                    <select class="form-control" id="configureStorage.selectStorage" th:errorclass="is-invalid"
+                                            th:field="*{storageType}">
+                                        <option selected value="">Select Storage</option>
                                         <option id="localFileSystemStorageSelect" value="localFileSystem">Local File System</option>
                                         <option id="dropboxStorageSelect" value="dropbox">Dropbox</option>
                                     </select>
+                                    <div class="invalid-feedback" th:errors="*{storageType}"
+                                         th:if="${#fields.hasErrors('storageType')}"></div>
                                 </div>
 
-                                <div class="form-group" id="commonStorageInputFields">
-                                    <label for="createStorageSettingsNameInput">Settings name</label>
-                                    <input class="form-control form-control-sm" id="createStorageSettingsNameInput" name="settingsName"
-                                           placeholder="" type="text">
+                                <div id="commonStorageInputFields">
+                                    <div class="form-group">
+                                        <label for="createStorageSettingsNameInput">Settings name</label>
+                                        <input class="form-control form-control-sm" id="createStorageSettingsNameInput"
+                                               placeholder="" th:errorclass="is-invalid" th:field="*{settingsName}" type="text">
+                                        <div class="invalid-feedback" th:errors="*{settingsName}"
+                                             th:if="${#fields.hasErrors('settingsName')}"></div>
+                                    </div>
                                 </div>
 
                                 <!--Storage select based content-->
@@ -150,12 +158,15 @@
                                             <input aria-describedby="localFileSystemStorageBackupPathHelp"
                                                    class="form-control form-control-sm"
                                                    id="localFileSystemStorageBackupPathInput"
-                                                   name="localFileSystemSettings.backupPath"
                                                    placeholder=""
-                                                   type="text">
+                                                   th:errorclass="is-invalid"
+                                                   th:field="*{localFileSystemSettings.backupPath}" type="text">
                                             <small class="form-text text-muted" id="localFileSystemStorageBackupPathHelp">
                                                 Absolute path to folder where backup should be saved into
                                             </small>
+                                            <div class="invalid-feedback"
+                                                 th:errors="*{localFileSystemSettings.backupPath}"
+                                                 th:if="${#fields.hasErrors('localFileSystemSettings.backupPath')}"></div>
                                         </div>
                                     </div>
                                     <div class="dropboxStorageSelect box">
@@ -163,11 +174,14 @@
                                             <label for="dropboxStorageAccessTokenInput">Dropbox access token</label>
                                             <input aria-describedby="dropboxStorageAccessTokenHelp" class="form-control form-control-sm"
                                                    id="dropboxStorageAccessTokenInput"
-                                                   name="dropboxSettings.accessToken" placeholder=""
-                                                   type="text">
+                                                   placeholder="" th:errorclass="is-invalid"
+                                                   th:field="*{dropboxSettings.accessToken}" type="text">
                                             <small class="form-text text-muted" id="dropboxStorageAccessTokenHelp">
                                                 You can get access token from the app page on Dropbox
                                             </small>
+                                            <div class="invalid-feedback"
+                                                 th:errors="*{dropboxSettings.accessToken}"
+                                                 th:if="${#fields.hasErrors('dropboxSettings.accessToken')}"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -230,35 +244,74 @@
                         </div>
 
                         <div class="tab-pane fade" id="configureDatabaseFormWrapper" role="tabpanel">
-                            <form action="/database" id="configureDatabaseForm" method="post">
+                            <form action="#" id="configureDatabaseForm" method="post" th:action="@{/database}"
+                                  th:object="${webAddDatabaseRequest}">
                                 <div class="form-group">
                                     <label for="configureDatabase-selectDatabase">Select Database</label>
-                                    <select class="form-control" id="configureDatabase-selectDatabase" name="databaseType">
-                                        <option disabled selected value="">Select Database</option>
+                                    <select class="form-control" id="configureDatabase-selectDatabase" th:errorclass="is-invalid"
+                                            th:field="*{databaseType}">
+                                        <option selected value="">Select Database</option>
                                         <option id="postgresDatabaseSelect" value="postgres">Postgres</option>
                                     </select>
+                                    <div class="invalid-feedback" th:errors="*{databaseType}"
+                                         th:if="${#fields.hasErrors('databaseType')}"></div>
                                 </div>
 
-                                <div class="form-group" id="commonDatabaseInputFields">
-                                    <label for="createDatabaseSettingsNameInput">Settings name</label>
-                                    <input class="form-control form-control-sm" id="createDatabaseSettingsNameInput" name="settingsName"
-                                           placeholder="" type="text">
-                                    <label for="createDatabaseHostInput">Host</label>
-                                    <input class="form-control form-control-sm" id="createDatabaseHostInput" name="host"
-                                           placeholder="" type="text">
-                                    <label for="createDatabasePortInput">Port</label>
-                                    <input class="form-control form-control-sm" id="createDatabasePortInput" name="port"
-                                           placeholder="" type="text">
-                                    <label for="createDatabaseNameInput">Database name</label>
-                                    <input class="form-control form-control-sm" id="createDatabaseNameInput" name="databaseName"
-                                           placeholder="" type="text">
-                                    <label for="createDatabaseLoginInput">Database login</label>
-                                    <input class="form-control form-control-sm" id="createDatabaseLoginInput" name="login"
-                                           placeholder="" type="text">
-                                    <label for="createDatabasePasswordInput">Database password</label>
-                                    <input class="form-control form-control-sm" id="createDatabasePasswordInput" name="password"
-                                           placeholder=""
-                                           type="text">
+                                <div id="commonDatabaseInputFields">
+                                    <div class="form-group">
+                                        <label for="createDatabaseSettingsNameInput">Settings name</label>
+                                        <input class="form-control form-control-sm" id="createDatabaseSettingsNameInput"
+                                               placeholder=""
+                                               th:errorclass="is-invalid" th:field="*{settingsName}" type="text">
+                                        <div class="invalid-feedback" th:errors="*{settingsName}"
+                                             th:if="${#fields.hasErrors('settingsName')}"></div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="createDatabaseHostInput">Host</label>
+                                        <input class="form-control form-control-sm" id="createDatabaseHostInput"
+                                               placeholder=""
+                                               th:errorclass="is-invalid" th:field="*{host}" type="text">
+                                        <div class="invalid-feedback" th:errors="*{host}"
+                                             th:if="${#fields.hasErrors('host')}"></div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="createDatabasePortInput">Port</label>
+                                        <input class="form-control form-control-sm" id="createDatabasePortInput"
+                                               placeholder=""
+                                               th:errorclass="is-invalid" th:field="*{port}" type="text">
+                                        <div class="invalid-feedback" th:errors="*{port}"
+                                             th:if="${#fields.hasErrors('port')}"></div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="createDatabaseNameInput">Database name</label>
+                                        <input class="form-control form-control-sm" id="createDatabaseNameInput"
+                                               placeholder=""
+                                               th:errorclass="is-invalid" th:field="*{databaseName}" type="text">
+                                        <div class="invalid-feedback" th:errors="*{databaseName}"
+                                             th:if="${#fields.hasErrors('databaseName')}"></div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="createDatabaseLoginInput">Database login</label>
+                                        <input class="form-control form-control-sm" id="createDatabaseLoginInput"
+                                               placeholder=""
+                                               th:errorclass="is-invalid" th:field="*{login}" type="text">
+                                        <div class="invalid-feedback" th:errors="*{login}"
+                                             th:if="${#fields.hasErrors('login')}"></div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="createDatabasePasswordInput">Database password</label>
+                                        <input class="form-control form-control-sm" id="createDatabasePasswordInput"
+                                               placeholder=""
+                                               th:errorclass="is-invalid"
+                                               th:field="*{password}" type="text">
+                                        <div class="invalid-feedback" th:errors="*{password}"
+                                             th:if="${#fields.hasErrors('password')}"></div>
+                                    </div>
                                 </div>
 
                                 <!--Database select based content-->
@@ -277,12 +330,12 @@
                         <h2>Create Backup</h2>
                     </div>
 
-                    <form action="#" id="createBackupForm" method="post" th:action="@{/create-backup}"
+                    <form action="#" id="createBackupForm" th:action="@{/create-backup}" th:method="post"
                           th:object="${webCreateBackupRequest}">
                         <div class="form-group">
                             <label for="createBackup-selectDatabase">Select database to backup</label>
-                            <select th:class="'form-control ' + (${#fields.hasErrors('databaseSettingsName')} ? 'is-invalid')"
-                                    id="createBackup-selectDatabase" th:field="*{databaseSettingsName}">
+                            <select class="form-control" id="createBackup-selectDatabase"
+                                    th:errorclass="is-invalid" th:field="*{databaseSettingsName}">
                                 <option selected value="">Select Database</option>
                                 <option th:each="database: ${databaseList}" th:text="${'Database: ' + database.type +
                                         ' | Details: ' + database.desc +
@@ -290,12 +343,14 @@
                                         th:value="${database.settingsName}">
                                 </option>
                             </select>
-                            <div th:if="${#fields.hasErrors('databaseSettingsName')}" th:errors="*{databaseSettingsName}"
-                                 class="invalid-feedback"></div>
+                            <div class="invalid-feedback" th:errors="*{databaseSettingsName}"
+                                 th:if="${#fields.hasErrors('databaseSettingsName')}"></div>
                         </div>
 
-                        <label for="selectStorageForBackupList">Select storage</label>
-                        <table class="table table-hover table-bordered" id="selectStorageForBackupList">
+                        <label for="createBackup-selectStorage">Select storage</label>
+                        <div class="invalid-feedback d-inline" th:errors="*{backupCreationProperties}"
+                             th:if="${#fields.hasErrors('backupCreationProperties')}"></div>
+                        <table class="table table-hover table-bordered" id="createBackup-selectStorage">
                             <thead class="thead-dark">
                             <tr>
                                 <th scope="col"></th>
@@ -309,7 +364,7 @@
                             <tr th:each="storage, iterStat: ${storageList}">
                                 <td>
                                     <div class="input-group">
-                                        <input th:name="|backupCreationProperties[${storage.settingsName}].storageSettingsName|"
+                                        <input th:name="|backupCreationProperties[__${storage.settingsName}__].storageSettingsName|"
                                                th:value="${storage.settingsName}"
                                                type="checkbox">
                                     </div>
@@ -320,7 +375,7 @@
                                 <td>
                                     <div class="form-check form-group">
                                         <input class="form-check-input"
-                                               th:name="|backupCreationProperties[${storage.settingsName}].processors|"
+                                               th:name="|backupCreationProperties[__${storage.settingsName}__].processors|"
                                                th:value="'Compressor'"
                                                type="checkbox">
                                     </div>
@@ -335,28 +390,35 @@
                         <h2>Restore Backup</h2>
                     </div>
 
-                    <form id="restoreBackupForm" method="post" th:action="@{/restore-backup}">
-
+                    <form action="#" id="restoreBackupForm" th:action="@{/restore-backup}" th:method="post"
+                          th:object="${webRestoreBackupRequest}">
                         <div class="form-group">
                             <label for="restoreBackup-selectBackup">Select backup to restore from</label>
-                            <select class="form-control" id="restoreBackup-selectBackup" name="backupId">
-                                <option disabled selected value="">Select Backup</option>
-                                <option th:each="backup: ${backupList}" th:object="${backup}" th:text="${'Backup name: ' + backup.name + ' | Details: ' + backup.desc +
+                            <select class="form-control" id="restoreBackup-selectBackup" th:errorclass="is-invalid"
+                                    th:field="*{backupId}">
+                                <option selected value="">Select Backup</option>
+                                <option th:each="backup: ${backupList}"
+                                        th:text="${'Backup name: ' + backup.name + ' | Details: ' + backup.desc +
                                         ' | Creation time: ' + backup.time}"
-                                        th:value="*{id}">
+                                        th:value="${backup.id}">
                                 </option>
                             </select>
+                            <div class="invalid-feedback" th:errors="*{backupId}"
+                                 th:if="${#fields.hasErrors('backupId')}"></div>
                         </div>
 
                         <div class="form-group">
                             <label for="restoreBackup-selectDatabase">Select database to restore to</label>
-                            <select class="form-control" id="restoreBackup-selectDatabase" name="databaseSettingsName">
-                                <option disabled selected value="">Select Database</option>
-                                <option th:each="database: ${databaseList}" th:object="${database}"
+                            <select class="form-control" id="restoreBackup-selectDatabase" th:errorclass="is-invalid"
+                                    th:field="*{databaseSettingsName}">
+                                <option selected value="">Select Database</option>
+                                <option th:each="database: ${databaseList}"
                                         th:text="${'Database type: ' + database.type.toString() + ' | Details: ' + database.desc}"
-                                        th:value="*{settingsName}">
+                                        th:value="${database.settingsName}">
                                 </option>
                             </select>
+                            <div class="invalid-feedback" th:errors="*{databaseSettingsName}"
+                                 th:if="${#fields.hasErrors('databaseSettingsName')}"></div>
                         </div>
 
                         <button class="btn btn-primary" type="submit">Restore</button>

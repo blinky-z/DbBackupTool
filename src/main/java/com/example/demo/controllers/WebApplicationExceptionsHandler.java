@@ -1,6 +1,7 @@
 package com.example.demo.controllers;
 
-import com.example.demo.controllers.WebApi.Errors.ValidationError;
+import com.example.demo.controllers.Errors.DataAccessUserError;
+import com.example.demo.controllers.Errors.ValidationError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -21,10 +22,22 @@ public class WebApplicationExceptionsHandler {
 
     private static final String ERROR_VIEW = "error";
 
+    @ExceptionHandler(value = {DataAccessUserError.class})
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST)
+    public ModelAndView handleDataAccessUserError(HttpServletRequest request, DataAccessUserError ex) {
+        logger.error("Data Access User Error Exception at request {} : {}", request.getRequestURL(), ex.getMessage());
+
+        ModelAndView mav = new ModelAndView();
+        mav.addObject(ERROR_CODE_RENDER_FIELD, HttpStatus.BAD_REQUEST.value());
+        mav.addObject(ERROR_MESSAGE_RENDER_FIELD, ex.getMessage());
+        mav.setViewName(ERROR_VIEW);
+        return mav;
+    }
+
     @ExceptionHandler(value = {ValidationError.class})
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
     public ModelAndView handleValidationError(HttpServletRequest request, ValidationError ex) {
-        logger.error("Validation Exception at request {} : {}", request.getRequestURL(), ex.getMessage());
+        logger.error("Validation Error Exception at request {} : {}", request.getRequestURL(), ex.getMessage());
 
         ModelAndView mav = new ModelAndView();
         mav.addObject(ERROR_CODE_RENDER_FIELD, HttpStatus.BAD_REQUEST.value());
