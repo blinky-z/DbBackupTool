@@ -23,6 +23,6 @@ user-config.webUIPassword=qwerty
 4. Перейдите на адрес сервера Spring Boot, по умолчанию - *localhost:8080*.
 
 ## Запуск тестов
-1. Откройте *application.properties* тестов и установите следующие поля:
- - *tests-config.dropbox-access-token* - dropbox хранилище для тестов
-4. Запустите тесты, выполнив Gradle команду - verification/test
+1. Откройте класс *TestConfiguration* и установите следующие поля:
+    - dropboxAccessToken - Dropbox хранилище куда будут загружаться бэкапы созданные во время тестов
+4. Запустите тесты, выполнив Gradle команду - *verification/test*
