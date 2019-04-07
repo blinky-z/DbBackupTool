@@ -1,5 +1,8 @@
 package com.example.demo.service.databaseBackup;
 
+import com.example.demo.entities.database.DatabaseSettings;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.InputStream;
 
 /**
@@ -11,12 +14,12 @@ public interface DatabaseBackup {
      *
      * @return input stream contains the plain text database backup
      */
-    InputStream createBackup();
+    InputStream createBackup(@NotNull DatabaseSettings databaseSettings);
 
     /**
      * Restores database backup.
      *
      * @param dumpData input stream contains the plain text database backup
      */
-    void restoreBackup(InputStream dumpData);
+    void restoreBackup(InputStream dumpData, @NotNull DatabaseSettings databaseSettings);
 }

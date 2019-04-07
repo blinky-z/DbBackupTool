@@ -6,6 +6,7 @@ import com.example.demo.service.databaseBackup.PostgresDatabaseBackup;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
@@ -14,6 +15,13 @@ import java.util.Objects;
 @Component
 public class DatabaseBackupManager {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseBackupManager.class);
+
+    private PostgresDatabaseBackup postgresDatabaseBackup;
+
+    @Autowired
+    public void setPostgresDatabaseBackup(PostgresDatabaseBackup postgresDatabaseBackup) {
+        this.postgresDatabaseBackup = postgresDatabaseBackup;
+    }
 
     public InputStream createBackup(@NotNull DatabaseSettings databaseSettings) {
         Objects.requireNonNull(databaseSettings);
@@ -24,8 +32,7 @@ public class DatabaseBackupManager {
         DatabaseType databaseType = databaseSettings.getType();
         switch (databaseType) {
             case POSTGRES: {
-                PostgresDatabaseBackup postgresBackupCreator = new PostgresDatabaseBackup(databaseSettings);
-                backupStream = postgresBackupCreator.createBackup();
+                backupStream = postgresDatabaseBackup.createBackup(databaseSettings);
                 break;
             }
             default: {
@@ -39,13 +46,14 @@ public class DatabaseBackupManager {
     }
 
     public void restoreBackup(@NotNull InputStream backup, @NotNull DatabaseSettings databaseSettings) {
+        Objects.requireNonNull(backup);
+        Objects.requireNonNull(databaseSettings);
         logger.info("Restoring backup to database {}... Database Settings: {}", databaseSettings.getName(), databaseSettings);
 
         DatabaseType databaseType = databaseSettings.getType();
         switch (databaseType) {
             case POSTGRES: {
-                PostgresDatabaseBackup postgresDatabaseBackup = new PostgresDatabaseBackup(databaseSettings);
-                postgresDatabaseBackup.restoreBackup(backup);
+                postgresDatabaseBackup.restoreBackup(backup, databaseSettings);
                 break;
             }
             default: {
