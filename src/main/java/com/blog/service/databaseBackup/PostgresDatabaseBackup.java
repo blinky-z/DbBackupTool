@@ -5,6 +5,7 @@ import com.blog.service.databaseBackup.Errors.InternalPostgresToolError;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -16,6 +17,20 @@ import java.util.List;
  */
 @Service
 public class PostgresDatabaseBackup implements DatabaseBackup {
+    private String pgDumpToolPath;
+
+    private String psqlToolPath;
+
+    @Autowired
+    public void setPgDumpToolPath(String pgDumpToolPath) {
+        this.pgDumpToolPath = pgDumpToolPath;
+    }
+
+    @Autowired
+    public void setPsqlToolPath(String psqlToolPath) {
+        this.psqlToolPath = psqlToolPath;
+    }
+
     private static final Logger logger = LoggerFactory.getLogger(PostgresDatabaseBackup.class);
 
     private ArrayList<String> addCommandParam(ArrayList<String> command, String paramName, String paramValue) {
@@ -41,7 +56,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
     private List<String> buildBackupCommand(DatabaseSettings databaseSettings) {
         ArrayList<String> command = new ArrayList<>();
 
-        command.add("pg_dump");
+        command.add(pgDumpToolPath);
         command = addCommandParam(command, "-h", databaseSettings.getHost());
         command = addCommandParam(command, "-p", Integer.toString(databaseSettings.getPort()));
         command = addCommandParam(command, "-F", "p");
@@ -53,7 +68,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
     private List<String> buildRestoreCommand(DatabaseSettings databaseSettings) {
         ArrayList<String> command = new ArrayList<>();
 
-        command.add("psql");
+        command.add(psqlToolPath);
         command = addCommandParam(command, "-h", databaseSettings.getHost());
         command = addCommandParam(command, "-U", databaseSettings.getLogin());
         command = addCommandParam(command, "-p", Integer.toString(databaseSettings.getPort()));
