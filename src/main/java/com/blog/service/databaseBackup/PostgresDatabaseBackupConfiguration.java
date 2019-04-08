@@ -13,12 +13,16 @@ class PostgresDatabaseBackupConfiguration {
 
     private String psqlToolPath;
 
+    public void setPgDumpToolPath(String pgDumpToolPath) {
+        this.pgDumpToolPath = pgDumpToolPath;
+    }
+
     public void setPsqlToolPath(String psqlToolPath) {
         this.psqlToolPath = psqlToolPath;
     }
 
-    @Bean(name = "pgDumpToolPath")
-    public String getPgDumpToolPath() {
+    @Bean
+    public String pgDumpToolPath() {
         if (!pgDumpToolPath.isEmpty()) {
             return pgDumpToolPath;
         }
@@ -26,11 +30,7 @@ class PostgresDatabaseBackupConfiguration {
         return "pg_dump";
     }
 
-    public void setPgDumpToolPath(String pgDumpToolPath) {
-        this.pgDumpToolPath = pgDumpToolPath;
-    }
-
-    @Bean(name = "psqlToolPath")
+    @Bean
     public String psqlToolPath() {
         if (!psqlToolPath.isEmpty()) {
             return psqlToolPath;
