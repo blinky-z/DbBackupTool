@@ -1,7 +1,7 @@
 package com.blog.WebApiTests.ValidatorTests;
 
-import com.blog.controllers.WebApi.Validator.WebAddDatabaseRequestValidator;
 import com.blog.ApplicationTests;
+import com.blog.controllers.WebApi.Validator.WebAddDatabaseRequestValidator;
 import com.blog.webUI.formTransfer.WebAddDatabaseRequest;
 import org.junit.Test;
 import org.junit.runner.RunWith;

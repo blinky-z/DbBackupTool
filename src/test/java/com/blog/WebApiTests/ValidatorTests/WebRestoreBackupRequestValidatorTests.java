@@ -1,7 +1,7 @@
 package com.blog.WebApiTests.ValidatorTests;
 
-import com.blog.controllers.WebApi.Validator.WebRestoreBackupRequestValidator;
 import com.blog.ApplicationTests;
+import com.blog.controllers.WebApi.Validator.WebRestoreBackupRequestValidator;
 import com.blog.webUI.formTransfer.WebRestoreBackupRequest;
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -9,11 +9,14 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 
 @Component
 public class TestUtils {
+    private static final Random random = new Random();
+
     /**
      * Compares tables not loading all table data in memory.
      * Table must contain 'id' column.
@@ -104,6 +107,19 @@ public class TestUtils {
         } catch (IOException ex) {
             throw new RuntimeException("Error occurred creating byte array copy of Input Stream", ex);
         }
+    }
+
+
+    /**
+     * Generates byte array with random content
+     *
+     * @param length length of byte array to create
+     * @return byte array filled with random bytes
+     */
+    public byte[] getRandomBytes(int length) {
+        byte[] bytes = new byte[length];
+        random.nextBytes(bytes);
+        return bytes;
     }
 
     /**

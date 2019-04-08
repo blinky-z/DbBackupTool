@@ -1,7 +1,7 @@
 package com.blog.WebApiTests.ValidatorTests;
 
-import com.blog.controllers.WebApi.Validator.WebAddStorageRequestValidator;
 import com.blog.ApplicationTests;
+import com.blog.controllers.WebApi.Validator.WebAddStorageRequestValidator;
 import com.blog.webUI.formTransfer.WebAddStorageRequest;
 import com.blog.webUI.formTransfer.storage.WebDropboxSettings;
 import com.blog.webUI.formTransfer.storage.WebLocalFileSystemSettings;

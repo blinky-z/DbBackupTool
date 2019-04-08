@@ -2,25 +2,17 @@ package com.blog.StorageServiceTests;
 
 import com.blog.ApplicationTests;
 import com.blog.TestUtils;
-import com.blog.entities.backup.BackupProperties;
-import com.blog.manager.BackupLoadManager;
-import com.blog.manager.BackupProcessorManager;
-import com.blog.manager.DatabaseBackupManager;
-import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.storage.StorageSettings;
-import org.junit.Before;
+import com.blog.service.storage.FileSystemStorage;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 
@@ -29,17 +21,9 @@ import static org.junit.Assert.assertTrue;
 public class FileSystemStorageTests extends ApplicationTests {
     private TestUtils testUtils;
 
-    private DatabaseBackupManager databaseBackupManager;
+    private FileSystemStorage fileSystemStorage;
 
-    private JdbcTemplate jdbcPostgresMasterTemplate;
-
-    private DatabaseSettings masterPostgresDatabaseSettings;
-
-    private BackupProcessorManager backupProcessorManager;
-
-    private BackupLoadManager backupLoadManager;
-
-    private StorageSettings localFileSystemStorageSettings;
+    private StorageSettings storageSettings;
 
     @Autowired
     public void setTestUtils(TestUtils testUtils) {
@@ -47,120 +31,46 @@ public class FileSystemStorageTests extends ApplicationTests {
     }
 
     @Autowired
-    public void setMasterPostgresDatabaseSettings(DatabaseSettings masterPostgresDatabaseSettings) {
-        this.masterPostgresDatabaseSettings = masterPostgresDatabaseSettings;
+    public void setFileSystemStorage(FileSystemStorage fileSystemStorage) {
+        this.fileSystemStorage = fileSystemStorage;
     }
 
     @Autowired
-    public void setDatabaseBackupManager(DatabaseBackupManager databaseBackupManager) {
-        this.databaseBackupManager = databaseBackupManager;
-    }
-
-    @Autowired
-    public void setJdbcPostgresMasterTemplate(JdbcTemplate jdbcPostgresMasterTemplate) {
-        this.jdbcPostgresMasterTemplate = jdbcPostgresMasterTemplate;
-    }
-
-    @Autowired
-    public void setBackupProcessorManager(BackupProcessorManager backupProcessorManager) {
-        this.backupProcessorManager = backupProcessorManager;
-    }
-
-    @Autowired
-    public void setBackupLoadManager(BackupLoadManager backupLoadManager) {
-        this.backupLoadManager = backupLoadManager;
-    }
-
-    @Autowired
-    public void setLocalFileSystemStorageSettings(StorageSettings localFileSystemStorageSettings) {
-        this.localFileSystemStorageSettings = localFileSystemStorageSettings;
-    }
-
-    @Before
-    public void setUp() {
-        testUtils.clearDatabase(jdbcPostgresMasterTemplate);
-        testUtils.initDatabase(jdbcPostgresMasterTemplate);
+    public void setStorageSettings(StorageSettings localFileSystemStorageSettings) {
+        this.storageSettings = localFileSystemStorageSettings;
     }
 
     @Test
-    public void whenUploadTextBackupAndDownload_contentIsEqual() {
-        List<String> processors = new ArrayList<>();
+    public void whenUploadSmallBackupAndDownload_contentIsEqual() throws IOException {
+        String backupName = "whenUploadTextBackupAndDownload_contentIsEqual";
+        byte[] source = testUtils.getRandomBytes(1000);
 
         try (
-                InputStream backupStream = databaseBackupManager.createBackup(masterPostgresDatabaseSettings)
+                ByteArrayInputStream sourceInputStream = new ByteArrayInputStream(source)
         ) {
-            byte[] streamContent = testUtils.getStreamCopyAsByteArray(backupStream);
+            fileSystemStorage.uploadBackup(sourceInputStream, storageSettings, backupName);
             try (
-                    InputStream inputStream = new ByteArrayInputStream(streamContent);
-                    InputStream copyInputStream = new ByteArrayInputStream(streamContent)
+                    InputStream downloadedBackup = fileSystemStorage.downloadBackup(storageSettings, backupName)
             ) {
-                BackupProperties backupProperties = backupLoadManager.uploadBackup(copyInputStream, localFileSystemStorageSettings,
-                        processors,
-                        masterPostgresDatabaseSettings.getName());
-                try (
-                        InputStream downloadedBackup = backupLoadManager.downloadBackup(localFileSystemStorageSettings,
-                                backupProperties)
-                ) {
-                    assertTrue(testUtils.streamsContentEquals(inputStream, downloadedBackup));
-                }
+                assertTrue(testUtils.streamsContentEquals(new ByteArrayInputStream(source), downloadedBackup));
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
     @Test
-    public void whenUploadCompressedBackupAndDownload_contentIsEqual() {
-        List<String> processors = new ArrayList<>();
-        processors.add("Processor");
+    public void whenUploadBigBackupAndDownload_contentIsEqual() throws IOException {
+        String backupName = "whenUploadTextBackupAndDownload_contentIsEqual";
+        byte[] source = testUtils.getRandomBytes(1000000);
 
         try (
-                InputStream backupStream = databaseBackupManager.createBackup(masterPostgresDatabaseSettings);
-                InputStream compressedBackup = backupProcessorManager.process(backupStream, processors)
+                ByteArrayInputStream sourceInputStream = new ByteArrayInputStream(source)
         ) {
-            byte[] compressedBackupContent = testUtils.getStreamCopyAsByteArray(compressedBackup);
+            fileSystemStorage.uploadBackup(sourceInputStream, storageSettings, backupName);
             try (
-                    InputStream inputStream = new ByteArrayInputStream(compressedBackupContent);
-                    InputStream copyInputStream = new ByteArrayInputStream(compressedBackupContent)
+                    InputStream downloadedBackup = fileSystemStorage.downloadBackup(storageSettings, backupName)
             ) {
-                BackupProperties backupProperties = backupLoadManager.uploadBackup(copyInputStream, localFileSystemStorageSettings, processors,
-                        masterPostgresDatabaseSettings.getName());
-                try (
-                        InputStream downloadedBackup = backupLoadManager.downloadBackup(localFileSystemStorageSettings, backupProperties)
-                ) {
-                    assertTrue(testUtils.streamsContentEquals(inputStream, downloadedBackup));
-                }
+                assertTrue(testUtils.streamsContentEquals(new ByteArrayInputStream(source), downloadedBackup));
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    public void whenUploadCompressedBackupAndDownloadAndDecompress_contentIsEqualToSource() {
-        List<String> processors = new ArrayList<>();
-        processors.add("Processor");
-
-        try (
-                InputStream backupStream = databaseBackupManager.createBackup(masterPostgresDatabaseSettings)
-        ) {
-            byte[] sourceBackupContent = testUtils.getStreamCopyAsByteArray(backupStream);
-            try (
-                    InputStream inputStream = new ByteArrayInputStream(sourceBackupContent);
-                    InputStream copyInputStream = new ByteArrayInputStream(sourceBackupContent);
-                    InputStream compressedBackup = backupProcessorManager.process(copyInputStream, processors)
-            ) {
-                BackupProperties backupProperties = backupLoadManager.uploadBackup(compressedBackup, localFileSystemStorageSettings, processors,
-                        masterPostgresDatabaseSettings.getName());
-                try (
-                        InputStream downloadedBackup = backupLoadManager.downloadBackup(localFileSystemStorageSettings, backupProperties);
-                        InputStream decompressedBackup = backupProcessorManager.deprocess(downloadedBackup, processors)
-                ) {
-                    assertTrue(testUtils.streamsContentEquals(inputStream, decompressedBackup));
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 }

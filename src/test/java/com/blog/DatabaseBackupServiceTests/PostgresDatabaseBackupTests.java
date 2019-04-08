@@ -26,27 +26,17 @@ import java.util.List;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class PostgresDatabaseBackupTests extends ApplicationTests {
-    private TestUtils testUtils;
-
-    private JdbcTemplate jdbcPostgresMasterTemplate;
-
-    private JdbcTemplate jdbcPostgresCopyTemplate;
-
-    private DatabaseSettings masterPostgresDatabaseSettings;
-
-    private DatabaseSettings copyPostgresDatabaseSettings;
-
-    private StorageSettings dropboxStorageSettings;
-
-    private StorageSettings localFileSystemStorageSettings;
-
-    private DatabaseBackupManager databaseBackupManager;
-
-    private BackupProcessorManager backupProcessorManager;
-
-    private BackupLoadManager backupLoadManager;
-
     private static final List<String> defaultTableNames = new ArrayList<>(Arrays.asList("comments"));
+    private TestUtils testUtils;
+    private JdbcTemplate jdbcPostgresMasterTemplate;
+    private JdbcTemplate jdbcPostgresCopyTemplate;
+    private DatabaseSettings masterPostgresDatabaseSettings;
+    private DatabaseSettings copyPostgresDatabaseSettings;
+    private StorageSettings dropboxStorageSettings;
+    private StorageSettings localFileSystemStorageSettings;
+    private DatabaseBackupManager databaseBackupManager;
+    private BackupProcessorManager backupProcessorManager;
+    private BackupLoadManager backupLoadManager;
 
     @Autowired
     public void setTestUtils(TestUtils testUtils) {
