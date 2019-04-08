@@ -82,6 +82,9 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
      * If pg_dump reports about error while executing, InternalPostgresToolError will be thrown
      * In such case, you can find process's stderr messages in the class log
      *
+     * Note, that this function returns directly process's stdin stream, that is you will not have to wait for full backup creation.
+     * Further reading is performing by processor or storage service.
+     *
      * @return input stream, connected to the normal output stream of the process, from which backup can be read
      */
     public InputStream createBackup(@NotNull DatabaseSettings databaseSettings)
@@ -97,14 +100,14 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
             throw new RuntimeException("Error starting PostgreSQL database backup process", ex);
         }
 
-        // we should wait for backup process terminating with following process destroying in separate thread, otherwise
-        // waitFor() call deadlocks the thread, cause process's output is not being read and buffer overflows which leads to blocking
+        Thread processStderrReaderThread = new Thread(new ProcessStderrStreamReadWorker(process.getErrorStream(),
+                JobType.BACKUP));
+        processStderrReaderThread.start();
+
+        // we should wait for backup process terminating in separate thread, otherwise
+        // waitFor() deadlocks the thread, cause process's output is not being read and buffer overflows which leads to blocking
         new Thread() {
             public void run() {
-                Thread processStderrReaderThread = new Thread(new ProcessStderrStreamReadWorker(process.getErrorStream(),
-                        JobType.BACKUP));
-                processStderrReaderThread.start();
-
                 try {
                     logger.info("Waiting for terminating PostgreSQL backup process...");
                     process.waitFor();
@@ -113,11 +116,10 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
                 }
 
                 process.destroy();
-                logger.info("PostgreSQL backup process destroyed");
+
+                logger.info("PostgreSQL database backup successfully created. Dumped from database {}", databaseSettings.getName());
             }
         }.start();
-
-        logger.info("PostgreSQL database backup successfully created. Dumped from database {}", databaseSettings.getName());
 
         return process.getInputStream();
     }
