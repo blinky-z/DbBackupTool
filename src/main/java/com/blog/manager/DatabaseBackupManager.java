@@ -1,8 +1,8 @@
 package com.blog.manager;
 
-import com.blog.service.databaseBackup.PostgresDatabaseBackup;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.database.DatabaseType;
+import com.blog.service.databaseBackup.PostgresDatabaseBackup;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

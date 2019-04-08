@@ -1,12 +1,12 @@
 package com.blog.service.storage;
 
+import com.blog.entities.storage.DropboxSettings;
+import com.blog.entities.storage.StorageSettings;
 import com.dropbox.core.DbxException;
 import com.dropbox.core.DbxRequestConfig;
 import com.dropbox.core.v2.DbxClientV2;
 import com.dropbox.core.v2.files.ListFolderResult;
 import com.dropbox.core.v2.files.Metadata;
-import com.blog.entities.storage.DropboxSettings;
-import com.blog.entities.storage.StorageSettings;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,14 +27,14 @@ public class DropboxStorage implements Storage {
     /**
      * Uploads backup to Dropbox
      * <p>
-     * Backup is saved into root folder, which is usually is an app folder
+     * Backup is saved into root folder, which is usually an app folder
      */
     public void uploadBackup(@NotNull InputStream in, @NotNull StorageSettings storageSettings, @NotNull String backupName) {
         String backupFolderPath = "/" + backupName;
         logger.info("Uploading backup to Dropbox. Backup folder: {}", backupFolderPath);
         DbxRequestConfig config = DbxRequestConfig.newBuilder("dbBackupUploader").build();
         DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(() -> new RuntimeException(
-                "Can't upload backup Dropbox storage: Missing Dropbox Settings"));
+                "Can't upload backup to Dropbox storage: Missing Dropbox Settings"));
         DbxClientV2 dbxClient = new DbxClientV2(config, dropboxSettings.getAccessToken());
 
         try (BufferedInputStream bufferedInputStream = new BufferedInputStream(in);

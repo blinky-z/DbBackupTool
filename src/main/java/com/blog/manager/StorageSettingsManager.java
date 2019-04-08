@@ -1,7 +1,7 @@
 package com.blog.manager;
 
-import com.blog.entities.storage.StorageType;
 import com.blog.entities.storage.StorageSettings;
+import com.blog.entities.storage.StorageType;
 import com.blog.repositories.StorageSettingsRepository;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;

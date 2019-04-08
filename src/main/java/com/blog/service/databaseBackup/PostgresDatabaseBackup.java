@@ -17,8 +17,8 @@ import java.util.List;
  */
 @Service
 public class PostgresDatabaseBackup implements DatabaseBackup {
+    private static final Logger logger = LoggerFactory.getLogger(PostgresDatabaseBackup.class);
     private String pgDumpToolPath;
-
     private String psqlToolPath;
 
     @Autowired
@@ -30,8 +30,6 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
     public void setPsqlToolPath(String psqlToolPath) {
         this.psqlToolPath = psqlToolPath;
     }
-
-    private static final Logger logger = LoggerFactory.getLogger(PostgresDatabaseBackup.class);
 
     private ArrayList<String> addCommandParam(ArrayList<String> command, String paramName, String paramValue) {
         command.add(paramName);
