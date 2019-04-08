@@ -1,11 +1,13 @@
-package com.blog;
+package com.blog.DatabaseBackupServiceTests;
 
+import com.blog.ApplicationTests;
+import com.blog.TestUtils;
 import com.blog.entities.backup.BackupProperties;
+import com.blog.entities.database.DatabaseSettings;
+import com.blog.entities.storage.StorageSettings;
 import com.blog.manager.BackupLoadManager;
 import com.blog.manager.BackupProcessorManager;
 import com.blog.manager.DatabaseBackupManager;
-import com.blog.entities.database.DatabaseSettings;
-import com.blog.entities.storage.StorageSettings;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -6,18 +6,11 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
-import org.springframework.validation.Validator;
 
 import java.util.Optional;
 
 @Component
-public class WebAddDatabaseRequestValidator implements Validator {
-    @Override
-    public boolean supports(@NotNull Class<?> clazz) {
-        return WebAddDatabaseRequest.class.isAssignableFrom(clazz);
-    }
-
-    @Override
+public class WebAddDatabaseRequestValidator {
     public void validate(@NotNull Object target, @NotNull Errors errors) {
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "databaseType", "error.addDatabaseRequest.databaseType.empty",
                 "Please specify database type");

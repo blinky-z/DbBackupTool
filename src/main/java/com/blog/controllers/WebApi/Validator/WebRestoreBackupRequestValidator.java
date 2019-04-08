@@ -5,16 +5,9 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
-import org.springframework.validation.Validator;
 
 @Component
-public class WebRestoreBackupRequestValidator implements Validator {
-    @Override
-    public boolean supports(@NotNull Class<?> clazz) {
-        return WebRestoreBackupRequest.class.isAssignableFrom(clazz);
-    }
-
-    @Override
+public class WebRestoreBackupRequestValidator {
     public void validate(@NotNull Object target, @NotNull Errors errors) {
         WebRestoreBackupRequest webRestoreBackupRequest = (WebRestoreBackupRequest) target;
 

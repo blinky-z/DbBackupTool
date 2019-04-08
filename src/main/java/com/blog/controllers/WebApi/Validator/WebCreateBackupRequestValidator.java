@@ -8,13 +8,7 @@ import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
 
 @Component
-public class WebCreateBackupRequestValidator implements Validator {
-    @Override
-    public boolean supports(@NotNull Class<?> clazz) {
-        return WebCreateBackupRequest.class.isAssignableFrom(clazz);
-    }
-
-    @Override
+public class WebCreateBackupRequestValidator {
     public void validate(@NotNull Object target, @NotNull Errors errors) {
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "databaseSettingsName", "error.databaseSettingsName.empty",
                 "Database settings name is required");

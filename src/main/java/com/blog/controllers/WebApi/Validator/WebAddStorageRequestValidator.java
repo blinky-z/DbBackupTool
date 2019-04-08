@@ -11,13 +11,7 @@ import org.springframework.validation.Validator;
 import java.util.Optional;
 
 @Component
-public class WebAddStorageRequestValidator implements Validator {
-    @Override
-    public boolean supports(@NotNull Class<?> clazz) {
-        return WebAddStorageRequest.class.isAssignableFrom(clazz);
-    }
-
-    @Override
+public class WebAddStorageRequestValidator {
     public void validate(@NotNull Object target, @NotNull Errors errors) {
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "storageType", "error.addStorageRequest.storageType.empty",
                 "Please specify storage type");
