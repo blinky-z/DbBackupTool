@@ -1,6 +1,6 @@
 package com.blog.controllers.WebApi;
 
-import com.blog.controllers.Errors.DataAccessUserError;
+import com.blog.controllers.Errors.DataAccessError;
 import com.blog.controllers.Errors.ValidationError;
 import com.blog.controllers.WebApi.Validator.WebAddStorageRequestValidator;
 import com.blog.entities.storage.DropboxSettings;
@@ -88,7 +88,7 @@ public class WebApiStorageController {
 
         String settingsName = addStorageRequest.getSettingsName();
         if (storageSettingsManager.existsById(settingsName)) {
-            throw new DataAccessUserError("Storage settings with name '" + settingsName + "' already exists");
+            throw new DataAccessError("Storage settings with name '" + settingsName + "' already exists");
         }
 
         Optional<StorageType> storageType = StorageType.of(addStorageRequest.getStorageType());

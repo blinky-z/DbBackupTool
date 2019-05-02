@@ -1,6 +1,6 @@
 package com.blog.controllers.WebApi;
 
-import com.blog.controllers.Errors.DataAccessUserError;
+import com.blog.controllers.Errors.DataAccessError;
 import com.blog.controllers.Errors.ValidationError;
 import com.blog.controllers.WebApi.Validator.WebAddDatabaseRequestValidator;
 import com.blog.entities.database.DatabaseSettings;
@@ -86,7 +86,7 @@ public class WebApiDatabaseController {
 
         String settingsName = addDatabaseRequest.getSettingsName();
         if (databaseSettingsManager.existsById(settingsName)) {
-            throw new DataAccessUserError("Database settings with name '" + settingsName + "' already exists");
+            throw new DataAccessError("Database settings with name '" + settingsName + "' already exists");
         }
 
         Optional<DatabaseType> databaseType = DatabaseType.of(addDatabaseRequest.getDatabaseType());
