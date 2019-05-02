@@ -62,11 +62,11 @@ public class FileSystemStorage implements Storage {
                         bufferedOutputStream.write(buffer, 0, bytesRead);
 
                         if (currentChunkSize >= maxChunkSize) {
+                            bufferedOutputStream.flush();
                             currentBackupPart++;
                             break;
                         }
                     }
-                    bufferedOutputStream.flush();
                 }
             }
         } catch (IOException ex) {
