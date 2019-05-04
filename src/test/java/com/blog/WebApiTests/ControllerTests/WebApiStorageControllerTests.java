@@ -23,21 +23,24 @@ public class WebApiStorageControllerTests extends ApplicationTests {
     @Autowired
     private TestRestTemplate restTemplate;
 
+    @Autowired
+    private MultiValueMap<String, Object> localFileSystemStorageSettingsAsMultiValueMap;
+
+    @Autowired
+    private MultiValueMap<String, Object> dropboxStorageSettingsAsMultiValueMap;
+
     @Test
-    public void createStorage_ShouldRespondWith400Error_WhenGotRequestToSaveDropboxSettingsWithAlreadyExistingSettingsName() {
+    public void createStorage_ShouldRespondWith400Error_WhenGotRequestToSaveStorageSettingsWithAlreadyExistingSettingsName() {
         String settingsName =
-                "createStorage_ShouldRespondWith400Error_WhenGotRequestToSaveDropboxSettingsWithAlreadyExistingSettingsName";
+                "createStorage_ShouldRespondWith400Error_WhenGotRequestToSaveStorageSettingsWithAlreadyExistingSettingsName";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("storageType", "dropbox");
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(dropboxStorageSettingsAsMultiValueMap);
         body.add("settingsName", settingsName);
-        body.add("dropboxSettings.accessToken", "createStorageTestAccessToken");
 
         HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
         restTemplate.exchange("/storage", HttpMethod.POST, entity, String.class);
 
         ResponseEntity<String> responseEntity = restTemplate.exchange("/storage", HttpMethod.POST, entity, String.class);
@@ -52,10 +55,8 @@ public class WebApiStorageControllerTests extends ApplicationTests {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("storageType", "dropbox");
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(dropboxStorageSettingsAsMultiValueMap);
         body.add("settingsName", settingsName);
-        body.add("dropboxSettings.accessToken", "createStorageTestAccessToken");
 
         HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
 
@@ -73,10 +74,8 @@ public class WebApiStorageControllerTests extends ApplicationTests {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("storageType", "localFileSystem");
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(localFileSystemStorageSettingsAsMultiValueMap);
         body.add("settingsName", settingsName);
-        body.add("localFileSystemSettings.backupPath", "createStorageTestBackupPath");
 
         HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
 
@@ -114,10 +113,9 @@ public class WebApiStorageControllerTests extends ApplicationTests {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-            MultiValueMap<String, Object> createStorageBody = new LinkedMultiValueMap<>();
-            createStorageBody.add("storageType", "localFileSystem");
+            MultiValueMap<String, Object> createStorageBody =
+                    new LinkedMultiValueMap<>(localFileSystemStorageSettingsAsMultiValueMap);
             createStorageBody.add("settingsName", settingsName);
-            createStorageBody.add("localFileSystemSettings.backupPath", "createStorageTestBackupPath");
 
             HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(createStorageBody, headers);
 
@@ -151,24 +149,22 @@ public class WebApiStorageControllerTests extends ApplicationTests {
     }
 
     @Test
-    public void deleteStorage_ShouldDeleteStorageInDatabase_WhenGotRequestToDeleteProperStorage() {
+    public void deleteStorage_ShouldDeleteStorageFromDatabase_WhenGotRequestToDeleteProperStorage() {
         String settingsName = "deleteStorage_ShouldDeleteStorageInDatabase_WhenGotRequestToDeleteProperStorage";
 
         {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-            MultiValueMap<String, Object> createStorageBody = new LinkedMultiValueMap<>();
-            createStorageBody.add("storageType", "localFileSystem");
+            MultiValueMap<String, Object> createStorageBody = new LinkedMultiValueMap<>(localFileSystemStorageSettingsAsMultiValueMap);
             createStorageBody.add("settingsName", settingsName);
-            createStorageBody.add("localFileSystemSettings.backupPath", "createStorageTestBackupPath");
 
             HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(createStorageBody, headers);
 
             ResponseEntity<String> responseEntity = restTemplate.exchange("/storage", HttpMethod.POST, entity, String.class);
             assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
 
-            assertTrue(storageSettingsRepository.findById(settingsName).isPresent());
+            assertTrue(storageSettingsRepository.existsById(settingsName));
         }
 
         {
@@ -183,7 +179,7 @@ public class WebApiStorageControllerTests extends ApplicationTests {
             ResponseEntity<String> responseEntity = restTemplate.exchange("/storage", HttpMethod.DELETE, entity, String.class);
             assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
 
-            assertFalse(storageSettingsRepository.findById(settingsName).isPresent());
+            assertFalse(storageSettingsRepository.existsById(settingsName));
         }
     }
 }

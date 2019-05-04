@@ -12,8 +12,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -24,19 +23,8 @@ public class WebApiDatabaseControllerTests extends ApplicationTests {
     @Autowired
     private TestRestTemplate restTemplate;
 
-    private MultiValueMap<String, Object> generateProperDatabaseSettingsWithCommonFieldsSet(String databaseType,
-                                                                                            String settingsName) {
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("databaseType", databaseType);
-        body.add("settingsName", settingsName);
-        body.add("host", "localhost");
-        body.add("port", "5432");
-        body.add("databaseName", "postgres");
-        body.add("login", "postgres");
-        body.add("password", "postgres");
-
-        return body;
-    }
+    @Autowired
+    private MultiValueMap<String, Object> postgresDatabaseSettingsAsMultiValueMap;
 
     @Test
     public void createDatabase_ShouldRespondWith400Error_WhenGotRequestToSavePostgresSettingsWithAlreadyExistingSettingsName() {
@@ -46,7 +34,8 @@ public class WebApiDatabaseControllerTests extends ApplicationTests {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        MultiValueMap<String, Object> body = generateProperDatabaseSettingsWithCommonFieldsSet("postgres", settingsName);
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(postgresDatabaseSettingsAsMultiValueMap);
+        body.add("settingsName", settingsName);
 
         HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
 
@@ -65,15 +54,15 @@ public class WebApiDatabaseControllerTests extends ApplicationTests {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        MultiValueMap<String, Object> body = generateProperDatabaseSettingsWithCommonFieldsSet("postgres", settingsName);
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(postgresDatabaseSettingsAsMultiValueMap);
+        body.add("settingsName", settingsName);
 
         HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
 
         ResponseEntity<String> responseEntity = restTemplate.exchange("/database", HttpMethod.POST, entity, String.class);
 
-        assertTrue(databaseSettingsRepository.existsById(settingsName));
-
         assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
+        assertTrue(databaseSettingsRepository.existsById(settingsName));
     }
 
     @Test
@@ -106,18 +95,13 @@ public class WebApiDatabaseControllerTests extends ApplicationTests {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("databaseType", "postgres");
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(postgresDatabaseSettingsAsMultiValueMap);
             body.add("settingsName", settingsName);
-            body.add("host", "localhost");
-            body.add("port", "5432");
-            body.add("databaseName", "postgres");
-            body.add("login", "postgres");
-            body.add("password", "postgres");
 
             HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
 
             restTemplate.exchange("/database", HttpMethod.POST, entity, String.class);
+            assertTrue(databaseSettingsRepository.existsById(settingsName));
         }
 
         // delete settings
@@ -131,6 +115,7 @@ public class WebApiDatabaseControllerTests extends ApplicationTests {
             HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
 
             restTemplate.exchange("/database", HttpMethod.DELETE, entity, String.class);
+            assertFalse(databaseSettingsRepository.existsById(settingsName));
         }
 
         // try to delete settings again
