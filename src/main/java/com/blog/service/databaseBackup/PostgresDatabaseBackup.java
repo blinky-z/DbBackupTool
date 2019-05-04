@@ -105,7 +105,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
         processStderrReaderThread.start();
 
         // we should wait for backup process terminating in separate thread, otherwise
-        // waitFor() deadlocks the thread, cause process's output is not being read and buffer overflows which leads to blocking
+        // waitFor() deadlocks the thread since process's output is not being read and buffer overflows which leads to blocking
         new Thread() {
             public void run() {
                 try {
@@ -152,7 +152,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
         Thread processStderrReaderThread = new Thread(new ProcessStderrStreamReadWorker(process.getErrorStream(), JobType.RESTORE));
         processStderrReaderThread.start();
 
-        Thread processStdoutReaderThread = new Thread(new ProcessStdoutReadWorker(process.getInputStream(), JobType.RESTORE));
+        Thread processStdoutReaderThread = new Thread(new ProcessStdoutStreamReadWorker(process.getInputStream(), JobType.RESTORE));
         processStdoutReaderThread.start();
 
         try (
@@ -200,19 +200,20 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
         }
     }
 
-    private static final class ProcessStdoutReadWorker implements Runnable {
+    private static final class ProcessStdoutStreamReadWorker implements Runnable {
         InputStream outputStream;
 
         private String STDOUT_PRINT_FORMAT;
 
         private JobType jobType;
 
-        ProcessStdoutReadWorker(InputStream outputStream, JobType jobType) {
+        ProcessStdoutStreamReadWorker(InputStream outputStream, JobType jobType) {
             this.outputStream = outputStream;
             this.jobType = jobType;
             this.STDOUT_PRINT_FORMAT = jobType.getJobPrefix() + " stdout: {}";
         }
 
+        @Override
         public void run() {
             logger.info("Reading process standard output stream...");
             try (
@@ -241,6 +242,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
             this.STDERR_PRINT_FORMAT = jobType.getJobPrefix() + " stderr: {}";
         }
 
+        @Override
         public void run() {
             logger.info("Reading process standard error stream...");
             try (
