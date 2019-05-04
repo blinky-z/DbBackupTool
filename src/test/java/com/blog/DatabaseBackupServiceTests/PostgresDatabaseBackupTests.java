@@ -24,8 +24,6 @@ import java.util.List;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class PostgresDatabaseBackupTests extends ApplicationTests {
-    private static final List<String> defaultTableNames = new ArrayList<>(Arrays.asList("comments"));
-
     private TestUtils testUtils;
 
     private JdbcTemplate jdbcPostgresMasterTemplate;
@@ -118,10 +116,12 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
         storageSettingsManager.save(localFileSystemStorageSettings);
         databaseSettingsManager.save(masterPostgresDatabaseSettings);
         databaseSettingsManager.save(copyPostgresDatabaseSettings);
-        addDefaultTables(jdbcPostgresMasterTemplate);
+        addTables(jdbcPostgresMasterTemplate);
     }
 
-    public void addDefaultTables(JdbcTemplate jdbcTemplate) {
+    private static final List<String> tableNames = new ArrayList<>(Arrays.asList("comments"));
+
+    public void addTables(JdbcTemplate jdbcTemplate) {
         jdbcTemplate.execute("CREATE TABLE comments" +
                 "(" +
                 "ID        SERIAL PRIMARY KEY," +
@@ -155,7 +155,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
             }
         }
 
-        testUtils.compareLargeTables(defaultTableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
+        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
     }
 
     @Test
@@ -174,7 +174,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
             }
         }
 
-        testUtils.compareLargeTables(defaultTableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
+        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
     }
 
     @Test
@@ -196,7 +196,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
             }
         }
 
-        testUtils.compareLargeTables(defaultTableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
+        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
     }
 
     @Test
@@ -219,7 +219,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
             }
         }
 
-        testUtils.compareLargeTables(defaultTableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
+        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
     }
 
     @Test
@@ -245,7 +245,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
                 ) {
                     databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings);
                 }
-                testUtils.compareLargeTables(defaultTableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
+                testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
             }
         }
 
@@ -263,7 +263,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
                 ) {
                     databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings);
                 }
-                testUtils.compareLargeTables(defaultTableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
+                testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
             }
         }
     }
@@ -294,7 +294,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
                 ) {
                     databaseBackupManager.restoreBackup(deprocessedBackup, copyPostgresDatabaseSettings);
                 }
-                testUtils.compareLargeTables(defaultTableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
+                testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
             }
         }
 
@@ -313,7 +313,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
                 ) {
                     databaseBackupManager.restoreBackup(deprocessedBackup, copyPostgresDatabaseSettings);
                 }
-                testUtils.compareLargeTables(defaultTableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
+                testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
             }
         }
     }
@@ -349,8 +349,8 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
             }
         }
 
-        List<String> tableNames = new ArrayList<>(defaultTableNames);
-        tableNames.add("users");
-        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
+        List<String> multipleTableNames = new ArrayList<>(tableNames);
+        multipleTableNames.add("users");
+        testUtils.compareLargeTables(multipleTableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
     }
 }
