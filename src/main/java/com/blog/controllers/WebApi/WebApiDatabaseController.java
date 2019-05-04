@@ -91,11 +91,13 @@ public class WebApiDatabaseController {
 
         Optional<DatabaseType> databaseType = DatabaseType.of(addDatabaseRequest.getDatabaseType());
         if (databaseType.isPresent()) {
+            DatabaseSettings databaseSettings = null;
+
             switch (databaseType.get()) {
                 case POSTGRES: {
                     PostgresSettings postgresSettings = new PostgresSettings();
 
-                    DatabaseSettings databaseSettings = DatabaseSettings.postgresSettings(postgresSettings)
+                    databaseSettings = DatabaseSettings.postgresSettings(postgresSettings)
                             .withHost(addDatabaseRequest.getHost())
                             .withPort(Integer.valueOf(addDatabaseRequest.getPort()))
                             .withDatabaseName(addDatabaseRequest.getDatabaseName())
@@ -103,12 +105,14 @@ public class WebApiDatabaseController {
                             .withPassword(addDatabaseRequest.getPassword())
                             .withSettingsName(addDatabaseRequest.getSettingsName())
                             .build();
-                    databaseSettingsManager.save(databaseSettings);
                     break;
                 }
             }
+
+            logger.info("Saving database settings into database... Database settings: {}", databaseSettings);
+            databaseSettingsManager.save(databaseSettings);
         } else {
-            throw new RuntimeException("Can't create database configuration. Error: Unknown database type");
+            throw new RuntimeException("Can't save database settings. Error: Unknown database type");
         }
 
         return "redirect:/dashboard";

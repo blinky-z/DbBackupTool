@@ -79,7 +79,7 @@ public class WebApiStorageController {
 
     @PostMapping
     public String createStorage(WebAddStorageRequest addStorageRequest, BindingResult bindingResult) {
-        logger.info("createStorage(): Got storage creation job");
+        logger.info("createStorage(): Got storage configuration creation job");
 
         webAddStorageRequestValidator.validate(addStorageRequest, bindingResult);
         if (bindingResult.hasErrors()) {
@@ -93,6 +93,8 @@ public class WebApiStorageController {
 
         Optional<StorageType> storageType = StorageType.of(addStorageRequest.getStorageType());
         if (storageType.isPresent()) {
+            StorageSettings storageSettings = null;
+
             switch (storageType.get()) {
                 case DROPBOX: {
                     DropboxSettings dropboxSettings = new DropboxSettings();
@@ -100,10 +102,9 @@ public class WebApiStorageController {
 
                     dropboxSettings.setAccessToken(webDropboxSettings.getAccessToken());
 
-                    StorageSettings storageSettings = StorageSettings.dropboxSettings(dropboxSettings)
+                    storageSettings = StorageSettings.dropboxSettings(dropboxSettings)
                             .withSettingsName(addStorageRequest.getSettingsName())
                             .build();
-                    storageSettingsManager.save(storageSettings);
                     break;
                 }
                 case LOCAL_FILE_SYSTEM: {
@@ -113,15 +114,17 @@ public class WebApiStorageController {
 
                     localFileSystemSettings.setBackupPath(webLocalFileSystemSettings.getBackupPath());
 
-                    StorageSettings storageSettings = StorageSettings.localFileSystemSettings(localFileSystemSettings)
+                    storageSettings = StorageSettings.localFileSystemSettings(localFileSystemSettings)
                             .withSettingsName(addStorageRequest.getSettingsName())
                             .build();
-                    storageSettingsManager.save(storageSettings);
                     break;
                 }
             }
+
+            logger.info("Saving storage settings into database... Storage settings: {}", storageSettings);
+            storageSettingsManager.save(storageSettings);
         } else {
-            throw new RuntimeException("Can't create storage configuration. Error: Unknown storage type");
+            throw new RuntimeException("Can't save storage settings. Error: Unknown storage type");
         }
 
         return "redirect:/dashboard";
