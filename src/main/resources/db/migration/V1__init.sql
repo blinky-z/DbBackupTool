@@ -1,7 +1,7 @@
 create table if not exists database_settings
 (
     TYPE              VARCHAR(64)               not null,
-    SETTINGS_NAME     varchar(128)              not null unique,
+    SETTINGS_NAME     varchar(256)              not null unique,
     HOST              VARCHAR(256)              not null,
     PORT              INTEGER                   not null,
     NAME              VARCHAR(1024)             not null,
@@ -14,7 +14,7 @@ create table if not exists database_settings
 create table if not exists storage_settings
 (
     TYPE              VARCHAR(64)               not null,
-    SETTINGS_NAME     varchar(128)              not null,
+    SETTINGS_NAME     varchar(256)              not null unique,
     DATE              TIMESTAMPTZ DEFAULT NOW() not null,
     ADDITIONAL_FIELDS varchar(8192)             not null
 );
