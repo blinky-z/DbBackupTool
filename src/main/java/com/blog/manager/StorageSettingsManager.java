@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -20,6 +21,10 @@ public class StorageSettingsManager {
 
     public StorageSettings save(@NotNull StorageSettings storageSettings) {
         return storageSettingsRepository.save(storageSettings);
+    }
+
+    public Iterable<StorageSettings> saveAll(List<StorageSettings> storageSettings) {
+        return storageSettingsRepository.saveAll(storageSettings);
     }
 
     public boolean existsById(@NotNull String id) {

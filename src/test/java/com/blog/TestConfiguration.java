@@ -8,6 +8,7 @@ import com.blog.entities.storage.LocalFileSystemSettings;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.manager.DatabaseSettingsManager;
 import com.blog.manager.StorageSettingsManager;
+import com.blog.service.storage.Storage;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 @Configuration
@@ -123,5 +126,15 @@ public class TestConfiguration {
                 StorageSettings.localFileSystemSettings(localFileSystemSettings)
                         .withSettingsName("testLocalFileSystemStorageSettings")
                         .build()));
+    }
+
+    @Bean
+    public List<StorageSettings> allStorageSettings() throws IOException {
+        return Arrays.asList(localFileSystemStorageSettings(), dropboxStorageSettings());
+    }
+
+    @Bean
+    public List<DatabaseSettings> allDatabaseSettings() throws SQLException {
+        return Arrays.asList(masterPostgresDatabaseSettings(), copyPostgresDatabaseSettings());
     }
 }
