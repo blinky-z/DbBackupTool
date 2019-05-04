@@ -59,11 +59,9 @@ public class TestUtils {
     /**
      * Initializes database with some tables.
      * Use it only when you need database contain some data (e.g. for storage upload testing) but not the table itself.
-     * You should not rely on realization of this function.
-     * Table name, columns and other params can be changed.
-     * Write own table creating function if you need to work with table.
+     * You should not rely on realization of this function - table name, columns and other params can be changed.
      * <p>
-     * Table names created by this function starting with '__'
+     * Table names created by this function has '__' prefix
      *
      * @param jdbcTemplate jdbc template to perform initializing on
      */
@@ -128,7 +126,7 @@ public class TestUtils {
      *
      * @param in1 the first stream
      * @param in2 the second stream
-     * @return true if content of both stream are equal, false otherwise
+     * @return true if content of both streams are equal, false otherwise
      */
     public boolean streamsContentEquals(InputStream in1, InputStream in2) {
         try {

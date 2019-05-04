@@ -6,7 +6,6 @@ import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.manager.*;
-import com.blog.repositories.StorageSettingsRepository;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
