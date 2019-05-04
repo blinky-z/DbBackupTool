@@ -3,7 +3,6 @@ package com.blog.controllers.WebApi;
 import com.blog.controllers.WebApi.Validator.WebRestoreBackupRequestValidator;
 import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.database.DatabaseSettings;
-import com.blog.entities.storage.StorageSettings;
 import com.blog.manager.*;
 import com.blog.webUI.formTransfer.WebRestoreBackupRequest;
 import org.slf4j.Logger;
@@ -25,8 +24,6 @@ public class WebApiRestoreBackupController {
 
     private BackupPropertiesManager backupPropertiesManager;
 
-    private StorageSettingsManager storageSettingsManager;
-
     private DatabaseSettingsManager databaseSettingsManager;
 
     private BackupLoadManager backupLoadManager;
@@ -43,11 +40,6 @@ public class WebApiRestoreBackupController {
     @Autowired
     public void setBackupPropertiesManager(BackupPropertiesManager backupPropertiesManager) {
         this.backupPropertiesManager = backupPropertiesManager;
-    }
-
-    @Autowired
-    public void setStorageSettingsManager(StorageSettingsManager storageSettingsManager) {
-        this.storageSettingsManager = storageSettingsManager;
     }
 
     @Autowired
@@ -86,12 +78,6 @@ public class WebApiRestoreBackupController {
                 new RuntimeException(String.format(
                         "Can't retrieve backup properties. Error: no backup properties with ID %d", backupId)));
 
-        String storageSettingsName = backupProperties.getStorageSettingsName();
-        StorageSettings storageSettings = storageSettingsManager.getById(storageSettingsName).
-                orElseThrow(() ->
-                        new RuntimeException(String.format(
-                                "Can't retrieve storage settings. Error: no storage settings with name %d", storageSettingsName)));
-
         String databaseSettingsName = webRestoreBackupRequest.getDatabaseSettingsName();
         DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseSettingsName).orElseThrow(() ->
                 new RuntimeException(
@@ -101,7 +87,7 @@ public class WebApiRestoreBackupController {
         logger.info("restoreBackup(): Database settings: {}", databaseSettings);
 
         logger.info("restoreBackup(): Downloading backup...");
-        InputStream downloadedBackup = backupLoadManager.downloadBackup(storageSettings, backupProperties);
+        InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties);
 
         logger.info("restoreBackup(): Deprocessing backup...");
         InputStream deprocessedBackup = backupProcessorManager.deprocess(downloadedBackup, backupProperties.getProcessors());

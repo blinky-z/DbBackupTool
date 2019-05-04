@@ -21,11 +21,18 @@ import java.util.Objects;
 public class BackupLoadManager {
     private static final Logger logger = LoggerFactory.getLogger(BackupLoadManager.class);
 
+    private StorageSettingsManager storageSettingsManager;
+
     private BackupPropertiesManager backupPropertiesManager;
 
     private DropboxStorage dropboxStorage;
 
     private FileSystemStorage fileSystemStorage;
+
+    @Autowired
+    public void setStorageSettingsManager(StorageSettingsManager storageSettingsManager) {
+        this.storageSettingsManager = storageSettingsManager;
+    }
 
     @Autowired
     public void setBackupPropertiesManager(BackupPropertiesManager backupPropertiesManager) {
@@ -44,6 +51,11 @@ public class BackupLoadManager {
 
     public BackupProperties uploadBackup(@NotNull InputStream backupStream, @NotNull StorageSettings storageSettings,
                                          @NotNull List<String> processors, @NotNull String databaseName) {
+        Objects.requireNonNull(backupStream);
+        Objects.requireNonNull(storageSettings);
+        Objects.requireNonNull(processors);
+        Objects.requireNonNull(databaseName);
+
         Date creationTime = new Date();
         String backupName = String.format(Storage.BACKUP_NAME_TEMPLATE, databaseName, Storage.dateFormatter.format(creationTime));
         StorageType storageType = storageSettings.getType();
@@ -73,13 +85,18 @@ public class BackupLoadManager {
         return backupProperties;
     }
 
-    public InputStream downloadBackup(@NotNull StorageSettings storageSettings, @NotNull BackupProperties backupProperties) {
-        Objects.requireNonNull(storageSettings);
+    public InputStream downloadBackup(@NotNull BackupProperties backupProperties) {
         Objects.requireNonNull(backupProperties);
-        String backupName = backupProperties.getBackupName();
+
+        logger.info("Downloading backup... Backup properties: {}", backupProperties);
+
+        String storageSettingsName = backupProperties.getStorageSettingsName();
+        StorageSettings storageSettings = storageSettingsManager.getById(storageSettingsName).orElseThrow(
+                () -> new RuntimeException("Can't download backup: missing storage settings with name " + storageSettingsName));
         StorageType storageType = storageSettings.getType();
 
-        logger.info("Downloading backup from storage {}. Backup name: {}", storageType, backupName);
+        String backupName = backupProperties.getBackupName();
+
         InputStream downloadedBackup;
         switch (storageType) {
             case LOCAL_FILE_SYSTEM: {
