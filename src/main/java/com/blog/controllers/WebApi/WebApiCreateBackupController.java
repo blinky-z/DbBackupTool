@@ -76,8 +76,8 @@ public class WebApiCreateBackupController {
 
         String databaseSettingsName = webCreateBackupRequest.getDatabaseSettingsName();
         DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseSettingsName).orElseThrow(() ->
-                new RuntimeException(
-                        String.format("Can't retrieve database settings. Error: no database settings with name %d", databaseSettingsName)));
+                new RuntimeException(String.format("Can't retrieve database settings. Error: no database settings with name %d",
+                        databaseSettingsName)));
         String databaseName = databaseSettings.getName();
 
         logger.info("createBackup(): Database settings: {}", databaseSettings);
@@ -86,9 +86,9 @@ public class WebApiCreateBackupController {
                 webCreateBackupRequest.getBackupCreationProperties().values()) {
             String storageSettingsName = backupCreationProperties.getStorageSettingsName();
             StorageSettings storageSettings = storageSettingsManager.getById(storageSettingsName).orElseThrow(() ->
-                    new RuntimeException(
-                            String.format("createBackup(): Can't retrieve storage settings. Error: no storage settings with name %d",
-                                    storageSettingsName)));
+                    new RuntimeException(String.format(
+                            "createBackup(): Can't retrieve storage settings. Error: no storage settings with name %d",
+                            storageSettingsName)));
 
             logger.info("Current storage settings: {}", storageSettings.toString());
 

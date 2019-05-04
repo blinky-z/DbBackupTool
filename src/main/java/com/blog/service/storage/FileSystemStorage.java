@@ -31,7 +31,7 @@ public class FileSystemStorage implements Storage {
         String backupFolderPath = localFileSystemSettings.getBackupPath().replace("/", File.separator);
         backupFolderPath = backupFolderPath + File.separator + backupName;
 
-        logger.info("Uploading backup chunk to the Local File System. Backup folder: {}", backupFolderPath);
+        logger.info("Uploading backup to the Local File System. Backup folder: {}", backupFolderPath);
 
         try (
                 BufferedInputStream bufferedInputStream = new BufferedInputStream(in)
@@ -73,7 +73,7 @@ public class FileSystemStorage implements Storage {
             throw new RuntimeException("Error occurred while uploading backup chunk to the Local File System", ex);
         }
 
-        logger.info("Backup chunk successfully saved on the Local File System. Backup folder: {}", backupFolderPath);
+        logger.info("Backup successfully saved on the Local File System. Backup folder: {}", backupFolderPath);
     }
 
     /**

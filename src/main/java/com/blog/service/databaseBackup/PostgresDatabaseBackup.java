@@ -81,7 +81,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
      * <p>
      * If pg_dump reports about error while executing, InternalPostgresToolError will be thrown
      * In such case, you can find process's stderr messages in the class log
-     *
+     * <p>
      * Note, that this function returns directly process's stdin stream, that is you will not have to wait for full backup creation.
      * Further reading is performing by processor or storage service.
      *

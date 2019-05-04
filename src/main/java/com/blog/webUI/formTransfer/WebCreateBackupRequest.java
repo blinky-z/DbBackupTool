@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 public class WebCreateBackupRequest {
     private String databaseSettingsName;
+
     private HashMap<String, BackupCreationProperties> backupCreationProperties = new HashMap<>();
 
     public HashMap<String, BackupCreationProperties> getBackupCreationProperties() {
