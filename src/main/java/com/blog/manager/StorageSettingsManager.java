@@ -23,7 +23,7 @@ public class StorageSettingsManager {
         return storageSettingsRepository.save(storageSettings);
     }
 
-    public Iterable<StorageSettings> saveAll(List<StorageSettings> storageSettings) {
+    public Iterable<StorageSettings> saveAll(@NotNull List<StorageSettings> storageSettings) {
         return storageSettingsRepository.saveAll(storageSettings);
     }
 
