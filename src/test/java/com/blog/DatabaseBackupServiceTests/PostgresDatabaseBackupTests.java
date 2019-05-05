@@ -108,14 +108,18 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
         this.databaseSettingsManager = databaseSettingsManager;
     }
 
+    @Autowired
+    private List<StorageSettings> allStorageSettings;
+
+    @Autowired
+    private List<DatabaseSettings> allDatabaseSettings;
+
     @Before
     public void init() {
         testUtils.clearDatabase(jdbcPostgresMasterTemplate);
         testUtils.clearDatabase(jdbcPostgresCopyTemplate);
-        storageSettingsManager.save(dropboxStorageSettings);
-        storageSettingsManager.save(localFileSystemStorageSettings);
-        databaseSettingsManager.save(masterPostgresDatabaseSettings);
-        databaseSettingsManager.save(copyPostgresDatabaseSettings);
+        storageSettingsManager.saveAll(allStorageSettings);
+        databaseSettingsManager.saveAll(allDatabaseSettings);
         addTables(jdbcPostgresMasterTemplate);
     }
 
