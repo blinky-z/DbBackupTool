@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -20,6 +21,10 @@ public class DatabaseSettingsManager {
 
     public DatabaseSettings save(@NotNull DatabaseSettings databaseSettings) {
         return databaseSettingsRepository.save(databaseSettings);
+    }
+
+    public Iterable<DatabaseSettings> saveAll(@NotNull List<DatabaseSettings> databaseSettings) {
+        return databaseSettingsRepository.saveAll(databaseSettings);
     }
 
     public boolean existsById(@NotNull String id) {
