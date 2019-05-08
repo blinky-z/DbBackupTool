@@ -37,13 +37,18 @@ import java.util.List;
 public class WebFrontController {
     private static final Logger logger = LoggerFactory.getLogger(WebFrontController.class);
 
-    private static final String TIME_FORMAT = "dd.MM.yyyy HH:mm:ss";
+    private SimpleDateFormat dateFormat;
 
     private DatabaseSettingsManager databaseSettingsManager;
 
     private StorageSettingsManager storageSettingsManager;
 
     private BackupPropertiesManager backupPropertiesManager;
+
+    @Autowired
+    public void setDateFormat(SimpleDateFormat dateFormat) {
+        this.dateFormat = dateFormat;
+    }
 
     @Autowired
     public void setDatabaseSettingsManager(DatabaseSettingsManager databaseSettingsManager) {
@@ -73,8 +78,6 @@ public class WebFrontController {
     @ModelAttribute
     public void addLists(Model model) {
         logger.info("Adding lists...");
-
-        SimpleDateFormat dateFormat = new SimpleDateFormat(TIME_FORMAT);
 
         {
             List<WebStorageItem> storageList = new ArrayList<>();
