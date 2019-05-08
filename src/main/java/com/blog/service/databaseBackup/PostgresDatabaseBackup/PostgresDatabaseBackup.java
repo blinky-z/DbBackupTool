@@ -1,7 +1,8 @@
-package com.blog.service.databaseBackup;
+package com.blog.service.databaseBackup.PostgresDatabaseBackup;
 
 import com.blog.entities.database.DatabaseSettings;
-import com.blog.service.databaseBackup.Errors.InternalPostgresToolError;
+import com.blog.service.databaseBackup.DatabaseBackup;
+import com.blog.service.databaseBackup.PostgresDatabaseBackup.Errors.InternalPostgresToolError;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +19,14 @@ import java.util.List;
 @Service
 public class PostgresDatabaseBackup implements DatabaseBackup {
     private static final Logger logger = LoggerFactory.getLogger(PostgresDatabaseBackup.class);
+    private static ErrorCallback errorCallback;
     private String pgDumpToolPath;
     private String psqlToolPath;
+
+    @Autowired
+    public void setErrorCallback(ErrorCallback errorCallback) {
+        PostgresDatabaseBackup.errorCallback = errorCallback;
+    }
 
     @Autowired
     public void setPgDumpToolPath(String pgDumpToolPath) {
@@ -41,8 +48,6 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
 
     private ProcessBuilder buildProcess(List<String> command, DatabaseSettings databaseSettings) {
         ProcessBuilder pb;
-
-        logger.info("Creating process with command: {}", command);
 
         pb = new ProcessBuilder(command);
         pb.environment().put("PGUSER", databaseSettings.getLogin());
@@ -87,7 +92,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
      *
      * @return input stream, connected to the normal output stream of the process, from which backup can be read
      */
-    public InputStream createBackup(@NotNull DatabaseSettings databaseSettings)
+    public InputStream createBackup(@NotNull DatabaseSettings databaseSettings, @NotNull Integer id)
             throws InternalPostgresToolError {
         List<String> backupCommand = buildBackupCommand(databaseSettings);
         logger.info("Creating PostgreSQL backup of database {} hosted on address {}:{}", databaseSettings.getName(),
@@ -101,7 +106,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
         }
 
         Thread processStderrReaderThread = new Thread(new ProcessStderrStreamReadWorker(process.getErrorStream(),
-                JobType.BACKUP));
+                JobType.BACKUP, id));
         processStderrReaderThread.start();
 
         // we should wait for backup process terminating in separate thread, otherwise
@@ -136,7 +141,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
      *
      * @param backupSource the input stream to read backup from
      */
-    public void restoreBackup(@NotNull InputStream backupSource, @NotNull DatabaseSettings databaseSettings)
+    public void restoreBackup(@NotNull InputStream backupSource, @NotNull DatabaseSettings databaseSettings, @NotNull Integer id)
             throws InternalPostgresToolError {
         List<String> restoreCommand = buildRestoreCommand(databaseSettings);
         logger.info("Restoring PostgreSQL backup to database {} hosted on address {}:{}", databaseSettings.getName(),
@@ -149,7 +154,8 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
             throw new RuntimeException("Error starting PostgreSQL database restore process", ex);
         }
 
-        Thread processStderrReaderThread = new Thread(new ProcessStderrStreamReadWorker(process.getErrorStream(), JobType.RESTORE));
+        Thread processStderrReaderThread =
+                new Thread(new ProcessStderrStreamReadWorker(process.getErrorStream(), JobType.RESTORE, id));
         processStderrReaderThread.start();
 
         Thread processStdoutReaderThread = new Thread(new ProcessStdoutStreamReadWorker(process.getInputStream(), JobType.RESTORE));
@@ -236,9 +242,13 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
 
         private String STDERR_PRINT_FORMAT;
 
-        private ProcessStderrStreamReadWorker(InputStream errorStream, JobType jobType) {
+        private Integer id;
+
+        private ProcessStderrStreamReadWorker(InputStream errorStream, JobType jobType, Integer id) {
             this.errorStream = errorStream;
             this.jobType = jobType;
+            this.id = id;
+
             this.STDERR_PRINT_FORMAT = jobType.getJobPrefix() + " stderr: {}";
         }
 
@@ -255,9 +265,9 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
                     logger.error(STDERR_PRINT_FORMAT, error);
                 }
                 if (isErrorOccurred) {
-                    throw new InternalPostgresToolError(String.format(
+                    errorCallback.onError(new InternalPostgresToolError(String.format(
                             "Error occurred while executing PostgreSQL database job. Job Type: %s. See process's stderr for details",
-                            jobType.toString()));
+                            jobType.toString())), id);
                 }
             } catch (IOException ex) {
                 throw new RuntimeException("Error occurred while reading process standard error stream", ex);
