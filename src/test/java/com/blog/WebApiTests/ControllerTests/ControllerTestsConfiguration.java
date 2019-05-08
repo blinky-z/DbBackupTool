@@ -14,13 +14,16 @@ public class ControllerTestsConfiguration {
     private DatabaseSettings masterPostgresDatabaseSettings;
 
     @Autowired
+    private DatabaseSettings copyPostgresDatabaseSettings;
+
+    @Autowired
     private StorageSettings localFileSystemStorageSettings;
 
     @Autowired
     private StorageSettings dropboxStorageSettings;
 
     @Bean
-    public MultiValueMap<String, Object> postgresDatabaseSettingsAsMultiValueMap() {
+    public MultiValueMap<String, Object> masterPostgresDatabaseSettingsAsMultiValueMap() {
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("databaseType", "postgres");
         body.add("host", masterPostgresDatabaseSettings.getHost());
@@ -28,6 +31,19 @@ public class ControllerTestsConfiguration {
         body.add("databaseName", masterPostgresDatabaseSettings.getName());
         body.add("login", masterPostgresDatabaseSettings.getLogin());
         body.add("password", masterPostgresDatabaseSettings.getPassword());
+
+        return body;
+    }
+
+    @Bean
+    public MultiValueMap<String, Object> copyPostgresDatabaseSettingsAsMultiValueMap() {
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("databaseType", "postgres");
+        body.add("host", copyPostgresDatabaseSettings.getHost());
+        body.add("port", String.valueOf(copyPostgresDatabaseSettings.getPort()));
+        body.add("databaseName", copyPostgresDatabaseSettings.getName());
+        body.add("login", copyPostgresDatabaseSettings.getLogin());
+        body.add("password", copyPostgresDatabaseSettings.getPassword());
 
         return body;
     }

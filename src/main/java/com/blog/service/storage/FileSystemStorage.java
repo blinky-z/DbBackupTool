@@ -86,11 +86,13 @@ public class FileSystemStorage implements Storage {
         String backupFolderPath = localFileSystemSettings.getBackupPath().replace("/", File.separator);
         backupFolderPath = backupFolderPath + File.separator + backupName;
 
-        logger.info("Downloading backup from the Local File System. Backup folder: {}", backupFolderPath);
+        logger.info("Downloading backup from the Local File System... Backup folder: {}", backupFolderPath);
         try {
             List<InputStream> backupFileStreamList = new ArrayList<>();
-            long filesCount = Objects.requireNonNull(new File(backupFolderPath).list(),
-                    "Can't download backup from the Local File System: Missing backup folder").length;
+
+            File backupFolder = new File(backupFolderPath);
+            long filesCount = Objects.requireNonNull(backupFolder.list(),
+                    String.format("Can't download backup: invalid backup folder path: %s", backupFolderPath)).length;
 
             logger.info("Total files in backup folder on Local File System: {}. Backup folder: {}", filesCount, backupFolderPath);
 
@@ -106,5 +108,39 @@ public class FileSystemStorage implements Storage {
         } catch (IOException ex) {
             throw new RuntimeException("Error occurred while downloading backup from Local File System", ex);
         }
+    }
+
+    @Override
+    public void deleteBackup(StorageSettings storageSettings, String backupName) {
+        LocalFileSystemSettings localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(() ->
+                new RuntimeException("Can't delete backup from Local File System storage: Missing Storage Settings"));
+        String backupFolderPath = localFileSystemSettings.getBackupPath().replace("/", File.separator);
+        backupFolderPath = backupFolderPath + File.separator + backupName;
+
+        logger.info("Deleting backup from the Local File System... Backup folder: {}", backupFolderPath);
+
+        File backupFolder = new File(backupFolderPath);
+        long filesCount = Objects.requireNonNull(backupFolder.list(),
+                String.format("Can't delete backup: invalid backup folder path: %s", backupFolderPath)).length;
+
+        logger.info("Total files in backup folder on Local File System: {}. Backup folder: {}", filesCount, backupFolderPath);
+
+        boolean deleted;
+        for (long currentBackupPart = 0; currentBackupPart < filesCount; currentBackupPart++) {
+            File backupFile = new File(getCurrentFilePartAsAbsolutePath(backupFolderPath, backupName, currentBackupPart));
+            logger.info("Deleting file [{}/{}]: '{}'", currentBackupPart + 1, filesCount, backupFile.getName());
+            deleted = backupFile.delete();
+            if (!deleted) {
+                throw new RuntimeException(String.format("Error deleting backup. Backup folder: %s. Can't delete file: %s",
+                        backupFolderPath, backupFile.getName()));
+            }
+        }
+        deleted = backupFolder.delete();
+        if (!deleted) {
+            throw new RuntimeException(String.format("Error deleting backup. Backup folder: %s. Can't delete folder",
+                    backupFolderPath));
+        }
+
+        logger.info("Deleting backup from the Local File System completed. Backup folder {}", backupFolderPath);
     }
 }

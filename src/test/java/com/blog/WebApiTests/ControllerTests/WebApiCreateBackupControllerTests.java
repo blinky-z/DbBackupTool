@@ -3,6 +3,8 @@ package com.blog.WebApiTests.ControllerTests;
 import com.blog.ApplicationTests;
 import com.blog.TestUtils;
 import com.blog.entities.backup.BackupProperties;
+import com.blog.entities.backup.BackupTask;
+import com.blog.entities.backup.BackupTaskState;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.manager.*;
@@ -22,7 +24,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -46,7 +47,7 @@ public class WebApiCreateBackupControllerTests extends ApplicationTests {
     private BackupPropertiesManager backupPropertiesManager;
 
     @Autowired
-    private MultiValueMap<String, Object> postgresDatabaseSettingsAsMultiValueMap;
+    private MultiValueMap<String, Object> masterPostgresDatabaseSettingsAsMultiValueMap;
 
     @Autowired
     private MultiValueMap<String, Object> localFileSystemStorageSettingsAsMultiValueMap;
@@ -69,16 +70,22 @@ public class WebApiCreateBackupControllerTests extends ApplicationTests {
     @Autowired
     private List<StorageSettings> allStorageSettings;
 
+    @Autowired
+    private List<DatabaseSettings> allDatabaseSettings;
+
+    @Autowired
+    private BackupTaskManager backupTaskManager;
+
     @Before
     public void init() {
         testUtils.clearDatabase(jdbcPostgresMasterTemplate);
         storageSettingsManager.saveAll(allStorageSettings);
-        databaseSettingsManager.save(masterPostgresDatabaseSettings);
+        databaseSettingsManager.saveAll(allDatabaseSettings);
         testUtils.initDatabase(jdbcPostgresMasterTemplate);
     }
 
     @Test
-    public void givenProperRequestWithLocalFileSystemStorage_createBackup_shouldCreateBackupSuccessfully_whenSendRequest() throws IOException {
+    public void givenProperRequestWithLocalFileSystemStorage_createBackup_shouldCreateBackupSuccessfully_whenSendRequest() throws IOException, InterruptedException {
         String settingsName =
                 "givenProperRequestWithLocalFileSystemStorage_createBackup_shouldCreateBackupSuccessfully_whenSendRequest";
 
@@ -100,7 +107,7 @@ public class WebApiCreateBackupControllerTests extends ApplicationTests {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(postgresDatabaseSettingsAsMultiValueMap);
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(masterPostgresDatabaseSettingsAsMultiValueMap);
             body.add("settingsName", settingsName);
 
             HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
@@ -125,11 +132,18 @@ public class WebApiCreateBackupControllerTests extends ApplicationTests {
 
             assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
 
+            BackupTask backupTask = backupTaskManager.findAllByOrderByDateDesc().iterator().next();
+            Integer id = backupTask.getId();
+
+            while (backupTaskManager.getBackupTask(id).orElseThrow(RuntimeException::new).getState() != BackupTaskState.COMPLETED) {
+                Thread.sleep(300);
+            }
+
             Collection<BackupProperties> backupPropertiesCollection = backupPropertiesManager.findAllByOrderByIdDesc();
-            BackupProperties backupProperties = Objects.requireNonNull(backupPropertiesCollection.iterator().next());
+            BackupProperties backupProperties = backupPropertiesCollection.iterator().next();
 
             try (
-                    InputStream in = databaseBackupManager.createBackup(masterPostgresDatabaseSettings);
+                    InputStream in = databaseBackupManager.createBackup(masterPostgresDatabaseSettings, 0);
                     InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties)
             ) {
                 assertTrue(testUtils.streamsContentEquals(in, downloadedBackup));
@@ -138,7 +152,7 @@ public class WebApiCreateBackupControllerTests extends ApplicationTests {
     }
 
     @Test
-    public void givenProperRequestWithDropboxStorage_createBackup_shouldCreateBackupSuccessfully_whenSendRequest() throws IOException {
+    public void givenProperRequestWithDropboxStorage_createBackup_shouldCreateBackupSuccessfully_whenSendRequest() throws IOException, InterruptedException {
         String settingsName =
                 "givenProperRequestWithDropboxStorage_createBackup_shouldCreateBackupSuccessfully_whenSendRequest";
 
@@ -160,7 +174,7 @@ public class WebApiCreateBackupControllerTests extends ApplicationTests {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(postgresDatabaseSettingsAsMultiValueMap);
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(masterPostgresDatabaseSettingsAsMultiValueMap);
             body.add("settingsName", settingsName);
 
             HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
@@ -185,11 +199,18 @@ public class WebApiCreateBackupControllerTests extends ApplicationTests {
 
             assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
 
+            BackupTask backupTask = backupTaskManager.findAllByOrderByDateDesc().iterator().next();
+            Integer id = backupTask.getId();
+
+            while (backupTaskManager.getBackupTask(id).orElseThrow(RuntimeException::new).getState() != BackupTaskState.COMPLETED) {
+                Thread.sleep(300);
+            }
+
             Collection<BackupProperties> backupPropertiesCollection = backupPropertiesManager.findAllByOrderByIdDesc();
-            BackupProperties backupProperties = Objects.requireNonNull(backupPropertiesCollection.iterator().next());
+            BackupProperties backupProperties = backupPropertiesCollection.iterator().next();
 
             try (
-                    InputStream in = databaseBackupManager.createBackup(masterPostgresDatabaseSettings);
+                    InputStream in = databaseBackupManager.createBackup(masterPostgresDatabaseSettings, 0);
                     InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties)
             ) {
                 assertTrue(testUtils.streamsContentEquals(in, downloadedBackup));

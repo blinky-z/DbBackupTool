@@ -24,7 +24,7 @@ public class WebApiDatabaseControllerTests extends ApplicationTests {
     private TestRestTemplate restTemplate;
 
     @Autowired
-    private MultiValueMap<String, Object> postgresDatabaseSettingsAsMultiValueMap;
+    private MultiValueMap<String, Object> masterPostgresDatabaseSettingsAsMultiValueMap;
 
     @Test
     public void createDatabase_ShouldRespondWith400Error_WhenGotRequestToSavePostgresSettingsWithAlreadyExistingSettingsName() {
@@ -34,7 +34,7 @@ public class WebApiDatabaseControllerTests extends ApplicationTests {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(postgresDatabaseSettingsAsMultiValueMap);
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(masterPostgresDatabaseSettingsAsMultiValueMap);
         body.add("settingsName", settingsName);
 
         HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
@@ -54,7 +54,7 @@ public class WebApiDatabaseControllerTests extends ApplicationTests {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(postgresDatabaseSettingsAsMultiValueMap);
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(masterPostgresDatabaseSettingsAsMultiValueMap);
         body.add("settingsName", settingsName);
 
         HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
@@ -95,7 +95,7 @@ public class WebApiDatabaseControllerTests extends ApplicationTests {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(postgresDatabaseSettingsAsMultiValueMap);
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(masterPostgresDatabaseSettingsAsMultiValueMap);
             body.add("settingsName", settingsName);
 
             HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);

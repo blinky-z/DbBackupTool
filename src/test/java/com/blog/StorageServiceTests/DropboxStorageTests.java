@@ -2,9 +2,14 @@ package com.blog.StorageServiceTests;
 
 import com.blog.ApplicationTests;
 import com.blog.TestUtils;
+import com.blog.entities.storage.DropboxSettings;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.service.storage.DropboxStorage;
 import com.blog.service.storage.Storage;
+import com.dropbox.core.DbxException;
+import com.dropbox.core.DbxRequestConfig;
+import com.dropbox.core.v2.DbxClientV2;
+import com.dropbox.core.v2.files.GetMetadataErrorException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,6 +79,34 @@ public class DropboxStorageTests extends ApplicationTests {
                     InputStream downloadedBackup = dropboxStorage.downloadBackup(dropboxStorageSettings, backupName)
             ) {
                 assertTrue(testUtils.streamsContentEquals(new ByteArrayInputStream(source), downloadedBackup));
+            }
+        }
+    }
+
+    @Test
+    public void whenUploadBackupAndDelete_backupIsDeletedOnStorage() throws IOException, DbxException {
+        String backupName = "whenUploadBackupAndDelete_backupIsDeletedOnStorage";
+        backupName = backupName + "_" + Storage.dateFormatter.format(new Date());
+        byte[] source = testUtils.getRandomBytes(1000000);
+
+        try (
+                ByteArrayInputStream sourceInputStream = new ByteArrayInputStream(source)
+        ) {
+            dropboxStorage.uploadBackup(sourceInputStream, dropboxStorageSettings, backupName);
+            dropboxStorage.deleteBackup(dropboxStorageSettings, backupName);
+
+            DbxRequestConfig config = DbxRequestConfig.newBuilder("dbBackupDeleted").build();
+            DropboxSettings dropboxSettings = dropboxStorageSettings.getDropboxSettings().orElseThrow(RuntimeException::new);
+            DbxClientV2 dbxClient = new DbxClientV2(config, dropboxSettings.getAccessToken());
+
+            try {
+                dbxClient.files().getMetadata("/" + backupName);
+            } catch (GetMetadataErrorException ex) {
+                if (ex.errorValue.isPath()) {
+                    assertTrue(ex.errorValue.getPathValue().isNotFound());
+                } else {
+                    throw ex;
+                }
             }
         }
     }

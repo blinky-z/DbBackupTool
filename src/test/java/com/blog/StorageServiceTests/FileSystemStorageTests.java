@@ -12,10 +12,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
@@ -44,7 +46,7 @@ public class FileSystemStorageTests extends ApplicationTests {
 
     @Test
     public void whenUploadSmallBackupAndDownload_contentIsEqual() throws IOException {
-        String backupName = "fileSystemStorage_whenUploadSmallBackupAndDownload_contentIsEqual";
+        String backupName = "whenUploadSmallBackupAndDownload_contentIsEqual";
         backupName = backupName + "_" + Storage.dateFormatter.format(new Date());
         byte[] source = testUtils.getRandomBytes(1000);
 
@@ -62,7 +64,7 @@ public class FileSystemStorageTests extends ApplicationTests {
 
     @Test
     public void whenUploadBigBackupAndDownload_contentIsEqual() throws IOException {
-        String backupName = "fileSystemStorage_whenUploadBigBackupAndDownload_contentIsEqual";
+        String backupName = "whenUploadBigBackupAndDownload_contentIsEqual";
         backupName = backupName + "_" + Storage.dateFormatter.format(new Date());
         byte[] source = testUtils.getRandomBytes(1000000);
 
@@ -75,6 +77,24 @@ public class FileSystemStorageTests extends ApplicationTests {
             ) {
                 assertTrue(testUtils.streamsContentEquals(new ByteArrayInputStream(source), downloadedBackup));
             }
+        }
+    }
+
+    @Test
+    public void whenUploadBackupAndDelete_backupIsDeletedOnStorage() throws IOException {
+        String backupName = "whenUploadBackupAndDelete_backupIsDeletedOnStorage";
+        backupName = backupName + "_" + Storage.dateFormatter.format(new Date());
+        byte[] source = testUtils.getRandomBytes(1000000);
+
+        try (
+                ByteArrayInputStream sourceInputStream = new ByteArrayInputStream(source)
+        ) {
+            fileSystemStorage.uploadBackup(sourceInputStream, localFileSystemStorageSettings, backupName);
+            fileSystemStorage.deleteBackup(localFileSystemStorageSettings, backupName);
+
+            assertFalse(new File(localFileSystemStorageSettings.getLocalFileSystemSettings()
+                    .orElseThrow(RuntimeException::new).
+                            getBackupPath() + File.separator + backupName).exists());
         }
     }
 }

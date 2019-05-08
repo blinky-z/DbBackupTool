@@ -67,4 +67,6 @@ public interface Storage {
      * @return input stream, from which backup can be read after download complete
      */
     InputStream downloadBackup(StorageSettings storageSettings, String backupName);
+
+    void deleteBackup(StorageSettings storageSettings, String backupName);
 }

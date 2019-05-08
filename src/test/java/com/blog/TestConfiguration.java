@@ -8,7 +8,6 @@ import com.blog.entities.storage.LocalFileSystemSettings;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.manager.DatabaseSettingsManager;
 import com.blog.manager.StorageSettingsManager;
-import com.blog.service.storage.Storage;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,9 +117,9 @@ public class TestConfiguration {
     public StorageSettings localFileSystemStorageSettings() throws IOException {
         LocalFileSystemSettings localFileSystemSettings = new LocalFileSystemSettings();
         Path tempDir = Files.createTempDirectory("dbBackupTests");
-        String tempDirPath = tempDir.toAbsolutePath().toString();
-        logger.info("Created temporary folder for File System Storage tests. Path: {}", tempDirPath);
-        localFileSystemSettings.setBackupPath(tempDirPath);
+        String tempDirPathAsString = tempDir.toAbsolutePath().toString();
+        logger.info("Created temporary folder for File System Storage tests. Path: {}", tempDirPathAsString);
+        localFileSystemSettings.setBackupPath(tempDirPathAsString);
 
         return Objects.requireNonNull(storageSettingsManager.save(
                 StorageSettings.localFileSystemSettings(localFileSystemSettings)

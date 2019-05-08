@@ -93,7 +93,8 @@ public class DropboxStorage implements Storage {
             List<Metadata> listFolderMetadata = listFolderResult.getEntries();
             filesCount = listFolderMetadata.size();
         } catch (DbxException ex) {
-            throw new RuntimeException(String.format("Error listing Dropbox backup folder. Backup folder: %s", backupFolderPath), ex);
+            throw new RuntimeException(
+                    String.format("Error listing Dropbox backup folder. Backup folder: %s", backupFolderPath), ex);
         }
 
         try {
@@ -108,6 +109,25 @@ public class DropboxStorage implements Storage {
         } catch (IOException ex) {
             throw new RuntimeException("Error occurred while initializing backup downloading from Dropbox", ex);
         }
+    }
+
+    @Override
+    public void deleteBackup(StorageSettings storageSettings, String backupName) {
+        String backupFolderPath = "/" + backupName;
+        logger.info("Deleting backup from Dropbox. Backup folder: {}", backupFolderPath);
+        DbxRequestConfig config = DbxRequestConfig.newBuilder("dbBackupDeleted").build();
+        DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(() -> new RuntimeException(
+                "Can't delete backup from Dropbox storage: Missing Dropbox Settings"));
+        DbxClientV2 dbxClient = new DbxClientV2(config, dropboxSettings.getAccessToken());
+
+        try {
+            dbxClient.files().deleteV2(backupFolderPath);
+        } catch (DbxException ex) {
+            throw new RuntimeException(
+                    String.format("Error deleting Dropbox backup folder. Backup folder: %s", backupFolderPath), ex);
+        }
+
+        logger.info("Backup successfully deleted from Dropbox. Backup folder: {}", backupFolderPath);
     }
 
     private class BackupDownloader implements Runnable {
@@ -140,7 +160,7 @@ public class DropboxStorage implements Storage {
                     dbxClient.files().downloadBuilder(currentFile).download(out);
                 }
                 out.close();
-                logger.info("Downloading backup from Dropbox completed. Backup folder: {}", backupFolderPath);
+                logger.info("Backup successfully downloaded from Dropbox. Backup folder: {}", backupFolderPath);
             } catch (DbxException | IOException ex) {
                 throw new RuntimeException(
                         String.format("Error occurred while downloading backup from Dropbox. Backup folder: %s",
