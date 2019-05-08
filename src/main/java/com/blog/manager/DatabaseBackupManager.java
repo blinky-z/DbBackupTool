@@ -2,7 +2,7 @@ package com.blog.manager;
 
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.database.DatabaseType;
-import com.blog.service.databaseBackup.PostgresDatabaseBackup;
+import com.blog.service.databaseBackup.PostgresDatabaseBackup.PostgresDatabaseBackup;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,8 +23,9 @@ public class DatabaseBackupManager {
         this.postgresDatabaseBackup = postgresDatabaseBackup;
     }
 
-    public InputStream createBackup(@NotNull DatabaseSettings databaseSettings) {
+    public InputStream createBackup(@NotNull DatabaseSettings databaseSettings, @NotNull Integer id) {
         Objects.requireNonNull(databaseSettings);
+        Objects.requireNonNull(id);
         logger.info("Creating backup of database {}... Database Settings: {}", databaseSettings.getName(), databaseSettings);
 
         InputStream backupStream;
@@ -32,7 +33,7 @@ public class DatabaseBackupManager {
         DatabaseType databaseType = databaseSettings.getType();
         switch (databaseType) {
             case POSTGRES: {
-                backupStream = postgresDatabaseBackup.createBackup(databaseSettings);
+                backupStream = postgresDatabaseBackup.createBackup(databaseSettings, id);
                 break;
             }
             default: {
@@ -45,15 +46,16 @@ public class DatabaseBackupManager {
         return backupStream;
     }
 
-    public void restoreBackup(@NotNull InputStream backup, @NotNull DatabaseSettings databaseSettings) {
+    public void restoreBackup(@NotNull InputStream backup, @NotNull DatabaseSettings databaseSettings, @NotNull Integer id) {
         Objects.requireNonNull(backup);
         Objects.requireNonNull(databaseSettings);
+        Objects.requireNonNull(id);
         logger.info("Restoring backup to database {}... Database Settings: {}", databaseSettings.getName(), databaseSettings);
 
         DatabaseType databaseType = databaseSettings.getType();
         switch (databaseType) {
             case POSTGRES: {
-                postgresDatabaseBackup.restoreBackup(backup, databaseSettings);
+                postgresDatabaseBackup.restoreBackup(backup, databaseSettings, id);
                 break;
             }
             default: {

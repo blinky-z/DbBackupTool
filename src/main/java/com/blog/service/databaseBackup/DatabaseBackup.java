@@ -14,12 +14,16 @@ public interface DatabaseBackup {
      *
      * @return input stream contains the plain text database backup
      */
-    InputStream createBackup(@NotNull DatabaseSettings databaseSettings);
+    InputStream createBackup(@NotNull DatabaseSettings databaseSettings, @NotNull Integer id);
 
     /**
      * Restores database backup.
      *
      * @param dumpData input stream contains the plain text database backup
      */
-    void restoreBackup(InputStream dumpData, @NotNull DatabaseSettings databaseSettings);
+    void restoreBackup(InputStream dumpData, @NotNull DatabaseSettings databaseSettings, @NotNull Integer id);
+
+    interface ErrorCallback {
+        void onError(@NotNull Throwable t, @NotNull Integer id);
+    }
 }

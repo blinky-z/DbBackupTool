@@ -27,3 +27,11 @@ create table if not exists backup_properties
     STORAGE_SETTINGS_NAME varchar(128)              not null,
     PROCESSORS            varchar(1024)             not null
 );
+
+create table if not exists backup_tasks
+(
+    ID       SERIAL PRIMARY KEY,
+    DATE     TIMESTAMPTZ DEFAULT NOW() not null,
+    STATE    VARCHAR(64)               not null,
+    IS_ERROR boolean                   not null
+);
