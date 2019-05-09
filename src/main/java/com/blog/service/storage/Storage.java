@@ -49,24 +49,31 @@ public interface Storage {
      * <p>
      * Backup always saved into folder named exactly as backup name
      * <p>
-     * The following is a typical uploaded backup:
+     * The following is an example of typical uploaded backup:
      * /backup_postgres_04-04-2019_15-24-51-970/backup_postgres_04-04-2019_15-24-51-970_part0.dat
      * /backup_postgres_04-04-2019_15-24-51-970/backup_postgres_04-04-2019_15-24-51-970_part1.dat
      *
      * @param in              the input stream to read backup from
-     * @param storageSettings storage settings wraps specified storage settings
-     * @param backupName      backup name to create backup folder and backup parts
+     * @param storageSettings storage settings to access storage where backup stored
+     * @param backupName      backup name to name backup folder
      */
     void uploadBackup(InputStream in, StorageSettings storageSettings, String backupName);
 
     /**
      * Downloads backup from the specified storage
      *
-     * @param storageSettings storage settings wraps specified storage settings
-     * @param backupName      backup name to retrieve backup folder and backup parts
+     * @param storageSettings storage settings to access storage where backup stored
+     * @param backupName      backup name to retrieve backup folder
      * @return input stream, from which backup can be read after download complete
      */
     InputStream downloadBackup(StorageSettings storageSettings, String backupName);
 
+
+    /**
+     * Deletes backup from the specified storage
+     *
+     * @param storageSettings storage settings to access storage where backup stored
+     * @param backupName      backup name to delete backup folder
+     */
     void deleteBackup(StorageSettings storageSettings, String backupName);
 }
