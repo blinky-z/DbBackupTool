@@ -72,6 +72,25 @@
                     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                         <h2>Dashboard</h2>
                     </div>
+
+                    <div id="backupTasksTable">
+                        <table class="table table-hover table-bordered">
+                            <thead class="thead-dark">
+                            <tr>
+                                <th class="col-md-2" scope="col">Task</th>
+                                <th class="col-md-6" scope="col">State</th>
+                                <th class="col-md-3" scope="col">Creation time</th>
+                            </tr>
+                            </thead>
+                            <tbody id="backupTasksTableBody">
+                            <tr th:each="backupTask: ${backupTasks}" th:object="${backupTask}">
+                                <th scope="row" th:text="*{type.toString()}"></th>
+                                <td th:text="*{state.toString()}"></td>
+                                <td th:text="*{time}"></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 <div aria-labelledby="storage" class="tab-pane fade" id="storage" role="tabpanel">
                     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -431,5 +450,6 @@
 <script src="js/jquery-3.3.1.min.js"></script>
 <script src="js/bootstrap.js"></script>
 <script src="js/selectContentShow.js"></script>
+<script src="js/dashboard.js"></script>
 </body>
 </html>

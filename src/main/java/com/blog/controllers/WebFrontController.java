@@ -1,6 +1,7 @@
 package com.blog.controllers;
 
 import com.blog.entities.backup.BackupProperties;
+import com.blog.entities.backup.BackupTask;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.database.DatabaseType;
 import com.blog.entities.database.PostgresSettings;
@@ -9,6 +10,7 @@ import com.blog.entities.storage.LocalFileSystemSettings;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.entities.storage.StorageType;
 import com.blog.manager.BackupPropertiesManager;
+import com.blog.manager.BackupTaskManager;
 import com.blog.manager.DatabaseSettingsManager;
 import com.blog.manager.StorageSettingsManager;
 import com.blog.webUI.formTransfer.WebAddDatabaseRequest;
@@ -16,6 +18,7 @@ import com.blog.webUI.formTransfer.WebAddStorageRequest;
 import com.blog.webUI.formTransfer.WebCreateBackupRequest;
 import com.blog.webUI.formTransfer.WebRestoreBackupRequest;
 import com.blog.webUI.renderModels.WebBackupItem;
+import com.blog.webUI.renderModels.WebBackupTask;
 import com.blog.webUI.renderModels.WebDatabaseItem;
 import com.blog.webUI.renderModels.WebStorageItem;
 import org.slf4j.Logger;
@@ -45,6 +48,8 @@ public class WebFrontController {
 
     private BackupPropertiesManager backupPropertiesManager;
 
+    private BackupTaskManager backupTaskManager;
+
     @Autowired
     public void setDateFormat(SimpleDateFormat dateFormat) {
         this.dateFormat = dateFormat;
@@ -65,6 +70,11 @@ public class WebFrontController {
         this.backupPropertiesManager = backupPropertiesManager;
     }
 
+    @Autowired
+    public void setBackupTaskManager(BackupTaskManager backupTaskManager) {
+        this.backupTaskManager = backupTaskManager;
+    }
+
     @RequestMapping("/")
     public String index() {
         return "redirect:/dashboard";
@@ -77,8 +87,6 @@ public class WebFrontController {
 
     @ModelAttribute
     public void addLists(Model model) {
-        logger.info("Adding lists...");
-
         {
             List<WebStorageItem> storageList = new ArrayList<>();
 
@@ -151,6 +159,18 @@ public class WebFrontController {
             }
 
             model.addAttribute("backupList", backupList);
+        }
+
+        {
+            List<WebBackupTask> backupTaskList = new ArrayList<>();
+
+            for (BackupTask backupTask : backupTaskManager.getBackupTasks()) {
+                WebBackupTask webBackupTask = new WebBackupTask(backupTask.getId(), backupTask.getType(), backupTask.getState(),
+                        dateFormat.format(backupTask.getDate()), backupTask.isError());
+                backupTaskList.add(webBackupTask);
+            }
+
+            model.addAttribute("backupTasks", backupTaskList);
         }
 
         model.addAttribute("webAddDatabaseRequest", new WebAddDatabaseRequest());
