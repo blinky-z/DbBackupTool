@@ -18,7 +18,7 @@ public class BackupProperties {
     private String backupName;
 
     @Column(updatable = false)
-    @Convert(converter = ProcessorsFieldConverter.class)
+    @Convert(converter = BackupPropertiesProcessorsFieldConverter.class)
     private List<String> processors;
 
     private String storageSettingsName;

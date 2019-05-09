@@ -4,7 +4,7 @@ import javax.persistence.AttributeConverter;
 import java.util.Arrays;
 import java.util.List;
 
-public class ProcessorsFieldConverter implements AttributeConverter<List<String>, String> {
+public class BackupPropertiesProcessorsFieldConverter implements AttributeConverter<List<String>, String> {
     private static final String DELIMITER = ",";
 
     @Override
