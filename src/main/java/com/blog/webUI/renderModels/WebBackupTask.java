@@ -1,20 +1,17 @@
 package com.blog.webUI.renderModels;
 
-import com.blog.entities.backup.BackupTaskState;
-import com.blog.entities.backup.BackupTaskType;
-
 public class WebBackupTask {
     private Integer id;
 
-    private BackupTaskType type;
+    private String type;
 
-    private BackupTaskState state;
+    private String state;
 
     private String time;
 
     private Boolean isError;
 
-    public WebBackupTask(Integer id, BackupTaskType type, BackupTaskState state, String time, Boolean isError) {
+    public WebBackupTask(Integer id, String type, String state, String time, Boolean isError) {
         this.id = id;
         this.type = type;
         this.state = state;
@@ -30,19 +27,19 @@ public class WebBackupTask {
         this.id = id;
     }
 
-    public BackupTaskType getType() {
+    public String getType() {
         return type;
     }
 
-    public void setType(BackupTaskType type) {
+    public void setType(String type) {
         this.type = type;
     }
 
-    public BackupTaskState getState() {
+    public String getState() {
         return state;
     }
 
-    public void setState(BackupTaskState state) {
+    public void setState(String state) {
         this.state = state;
     }
 

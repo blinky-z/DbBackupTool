@@ -165,8 +165,8 @@ public class WebFrontController {
             List<WebBackupTask> backupTaskList = new ArrayList<>();
 
             for (BackupTask backupTask : backupTaskManager.getBackupTasks()) {
-                WebBackupTask webBackupTask = new WebBackupTask(backupTask.getId(), backupTask.getType(), backupTask.getState(),
-                        dateFormat.format(backupTask.getDate()), backupTask.isError());
+                WebBackupTask webBackupTask = new WebBackupTask(backupTask.getId(), backupTask.getType().toString(),
+                        backupTask.getState().toString(), dateFormat.format(backupTask.getDate()), backupTask.isError());
                 backupTaskList.add(webBackupTask);
             }
 

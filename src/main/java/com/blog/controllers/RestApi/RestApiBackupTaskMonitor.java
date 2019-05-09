@@ -32,8 +32,8 @@ public class RestApiBackupTaskMonitor {
         List<WebBackupTask> webBackupTasks = new ArrayList<>();
 
         for (BackupTask backupTask : backupTaskManager.getBackupTasks()) {
-            WebBackupTask webBackupTask = new WebBackupTask(backupTask.getId(), backupTask.getType(), backupTask.getState(),
-                    dateFormat.format(backupTask.getDate()), backupTask.isError());
+            WebBackupTask webBackupTask = new WebBackupTask(backupTask.getId(), backupTask.getType().toString(),
+                    backupTask.getState().toString(), dateFormat.format(backupTask.getDate()), backupTask.isError());
             webBackupTasks.add(webBackupTask);
         }
 
