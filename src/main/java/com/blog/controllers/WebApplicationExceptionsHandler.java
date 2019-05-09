@@ -2,7 +2,7 @@ package com.blog.controllers;
 
 import com.blog.controllers.Errors.DataAccessError;
 import com.blog.controllers.Errors.ValidationError;
-import com.blog.service.databaseBackup.Errors.InternalPostgresToolError;
+import com.blog.service.databaseBackup.PostgresDatabaseBackup.Errors.InternalPostgresToolError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
