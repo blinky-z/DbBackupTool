@@ -98,6 +98,7 @@ public class BackupStateWatcher {
                                     }
                                 }
                         );
+                        backupTaskManager.removeTask(taskId);
                         break;
                     }
                     default: {
