@@ -30,8 +30,11 @@ create table if not exists backup_properties
 
 create table if not exists backup_tasks
 (
-    ID       SERIAL PRIMARY KEY,
-    DATE     TIMESTAMPTZ DEFAULT NOW() not null,
-    STATE    VARCHAR(64)               not null,
-    IS_ERROR boolean                   not null
+    ID                   SERIAL PRIMARY KEY,
+    DATE                 TIMESTAMPTZ DEFAULT NOW() not null,
+    TYPE                 VARCHAR(64)               not null,
+    STATE                VARCHAR(64)               not null,
+    BACKUP_PROPERTIES_ID int                       not null,
+    IS_ERROR             boolean                   not null
 );
+
