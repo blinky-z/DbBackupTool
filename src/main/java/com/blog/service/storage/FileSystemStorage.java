@@ -121,7 +121,7 @@ public class FileSystemStorage implements Storage {
 
         File backupFolder = new File(backupFolderPath);
         long filesCount = Objects.requireNonNull(backupFolder.list(),
-                String.format("Can't delete backup: invalid backup folder path: %s", backupFolderPath)).length;
+                String.format("Can't delete backup: invalid or non-existing backup folder at path: %s", backupFolderPath)).length;
 
         logger.info("Total files in backup folder on Local File System: {}. Backup folder: {}", filesCount, backupFolderPath);
 
