@@ -48,9 +48,16 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a aria-controls="backups" aria-selected="false" class="nav-link" data-toggle="tab" href="#backups"
+                           id="backupts-tab" role="tab">
+                            <img alt="" height="20px" src="images/manage-backups-icon.png" width="20px">
+                            Manage backups
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a aria-controls="create-backup" aria-selected="false" class="nav-link" data-toggle="tab" href="#create-backup"
                            id="create-backup-tab" role="tab">
-                            <img alt="" height="20px" src="images/createBackup-tab-icon1.png" width="20px">
+                            <img alt="" height="20px" src="images/createBackup-tab-icon.png" width="20px">
                             Create Backup
                         </a>
                     </li>
@@ -342,6 +349,41 @@
                                 <button class="btn btn-primary" type="submit">Create database</button>
                             </form>
                         </div>
+                    </div>
+                </div>
+                <div aria-labelledby="backups" class="tab-pane fade" id="backups" role="tabpanel">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h2>Manage Backups</h2>
+                    </div>
+
+                    <div id="backupListTable">
+                        <table class="table table-hover table-bordered">
+                            <thead class="thead-dark">
+                            <tr>
+                                <th class="col-md-2" scope="col">Name</th>
+                                <th class="col-md-6" scope="col">Properties</th>
+                                <th class="col-md-3" scope="col">Creation time</th>
+                                <th scope="col"></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="backup: ${backupList}" th:object="${backup}">
+                                <th scope="row" th:text="*{name}"></th>
+                                <td th:text="*{desc}"></td>
+                                <td th:text="*{time}"></td>
+                                <td>
+                                    <div class="d-flex flex-row-reverse bd-highlight">
+                                        <form th:action="@{/delete-backup}" th:method="delete">
+                                            <input hidden th:name="backupId" th:value="*{id}" type="text">
+                                            <button class="btn btn-secondary" type="submit">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 <div aria-labelledby="create-backup" class="tab-pane fade" id="create-backup" role="tabpanel">
