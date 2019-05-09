@@ -14,6 +14,7 @@ public class InitializeBackupStateWatcher {
 
     @PostConstruct
     public void initialize() {
+        backupStateWatcher.cleanCompletedTasks();
         backupStateWatcher.watchStates();
     }
 }
