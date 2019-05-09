@@ -3,6 +3,7 @@ package com.blog.controllers.WebApi;
 import com.blog.controllers.WebApi.Validator.WebRestoreBackupRequestValidator;
 import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.backup.BackupTaskState;
+import com.blog.entities.backup.BackupTaskType;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.manager.*;
 import com.blog.webUI.formTransfer.WebRestoreBackupRequest;
@@ -15,7 +16,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.io.InputStream;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -104,11 +104,11 @@ public class WebApiRestoreBackupController {
         logger.info("restoreBackup(): Backup properties: {}", backupProperties);
         logger.info("restoreBackup(): Database settings: {}", databaseSettings);
 
-        Integer taskId = backupTaskManager.initNewTask();
-        Future<BackupProperties> task = executorService.submit(
-                new Callable<BackupProperties>() {
+        Integer taskId = backupTaskManager.initNewTask(BackupTaskType.RESTORE_BACKUP, backupProperties);
+        Future task = executorService.submit(
+                new Runnable() {
                     @Override
-                    public BackupProperties call() {
+                    public void run() {
                         try {
                             backupTaskManager.updateTaskState(taskId, BackupTaskState.DOWNLOADING);
 
@@ -133,8 +133,6 @@ public class WebApiRestoreBackupController {
                                     backupProperties, ex);
                             backupTaskManager.setError(taskId);
                         }
-
-                        return backupProperties;
                     }
                 }
         );

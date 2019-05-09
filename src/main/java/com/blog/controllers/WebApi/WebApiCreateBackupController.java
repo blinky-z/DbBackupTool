@@ -3,6 +3,7 @@ package com.blog.controllers.WebApi;
 import com.blog.controllers.WebApi.Validator.WebCreateBackupRequestValidator;
 import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.backup.BackupTaskState;
+import com.blog.entities.backup.BackupTaskType;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.manager.*;
@@ -17,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.io.InputStream;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -115,15 +115,15 @@ public class WebApiCreateBackupController {
 
             logger.info("createBackup(): Current storage - [{}/{}]. Storage settings: {}", currentStorage, storagesCount, storageSettings);
 
-            Integer taskId = backupTaskManager.initNewTask();
-            Future<BackupProperties> task = executorService.submit(
-                    new Callable<BackupProperties>() {
-                        @Override
-                        public BackupProperties call() {
-                            List<String> processorList = backupCreationProperties.getProcessors();
-                            BackupProperties backupProperties =
-                                    backupLoadManager.getNewBackupProperties(storageSettings, processorList, databaseName);
+            List<String> processorList = backupCreationProperties.getProcessors();
+            BackupProperties backupProperties =
+                    backupLoadManager.getNewBackupProperties(storageSettings, processorList, databaseName);
 
+            Integer taskId = backupTaskManager.initNewTask(BackupTaskType.CREATE_BACKUP, backupProperties);
+            Future task = executorService.submit(
+                    new Runnable() {
+                        @Override
+                        public void run() {
                             try {
                                 backupTaskManager.updateTaskState(taskId, BackupTaskState.CREATING);
 
@@ -149,8 +149,6 @@ public class WebApiCreateBackupController {
                                         backupProperties, ex);
                                 backupTaskManager.setError(taskId);
                             }
-
-                            return backupProperties;
                         }
                     }
             );

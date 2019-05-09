@@ -3,6 +3,7 @@ package com.blog.manager;
 import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.backup.BackupTask;
 import com.blog.entities.backup.BackupTaskState;
+import com.blog.entities.backup.BackupTaskType;
 import com.blog.repositories.BackupTaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,7 @@ import java.util.concurrent.Future;
 @Service
 public class BackupTaskManager {
     private static final BackupTaskState initialBackupTaskState = BackupTaskState.PLANNED;
-    private static final HashMap<Integer, Future<BackupProperties>> tasks = new HashMap<>();
+    private static final HashMap<Integer, Future> tasks = new HashMap<>();
     private BackupTaskRepository backupTaskRepository;
 
     @Autowired
@@ -22,15 +23,17 @@ public class BackupTaskManager {
         this.backupTaskRepository = backupTaskRepository;
     }
 
-    public Integer initNewTask() {
+    public Integer initNewTask(BackupTaskType type, BackupProperties backupProperties) {
         BackupTask backupTask = new BackupTask();
+        backupTask.setBackupPropertiesId(backupProperties.getId());
+        backupTask.setType(type);
         backupTask.setState(initialBackupTaskState);
         backupTask.setError(Boolean.FALSE);
 
         return backupTaskRepository.save(backupTask).getId();
     }
 
-    public void addTaskFuture(Integer id, Future<BackupProperties> task) {
+    public void addTaskFuture(Integer id, Future task) {
         tasks.put(id, task);
     }
 
@@ -40,7 +43,7 @@ public class BackupTaskManager {
         backupTaskRepository.save(backupTask);
     }
 
-    public Future<BackupProperties> getTaskFuture(Integer id) {
+    public Future getTaskFuture(Integer id) {
         return tasks.get(id);
     }
 
