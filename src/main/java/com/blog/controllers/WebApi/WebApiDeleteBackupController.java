@@ -3,8 +3,11 @@ package com.blog.controllers.WebApi;
 import com.blog.controllers.Errors.ValidationError;
 import com.blog.controllers.WebApi.Validator.WebDeleteBackupRequestValidator;
 import com.blog.entities.backup.BackupProperties;
+import com.blog.entities.backup.BackupTaskState;
+import com.blog.entities.backup.BackupTaskType;
 import com.blog.manager.BackupLoadManager;
 import com.blog.manager.BackupPropertiesManager;
+import com.blog.manager.BackupTaskManager;
 import com.blog.webUI.formTransfer.WebDeleteBackupRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,11 +31,18 @@ public class WebApiDeleteBackupController {
 
     private WebDeleteBackupRequestValidator webDeleteBackupRequestValidator;
 
+    private BackupTaskManager backupTaskManager;
+
     private ExecutorService executorService;
 
     @Autowired
     public void setBackupLoadManager(BackupLoadManager backupLoadManager) {
         this.backupLoadManager = backupLoadManager;
+    }
+
+    @Autowired
+    public void setBackupTaskManager(BackupTaskManager backupTaskManager) {
+        this.backupTaskManager = backupTaskManager;
     }
 
     @Autowired
@@ -66,14 +76,32 @@ public class WebApiDeleteBackupController {
                 new RuntimeException(String.format(
                         "Can't retrieve backup properties. Error: no backup properties with ID %d", backupId)));
 
+        Integer taskId = backupTaskManager.initNewTask(BackupTaskType.DELETE_BACKUP, backupProperties);
+
         backupPropertiesManager.deleteById(backupId);
         Future task = executorService.submit(
                 new Runnable() {
                     @Override
                     public void run() {
-                        backupLoadManager.deleteBackup(backupProperties);
+                        try {
+                            logger.info("deleteBackup(): Deleting backup started. Backup properties: {}", backupProperties);
+
+                            backupTaskManager.updateTaskState(taskId, BackupTaskState.DELETING);
+
+                            backupLoadManager.deleteBackup(backupProperties);
+
+                            backupTaskManager.updateTaskState(taskId, BackupTaskState.COMPLETED);
+
+                            logger.info("deleteBackup(): Deleting backup completed. Backup properties: {}", backupProperties);
+                        } catch (RuntimeException ex) {
+                            logger.info("deleteBackup(): Error occurred while deleting backup. Backup properties: {}",
+                                    backupProperties, ex);
+                            backupTaskManager.setError(taskId);
+                        }
                     }
+
                 });
+        backupTaskManager.addTaskFuture(taskId, task);
 
         return "redirect:/dashboard";
     }
