@@ -115,14 +115,31 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
             public void run() {
                 try {
                     logger.info("Waiting for terminating PostgreSQL backup process...");
-                    process.waitFor();
+                    int exitVal = process.waitFor();
+                    if (exitVal != 0) {
+                        errorCallback.onError(new RuntimeException("pg_dump process terminated with error"), id);
+                    }
+
+                    logger.info("Waiting for complete reading of backup process's output stream buffer...");
+
+                    InputStream inputStream = process.getInputStream();
+                    try {
+                        int bytesToRead;
+                        while ((bytesToRead = inputStream.available()) != 0) {
+                            logger.info("Bytes to read now: {}", bytesToRead);
+                            Thread.yield();
+                        }
+                        logger.info("Bytes to read now: {}", bytesToRead);
+                    } catch (IOException ex) {
+                        logger.error("Error checking process's output stream for data to be read. Probably stream was closed");
+                    }
+
+                    process.destroy();
+
+                    logger.info("PostgreSQL backup process destroyed");
                 } catch (InterruptedException ex) {
                     logger.error("Error terminating PostgreSQL backup process", ex);
                 }
-
-                process.destroy();
-
-                logger.info("PostgreSQL database backup successfully created. Dumped from database {}", databaseSettings.getName());
             }
         }.start();
 
@@ -158,7 +175,8 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
                 new Thread(new ProcessStderrStreamReadWorker(process.getErrorStream(), JobType.RESTORE, id));
         processStderrReaderThread.start();
 
-        Thread processStdoutReaderThread = new Thread(new ProcessStdoutStreamReadWorker(process.getInputStream(), JobType.RESTORE));
+        Thread processStdoutReaderThread = new Thread(
+                new ProcessStdoutStreamReadWorker(process.getInputStream(), JobType.RESTORE));
         processStdoutReaderThread.start();
 
         try (
