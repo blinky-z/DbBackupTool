@@ -8,14 +8,14 @@ import com.blog.repositories.BackupTaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 
 @Service
 public class BackupTaskManager {
     private static final BackupTaskState initialBackupTaskState = BackupTaskState.PLANNED;
-    private static final HashMap<Integer, Future> tasks = new HashMap<>();
+    private static final ConcurrentHashMap<Integer, Future> tasks = new ConcurrentHashMap<>();
     private BackupTaskRepository backupTaskRepository;
 
     @Autowired
