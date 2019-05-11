@@ -139,7 +139,6 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
             BackupProperties backupProperties = backupLoadManager.getNewBackupProperties(
                     localFileSystemStorageSettings, processors, masterPostgresDatabaseSettings.getName());
             backupLoadManager.uploadBackup(backupStream, backupProperties);
-            assert (storageSettingsManager.existsById(backupProperties.getStorageSettingsName()));
             try (
                     InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties)
             ) {
