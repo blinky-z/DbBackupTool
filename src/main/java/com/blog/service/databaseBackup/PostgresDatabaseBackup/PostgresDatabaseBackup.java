@@ -114,7 +114,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
         new Thread() {
             public void run() {
                 try {
-                    logger.info("Waiting for terminating PostgreSQL backup process...");
+                    logger.info("Waiting for PostgreSQL backup process termination...");
                     int exitVal = process.waitFor();
                     if (exitVal != 0) {
                         errorCallback.onError(new RuntimeException("pg_dump process terminated with error"), id);
@@ -192,7 +192,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
         }
 
         try {
-            logger.info("Waiting for terminating PostgreSQL restore process...");
+            logger.info("Waiting for PostgreSQL restore process termination...");
             process.waitFor();
         } catch (InterruptedException ex) {
             logger.error("Error terminating PostgreSQL restore process", ex);
