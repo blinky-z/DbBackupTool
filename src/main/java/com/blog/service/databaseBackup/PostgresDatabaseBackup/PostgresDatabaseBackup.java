@@ -124,12 +124,9 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
 
                     InputStream inputStream = process.getInputStream();
                     try {
-                        int bytesToRead;
-                        while ((bytesToRead = inputStream.available()) != 0) {
-                            logger.info("Bytes to read now: {}", bytesToRead);
+                        while (inputStream.available() != 0) {
                             Thread.yield();
                         }
-                        logger.info("Bytes to read now: {}", bytesToRead);
                     } catch (IOException ex) {
                         logger.error("Error checking process's output stream for data to be read. Probably stream was closed");
                     }
