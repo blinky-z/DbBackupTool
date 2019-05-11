@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.util.FileSystemUtils;
 
 import javax.sql.DataSource;
 import java.io.IOException;
@@ -116,8 +117,23 @@ public class TestConfiguration {
     @Bean
     public StorageSettings localFileSystemStorageSettings() throws IOException {
         LocalFileSystemSettings localFileSystemSettings = new LocalFileSystemSettings();
-        Path tempDir = Files.createTempDirectory("dbBackupTests");
-        String tempDirPathAsString = tempDir.toAbsolutePath().toString();
+        Path tempDirPath = Files.createTempDirectory("dbBackupTests");
+        Runtime.getRuntime().addShutdownHook(new Thread(
+                new Runnable() {
+
+                    @Override
+                    public void run() {
+                        try {
+                            FileSystemUtils.deleteRecursively(tempDirPath);
+                        } catch (IOException e) {
+                            logger.error("Error deleting temporary folder");
+                        }
+                    }
+                }
+        ));
+
+        String tempDirPathAsString = tempDirPath.toAbsolutePath().toString();
+
         logger.info("Created temporary folder for File System Storage tests. Path: {}", tempDirPathAsString);
         localFileSystemSettings.setBackupPath(tempDirPathAsString);
 
