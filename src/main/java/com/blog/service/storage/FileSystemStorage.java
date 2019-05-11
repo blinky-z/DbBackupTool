@@ -31,8 +31,6 @@ public class FileSystemStorage implements Storage {
         String backupFolderPath = localFileSystemSettings.getBackupPath().replace("/", File.separator);
         backupFolderPath = backupFolderPath + File.separator + backupName;
 
-        logger.info("Uploading backup to the Local File System. Backup folder: {}", backupFolderPath);
-
         try (
                 BufferedInputStream bufferedInputStream = new BufferedInputStream(in)
         ) {
@@ -70,10 +68,8 @@ public class FileSystemStorage implements Storage {
                 }
             }
         } catch (IOException ex) {
-            throw new RuntimeException("Error occurred while uploading backup chunk to the Local File System", ex);
+            throw new RuntimeException("Error occurred while uploading backup to the Local File System", ex);
         }
-
-        logger.info("Backup successfully saved on the Local File System. Backup folder: {}", backupFolderPath);
     }
 
     /**
@@ -86,7 +82,6 @@ public class FileSystemStorage implements Storage {
         String backupFolderPath = localFileSystemSettings.getBackupPath().replace("/", File.separator);
         backupFolderPath = backupFolderPath + File.separator + backupName;
 
-        logger.info("Downloading backup from the Local File System... Backup folder: {}", backupFolderPath);
         try {
             List<InputStream> backupFileStreamList = new ArrayList<>();
 
@@ -98,11 +93,8 @@ public class FileSystemStorage implements Storage {
 
             for (long currentBackupPart = 0; currentBackupPart < filesCount; currentBackupPart++) {
                 File backupFile = new File(getCurrentFilePartAsAbsolutePath(backupFolderPath, backupName, currentBackupPart));
-                logger.info("Downloading file [{}/{}]: '{}'", currentBackupPart + 1, filesCount, backupFile.getName());
                 backupFileStreamList.add(new FileInputStream(backupFile));
             }
-
-            logger.info("Downloading backup from the Local File System completed. Backup folder {}", backupFolderPath);
 
             return new SequenceInputStream(Collections.enumeration(backupFileStreamList));
         } catch (IOException ex) {
@@ -117,8 +109,6 @@ public class FileSystemStorage implements Storage {
         String backupFolderPath = localFileSystemSettings.getBackupPath().replace("/", File.separator);
         backupFolderPath = backupFolderPath + File.separator + backupName;
 
-        logger.info("Deleting backup from the Local File System... Backup folder: {}", backupFolderPath);
-
         File backupFolder = new File(backupFolderPath);
         long filesCount = Objects.requireNonNull(backupFolder.list(),
                 String.format("Can't delete backup: invalid or non-existing backup folder at path: %s", backupFolderPath)).length;
@@ -128,7 +118,6 @@ public class FileSystemStorage implements Storage {
         boolean deleted;
         for (long currentBackupPart = 0; currentBackupPart < filesCount; currentBackupPart++) {
             File backupFile = new File(getCurrentFilePartAsAbsolutePath(backupFolderPath, backupName, currentBackupPart));
-            logger.info("Deleting file [{}/{}]: '{}'", currentBackupPart + 1, filesCount, backupFile.getName());
             deleted = backupFile.delete();
             if (!deleted) {
                 throw new RuntimeException(String.format("Error deleting backup. Backup folder: %s. Can't delete file: %s",
@@ -140,7 +129,5 @@ public class FileSystemStorage implements Storage {
             throw new RuntimeException(String.format("Error deleting backup. Backup folder: %s. Can't delete folder",
                     backupFolderPath));
         }
-
-        logger.info("Deleting backup from the Local File System completed. Backup folder {}", backupFolderPath);
     }
 }

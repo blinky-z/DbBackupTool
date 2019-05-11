@@ -31,13 +31,13 @@ public class DropboxStorage implements Storage {
      */
     public void uploadBackup(@NotNull InputStream in, @NotNull StorageSettings storageSettings, @NotNull String backupName) {
         String backupFolderPath = "/" + backupName;
-        logger.info("Uploading backup to Dropbox. Backup folder: {}", backupFolderPath);
         DbxRequestConfig config = DbxRequestConfig.newBuilder("dbBackupUploader").build();
         DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(() -> new RuntimeException(
                 "Can't upload backup to Dropbox storage: Missing Dropbox Settings"));
         DbxClientV2 dbxClient = new DbxClientV2(config, dropboxSettings.getAccessToken());
 
         try (BufferedInputStream bufferedInputStream = new BufferedInputStream(in);
+
              ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
              BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream)
         ) {
@@ -54,10 +54,11 @@ public class DropboxStorage implements Storage {
                 if (currentChunkSize >= maxChunkSize) {
                     bufferedOutputStream.flush();
                     String currentFilePath = getCurrentFilePartAsAbsolutePath(backupFolderPath, backupName, currentBackupPart);
+
                     dbxClient.files().uploadBuilder(currentFilePath).uploadAndFinish(
                             new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
-                    currentBackupPart++;
 
+                    currentBackupPart++;
                     byteArrayOutputStream.reset();
                     currentChunkSize = 0;
                 }
@@ -70,10 +71,8 @@ public class DropboxStorage implements Storage {
                 byteArrayOutputStream.reset();
             }
         } catch (DbxException | IOException ex) {
-            throw new RuntimeException("Error occurred while uploading binary backup to Dropbox", ex);
+            throw new RuntimeException("Error occurred while uploading backup to Dropbox", ex);
         }
-
-        logger.info("Backup successfully saved on Dropbox. Backup folder: {}", backupFolderPath);
     }
 
     /**
@@ -81,7 +80,6 @@ public class DropboxStorage implements Storage {
      */
     public InputStream downloadBackup(@NotNull StorageSettings storageSettings, @NotNull String backupName) {
         String backupFolderPath = "/" + backupName;
-        logger.info("Downloading backup from Dropbox. Backup folder: {}", backupFolderPath);
         DbxRequestConfig config = DbxRequestConfig.newBuilder("dbBackupDownloader").build();
         DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(() -> new RuntimeException(
                 "Can't download backup from Dropbox storage: Missing Dropbox Settings"));
@@ -114,7 +112,6 @@ public class DropboxStorage implements Storage {
     @Override
     public void deleteBackup(StorageSettings storageSettings, String backupName) {
         String backupFolderPath = "/" + backupName;
-        logger.info("Deleting backup from Dropbox. Backup folder: {}", backupFolderPath);
         DbxRequestConfig config = DbxRequestConfig.newBuilder("dbBackupDeleted").build();
         DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(() -> new RuntimeException(
                 "Can't delete backup from Dropbox storage: Missing Dropbox Settings"));
@@ -124,10 +121,8 @@ public class DropboxStorage implements Storage {
             dbxClient.files().deleteV2(backupFolderPath);
         } catch (DbxException ex) {
             throw new RuntimeException(
-                    String.format("Error deleting Dropbox backup folder. Backup folder: %s", backupFolderPath), ex);
+                    String.format("Error deleting backup from Dropbox. Backup folder: %s", backupFolderPath), ex);
         }
-
-        logger.info("Backup successfully deleted from Dropbox. Backup folder: {}", backupFolderPath);
     }
 
     private class BackupDownloader implements Runnable {
@@ -153,14 +148,12 @@ public class DropboxStorage implements Storage {
         public void run() {
             try {
                 logger.info("Total files in backup folder on Dropbox: {}. Backup folder: {}", filesCount, backupFolderPath);
+                String currentFile;
                 for (long currentBackupPart = 0; currentBackupPart < filesCount; currentBackupPart++) {
-                    String currentFile = getCurrentFilePartAsAbsolutePath(backupFolderPath, backupName, currentBackupPart);
-                    logger.info("Downloading file [{}]: '{}'...", currentBackupPart + 1,
-                            currentFile.substring(currentFile.lastIndexOf("/") + 1));
+                    currentFile = getCurrentFilePartAsAbsolutePath(backupFolderPath, backupName, currentBackupPart);
                     dbxClient.files().downloadBuilder(currentFile).download(out);
                 }
                 out.close();
-                logger.info("Backup successfully downloaded from Dropbox. Backup folder: {}", backupFolderPath);
             } catch (DbxException | IOException ex) {
                 throw new RuntimeException(
                         String.format("Error occurred while downloading backup from Dropbox. Backup folder: %s",
