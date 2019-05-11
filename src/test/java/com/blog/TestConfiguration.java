@@ -8,6 +8,8 @@ import com.blog.entities.storage.LocalFileSystemSettings;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.manager.DatabaseSettingsManager;
 import com.blog.manager.StorageSettingsManager;
+import com.dropbox.core.DbxRequestConfig;
+import com.dropbox.core.v2.DbxClientV2;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +35,12 @@ import java.util.Objects;
 public class TestConfiguration {
     private static final Logger logger = LoggerFactory.getLogger(TestConfiguration.class);
     private static final String dropboxAccessToken = "tzFnUqsYFXAAAAAAAAAAG-irDd6KaODXHm7TlYvPwBytOxGRTJz-F0u4grmndSg3";
+
+    @Bean
+    public DbxClientV2 dbxClient() {
+        DbxRequestConfig config = DbxRequestConfig.newBuilder("testsDbxClient").build();
+        return new DbxClientV2(config, dropboxAccessToken);
+    }
 
     @Autowired
     private StorageSettingsManager storageSettingsManager;
