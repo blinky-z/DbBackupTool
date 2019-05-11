@@ -82,7 +82,7 @@ public class BackupStateWatcher {
                 backupTaskManager.removeTask(taskId);
 
                 Integer backupPropertiesId = backupTask.getBackupPropertiesId();
-                BackupProperties backupProperties = backupPropertiesManager.getById(backupPropertiesId).
+                BackupProperties backupProperties = backupPropertiesManager.findById(backupPropertiesId).
                         orElseThrow(() -> new RuntimeException(String.format(
                                 "Can't handle error occurred while %s operation: missing backup properties with ID %s",
                                 state, backupPropertiesId)));

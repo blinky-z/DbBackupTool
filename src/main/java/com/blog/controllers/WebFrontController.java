@@ -140,7 +140,7 @@ public class WebFrontController {
         {
             List<WebBackupItem> backupList = new ArrayList<>();
 
-            for (BackupProperties currentBackupProperties : backupPropertiesManager.getAll()) {
+            for (BackupProperties currentBackupProperties : backupPropertiesManager.findAll()) {
                 HashMap<String, String> backupProperties = new HashMap<>();
 
                 String storageSettingsName = currentBackupProperties.getStorageSettingsName();

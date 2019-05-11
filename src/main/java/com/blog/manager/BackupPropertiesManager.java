@@ -22,12 +22,16 @@ public class BackupPropertiesManager {
         return backupPropertiesRepository.save(backupProperties);
     }
 
-    public Optional<BackupProperties> getById(@NotNull Integer id) {
+    public Optional<BackupProperties> findById(@NotNull Integer id) {
         return backupPropertiesRepository.findById(id);
     }
 
-    public Iterable<BackupProperties> getAll() {
+    public Iterable<BackupProperties> findAll() {
         return backupPropertiesRepository.findAll();
+    }
+
+    public boolean existsById(@NotNull Integer id) {
+        return backupPropertiesRepository.existsById(id);
     }
 
     public ArrayList<BackupProperties> findAllByOrderByIdDesc() {

@@ -62,7 +62,7 @@ public class WebApiDeleteBackupController {
         }
 
         Integer backupId = Integer.valueOf(webDeleteBackupRequest.getBackupId());
-        BackupProperties backupProperties = backupPropertiesManager.getById(backupId).orElseThrow(() ->
+        BackupProperties backupProperties = backupPropertiesManager.findById(backupId).orElseThrow(() ->
                 new RuntimeException(String.format(
                         "Can't retrieve backup properties. Error: no backup properties with ID %d", backupId)));
 
