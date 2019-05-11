@@ -71,7 +71,7 @@ public class BackupStateWatcher {
                 if (task != null) {
                     boolean canceled = task.cancel(true);
                     if (!canceled) {
-                        logger.error("Error canceling future task with ID {}", taskId);
+                        logger.error("Error canceling future task with ID {}. Probably task already finished", taskId);
                     }
                 } else {
                     logger.error(
@@ -79,16 +79,17 @@ public class BackupStateWatcher {
                             taskId);
                 }
 
+                backupTaskManager.removeTask(taskId);
+
                 Integer backupPropertiesId = backupTask.getBackupPropertiesId();
                 BackupProperties backupProperties = backupPropertiesManager.getById(backupPropertiesId).
-                        orElseThrow(() ->
-                                new RuntimeException(String.format(
-                                        "Can't handle error occurred while %s operation: missing backup properties with ID %s",
-                                        state, backupPropertiesId)));
+                        orElseThrow(() -> new RuntimeException(String.format(
+                                "Can't handle error occurred while %s operation: missing backup properties with ID %s",
+                                state, backupPropertiesId)));
 
                 switch (state) {
                     case UPLOADING: {
-                        logger.error("Error occurred while uploading backup. Deleting backup from storage...");
+                        logger.error("Error occurred while {} backup. Deleting backup from storage...", state);
 
                         executorService.submit(
                                 new Runnable() {
@@ -98,15 +99,14 @@ public class BackupStateWatcher {
                                     }
                                 }
                         );
-                        backupTaskManager.removeTask(taskId);
                         break;
                     }
                     default: {
                         logger.error("Error occurred while {} operation. No extra actions required...", state.toString());
-
-                        backupTaskManager.removeTask(taskId);
                     }
                 }
+
+                backupPropertiesManager.deleteById(backupPropertiesId);
             }
         }
     }
