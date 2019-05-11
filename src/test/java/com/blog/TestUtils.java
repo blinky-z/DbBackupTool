@@ -24,13 +24,11 @@ import static org.junit.Assert.assertEquals;
 
 @Component
 public class TestUtils {
+    private static final Random random = new Random();
     @Autowired
     private DbxClientV2 dbxClient;
-
     @Autowired
     private StorageSettings localFileSystemStorageSettings;
-
-    private static final Random random = new Random();
 
     public boolean backupExistsOnStorage(StorageType type, String backupName) {
         switch (type) {

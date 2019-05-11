@@ -6,7 +6,6 @@ import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.backup.BackupTask;
 import com.blog.entities.backup.BackupTaskState;
 import com.blog.entities.database.DatabaseSettings;
-import com.blog.entities.storage.StorageSettings;
 import com.blog.manager.*;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,7 +22,6 @@ import org.springframework.util.MultiValueMap;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -68,19 +66,11 @@ public class WebApiCreateBackupControllerTests extends ApplicationTests {
     private BackupLoadManager backupLoadManager;
 
     @Autowired
-    private List<StorageSettings> allStorageSettings;
-
-    @Autowired
-    private List<DatabaseSettings> allDatabaseSettings;
-
-    @Autowired
     private BackupTaskManager backupTaskManager;
 
     @Before
     public void init() {
         testUtils.clearDatabase(jdbcPostgresMasterTemplate);
-        storageSettingsManager.saveAll(allStorageSettings);
-        databaseSettingsManager.saveAll(allDatabaseSettings);
         testUtils.initDatabase(jdbcPostgresMasterTemplate);
     }
 

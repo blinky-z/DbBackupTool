@@ -35,13 +35,6 @@ import java.util.Objects;
 public class TestConfiguration {
     private static final Logger logger = LoggerFactory.getLogger(TestConfiguration.class);
     private static final String dropboxAccessToken = "tzFnUqsYFXAAAAAAAAAAG-irDd6KaODXHm7TlYvPwBytOxGRTJz-F0u4grmndSg3";
-
-    @Bean
-    public DbxClientV2 dbxClient() {
-        DbxRequestConfig config = DbxRequestConfig.newBuilder("testsDbxClient").build();
-        return new DbxClientV2(config, dropboxAccessToken);
-    }
-
     @Autowired
     private StorageSettingsManager storageSettingsManager;
     @Autowired
@@ -52,6 +45,12 @@ public class TestConfiguration {
     @Autowired
     @Qualifier("copyPostgresDataSource")
     private DataSource copyPostgresDataSource;
+
+    @Bean
+    public DbxClientV2 dbxClient() {
+        DbxRequestConfig config = DbxRequestConfig.newBuilder("testsDbxClient").build();
+        return new DbxClientV2(config, dropboxAccessToken);
+    }
 
     private DatabaseSettings buildDatabaseSettings(@NotNull DatabaseType databaseType, @NotNull String settingsName,
                                                    @NotNull DataSource dataSource) throws SQLException {
