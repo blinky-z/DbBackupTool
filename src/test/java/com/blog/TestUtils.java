@@ -1,11 +1,20 @@
 package com.blog;
 
+import com.blog.entities.storage.StorageSettings;
+import com.blog.entities.storage.StorageType;
+import com.dropbox.core.DbxException;
+import com.dropbox.core.v2.DbxClientV2;
+import com.dropbox.core.v2.files.GetMetadataErrorException;
 import org.apache.commons.io.IOUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -15,7 +24,43 @@ import static org.junit.Assert.assertEquals;
 
 @Component
 public class TestUtils {
+    @Autowired
+    private DbxClientV2 dbxClient;
+
+    @Autowired
+    private StorageSettings localFileSystemStorageSettings;
+
     private static final Random random = new Random();
+
+    public boolean backupExistsOnStorage(StorageType type, String backupName) {
+        switch (type) {
+            case DROPBOX: {
+                try {
+                    dbxClient.files().getMetadata("/" + backupName);
+                } catch (GetMetadataErrorException ex) {
+                    if (ex.errorValue.isPath() && ex.errorValue.getPathValue().isNotFound()) {
+                        return false;
+                    }
+
+                    throw new RuntimeException(ex);
+                } catch (DbxException ex) {
+                    throw new RuntimeException(ex);
+                }
+                break;
+            }
+            case LOCAL_FILE_SYSTEM: {
+                final String localFileSystemBackupPath =
+                        localFileSystemStorageSettings.getLocalFileSystemSettings().get().getBackupPath();
+                Path path = Paths.get(localFileSystemBackupPath + "/" + backupName);
+                return Files.exists(path);
+            }
+            default: {
+                throw new RuntimeException("Unknown storage type");
+            }
+        }
+
+        return true;
+    }
 
     /**
      * Compares tables not loading all table data in memory.
