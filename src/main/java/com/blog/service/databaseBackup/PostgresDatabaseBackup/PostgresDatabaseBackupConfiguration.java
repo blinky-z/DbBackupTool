@@ -3,6 +3,8 @@ package com.blog.service.databaseBackup.PostgresDatabaseBackup;
 import com.blog.manager.BackupTaskManager;
 import com.blog.service.databaseBackup.DatabaseBackup;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,6 +14,8 @@ import org.springframework.context.annotation.PropertySource;
 @PropertySource("classpath:postgres.properties")
 @ConfigurationProperties(prefix = "postgres")
 class PostgresDatabaseBackupConfiguration {
+    private static final Logger logger = LoggerFactory.getLogger("ErrorCallBack");
+
     private final BackupTaskManager backupTaskManager;
     private String pgDumpToolPath;
     private String psqlToolPath;
@@ -33,6 +37,7 @@ class PostgresDatabaseBackupConfiguration {
         return new DatabaseBackup.ErrorCallback() {
             @Override
             public void onError(@NotNull Throwable t, @NotNull Integer id) {
+                logger.error("Error catched: ", t);
                 backupTaskManager.setError(id);
             }
         };
