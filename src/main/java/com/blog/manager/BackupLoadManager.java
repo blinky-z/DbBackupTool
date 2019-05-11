@@ -65,11 +65,12 @@ public class BackupLoadManager {
         String settingsName = backupProperties.getStorageSettingsName();
         StorageSettings storageSettings = storageSettingsManager.getById(settingsName).
                 orElseThrow(() -> new RuntimeException(
-                        String.format("Can't upload backup. Missing storage settings with name %", settingsName)));
+                        String.format("Can't upload backup. Missing storage settings with name %s", settingsName)));
 
         StorageType storageType = storageSettings.getType();
         String backupName = backupProperties.getBackupName();
         logger.info("Uploading backup to {}. Backup name: {}", storageType, backupName);
+
         switch (storageType) {
             case LOCAL_FILE_SYSTEM: {
                 fileSystemStorage.uploadBackup(backupStream, storageSettings, backupName);
@@ -113,7 +114,7 @@ public class BackupLoadManager {
                 throw new RuntimeException(String.format("Can't download backup. Unknown storage type: %s", storageType));
             }
         }
-        logger.info("Backup successfully downloaded from storage {}. Backup name: {}", storageType, backupName);
+        logger.info("Backup successfully downloaded from {}. Backup name: {}", storageType, backupName);
 
         return downloadedBackup;
     }
@@ -144,6 +145,6 @@ public class BackupLoadManager {
             }
         }
 
-        logger.info("Backup successfully deleted from storage {}. Backup name: {}", storageType, backupName);
+        logger.info("Backup successfully deleted from {}. Backup name: {}", storageType, backupName);
     }
 }
