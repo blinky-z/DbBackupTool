@@ -186,6 +186,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
             }
             // quit from psql
             processOutputWriter.write("\\q" + System.lineSeparator());
+            processOutputWriter.flush();
         } catch (IOException ex) {
             throw new RuntimeException("Error occurred while restoring PostgreSQL backup", ex);
         }
