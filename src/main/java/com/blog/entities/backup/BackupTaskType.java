@@ -12,5 +12,11 @@ public enum BackupTaskType {
         public String toString() {
             return "RESTORE BACKUP";
         }
+    },
+    DELETE_BACKUP {
+        @Override
+        public String toString() {
+            return "DELETE BACKUP";
+        }
     }
 }
