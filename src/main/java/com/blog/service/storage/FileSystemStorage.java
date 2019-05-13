@@ -34,7 +34,7 @@ public class FileSystemStorage implements Storage {
         try (
                 BufferedInputStream bufferedInputStream = new BufferedInputStream(in)
         ) {
-            long maxChunkSize = 64L * 1024;
+            long maxChunkSize = 1024L * 1024 * 192;
             long currentBackupPart = 0;
             long currentChunkSize;
             int bytesRead = 0;
