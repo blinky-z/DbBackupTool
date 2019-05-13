@@ -3,6 +3,7 @@ package com.blog.controllers;
 import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.backup.BackupTask;
 import com.blog.entities.backup.BackupTaskState;
+import com.blog.entities.backup.BackupTaskType;
 import com.blog.manager.BackupLoadManager;
 import com.blog.manager.BackupPropertiesManager;
 import com.blog.manager.BackupTaskManager;
@@ -107,21 +108,29 @@ public class BackupStateWatcher {
                     case UPLOADING: {
                         logger.error("Error occurred while {} operation. Deleting backup from storage...", state);
 
-                        executorService.submit(
+                        Integer deletionTaskId = backupTaskManager.initNewTask(BackupTaskType.DELETE_BACKUP, backupProperties);
+                        Future deletionTask = executorService.submit(
                                 new Runnable() {
                                     @Override
                                     public void run() {
-                                        backupLoadManager.deleteBackup(backupProperties);
+                                        backupTaskManager.updateTaskState(deletionTaskId, BackupTaskState.DELETING);
+
+                                        try {
+                                            backupLoadManager.deleteBackup(backupProperties, deletionTaskId);
+                                            backupTaskManager.updateTaskState(deletionTaskId, BackupTaskState.COMPLETED);
+                                        } catch (RuntimeException ex) {
+                                            logger.error("Can't delete broken backup", ex);
+                                        }
+                                        backupPropertiesManager.deleteById(backupPropertiesId);
                                     }
                                 }
                         );
-
-                        backupPropertiesManager.deleteById(backupPropertiesId);
+                        backupTaskManager.addTaskFuture(deletionTaskId, deletionTask);
 
                         break;
                     }
                     default: {
-                        logger.error("Can't handle error occurred while {}: Wrong state", state);
+                        logger.error("Can't handle error occurred while {} operation: Wrong state", state);
                     }
                 }
             }
