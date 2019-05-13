@@ -115,7 +115,7 @@ public class WebApiCreateBackupController {
 
             List<String> processorList = backupCreationProperties.getProcessors();
             BackupProperties backupProperties =
-                    backupLoadManager.getNewBackupProperties(storageSettings, processorList, databaseName);
+                    backupLoadManager.initNewBackupProperties(storageSettings, processorList, databaseName);
 
             Integer taskId = backupTaskManager.initNewTask(BackupTaskType.CREATE_BACKUP, backupProperties);
             Future task = executorService.submit(

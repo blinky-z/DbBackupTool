@@ -49,12 +49,14 @@ public class BackupLoadManager {
         this.fileSystemStorage = fileSystemStorage;
     }
 
-    public BackupProperties getNewBackupProperties(@NotNull StorageSettings storageSettings, @NotNull List<String> processors,
-                                                   @NotNull String databaseName) {
+    public BackupProperties initNewBackupProperties(@NotNull StorageSettings storageSettings, @NotNull List<String> processors,
+                                                    @NotNull String databaseName) {
         Date creationTime = new Date();
-        String backupName = String.format(Storage.BACKUP_NAME_TEMPLATE, databaseName, Storage.dateFormatter.format(creationTime));
+        String backupName = String.format(
+                Storage.BACKUP_NAME_TEMPLATE, databaseName, Storage.dateFormatter.format(creationTime));
 
-        BackupProperties backupProperties = new BackupProperties(backupName, processors, creationTime, storageSettings.getSettingsName());
+        BackupProperties backupProperties =
+                new BackupProperties(backupName, processors, creationTime, storageSettings.getSettingsName());
         return backupPropertiesManager.save(backupProperties);
     }
 
