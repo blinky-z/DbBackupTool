@@ -137,7 +137,7 @@ public class WebApiCreateBackupController {
 
                                 backupTaskManager.updateTaskState(taskId, BackupTaskState.UPLOADING);
 
-                                backupLoadManager.uploadBackup(processedBackupStream, backupProperties);
+                                backupLoadManager.uploadBackup(processedBackupStream, backupProperties, taskId);
 
                                 backupTaskManager.updateTaskState(taskId, BackupTaskState.COMPLETED);
 

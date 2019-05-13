@@ -57,7 +57,7 @@ public interface Storage {
      * @param storageSettings storage settings to access storage where backup stored
      * @param backupName      backup name to name backup folder
      */
-    void uploadBackup(InputStream in, StorageSettings storageSettings, String backupName);
+    void uploadBackup(InputStream in, StorageSettings storageSettings, String backupName, Integer id);
 
     /**
      * Downloads backup from the specified storage
@@ -66,7 +66,7 @@ public interface Storage {
      * @param backupName      backup name to retrieve backup folder
      * @return input stream, from which backup can be read after download complete
      */
-    InputStream downloadBackup(StorageSettings storageSettings, String backupName);
+    InputStream downloadBackup(StorageSettings storageSettings, String backupName, Integer id);
 
 
     /**
@@ -75,5 +75,5 @@ public interface Storage {
      * @param storageSettings storage settings to access storage where backup stored
      * @param backupName      backup name to delete backup folder
      */
-    void deleteBackup(StorageSettings storageSettings, String backupName);
+    void deleteBackup(StorageSettings storageSettings, String backupName, Integer id);
 }

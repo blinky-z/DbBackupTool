@@ -25,7 +25,7 @@ public class FileSystemStorage implements Storage {
      * Uploads backup to Local File System
      */
     @Override
-    public void uploadBackup(InputStream in, StorageSettings storageSettings, String backupName) {
+    public void uploadBackup(InputStream in, StorageSettings storageSettings, String backupName, Integer id) {
         LocalFileSystemSettings localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(() ->
                 new RuntimeException("Can't upload backup to Local File System storage: Missing Storage Settings"));
         String backupFolderPath = localFileSystemSettings.getBackupPath().replace("/", File.separator);
@@ -76,7 +76,7 @@ public class FileSystemStorage implements Storage {
      * Downloads backup from Local File System
      */
     @Override
-    public InputStream downloadBackup(StorageSettings storageSettings, String backupName) {
+    public InputStream downloadBackup(StorageSettings storageSettings, String backupName, Integer id) {
         LocalFileSystemSettings localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(() ->
                 new RuntimeException("Can't download backup from Local File System storage: Missing Storage Settings"));
         String backupFolderPath = localFileSystemSettings.getBackupPath().replace("/", File.separator);
@@ -103,7 +103,7 @@ public class FileSystemStorage implements Storage {
     }
 
     @Override
-    public void deleteBackup(StorageSettings storageSettings, String backupName) {
+    public void deleteBackup(StorageSettings storageSettings, String backupName, Integer id) {
         LocalFileSystemSettings localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(() ->
                 new RuntimeException("Can't delete backup from Local File System storage: Missing Storage Settings"));
         String backupFolderPath = localFileSystemSettings.getBackupPath().replace("/", File.separator);

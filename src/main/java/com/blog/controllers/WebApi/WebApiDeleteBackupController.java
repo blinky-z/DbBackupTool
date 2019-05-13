@@ -86,7 +86,7 @@ public class WebApiDeleteBackupController {
 
                             backupTaskManager.updateTaskState(taskId, BackupTaskState.DELETING);
 
-                            backupLoadManager.deleteBackup(backupProperties);
+                            backupLoadManager.deleteBackup(backupProperties, taskId);
 
                             backupTaskManager.updateTaskState(taskId, BackupTaskState.COMPLETED);
 

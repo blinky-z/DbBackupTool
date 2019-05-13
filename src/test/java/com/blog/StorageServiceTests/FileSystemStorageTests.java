@@ -23,6 +23,8 @@ import static org.junit.Assert.assertTrue;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class FileSystemStorageTests extends ApplicationTests {
+    private static final Integer testTaskID = 0;
+
     private TestUtils testUtils;
 
     private FileSystemStorage fileSystemStorage;
@@ -53,9 +55,10 @@ public class FileSystemStorageTests extends ApplicationTests {
         try (
                 ByteArrayInputStream sourceInputStream = new ByteArrayInputStream(source)
         ) {
-            fileSystemStorage.uploadBackup(sourceInputStream, localFileSystemStorageSettings, backupName);
+            fileSystemStorage.uploadBackup(sourceInputStream, localFileSystemStorageSettings, backupName, testTaskID);
             try (
-                    InputStream downloadedBackup = fileSystemStorage.downloadBackup(localFileSystemStorageSettings, backupName)
+                    InputStream downloadedBackup =
+                            fileSystemStorage.downloadBackup(localFileSystemStorageSettings, backupName, testTaskID)
             ) {
                 assertTrue(testUtils.streamsContentEquals(new ByteArrayInputStream(source), downloadedBackup));
             }
@@ -71,9 +74,10 @@ public class FileSystemStorageTests extends ApplicationTests {
         try (
                 ByteArrayInputStream sourceInputStream = new ByteArrayInputStream(source)
         ) {
-            fileSystemStorage.uploadBackup(sourceInputStream, localFileSystemStorageSettings, backupName);
+            fileSystemStorage.uploadBackup(sourceInputStream, localFileSystemStorageSettings, backupName, testTaskID);
             try (
-                    InputStream downloadedBackup = fileSystemStorage.downloadBackup(localFileSystemStorageSettings, backupName)
+                    InputStream downloadedBackup =
+                            fileSystemStorage.downloadBackup(localFileSystemStorageSettings, backupName, testTaskID)
             ) {
                 assertTrue(testUtils.streamsContentEquals(new ByteArrayInputStream(source), downloadedBackup));
             }
@@ -89,8 +93,8 @@ public class FileSystemStorageTests extends ApplicationTests {
         try (
                 ByteArrayInputStream sourceInputStream = new ByteArrayInputStream(source)
         ) {
-            fileSystemStorage.uploadBackup(sourceInputStream, localFileSystemStorageSettings, backupName);
-            fileSystemStorage.deleteBackup(localFileSystemStorageSettings, backupName);
+            fileSystemStorage.uploadBackup(sourceInputStream, localFileSystemStorageSettings, backupName, testTaskID);
+            fileSystemStorage.deleteBackup(localFileSystemStorageSettings, backupName, testTaskID);
 
             assertFalse(new File(localFileSystemStorageSettings.getLocalFileSystemSettings()
                     .orElseThrow(RuntimeException::new).

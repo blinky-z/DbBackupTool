@@ -111,7 +111,7 @@ public class WebApiRestoreBackupController {
                             backupTaskManager.updateTaskState(taskId, BackupTaskState.DOWNLOADING);
 
                             logger.info("restoreBackup(): Downloading backup...");
-                            InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties);
+                            InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, taskId);
 
                             backupTaskManager.updateTaskState(taskId, BackupTaskState.APPLYING_DEPROCESSORS);
 

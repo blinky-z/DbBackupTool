@@ -26,6 +26,8 @@ import static org.junit.Assert.assertTrue;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class DropboxStorageTests extends ApplicationTests {
+    private static final Integer testTaskID = 0;
+
     private TestUtils testUtils;
 
     private DropboxStorage dropboxStorage;
@@ -56,9 +58,9 @@ public class DropboxStorageTests extends ApplicationTests {
         try (
                 ByteArrayInputStream sourceInputStream = new ByteArrayInputStream(source)
         ) {
-            dropboxStorage.uploadBackup(sourceInputStream, dropboxStorageSettings, backupName);
+            dropboxStorage.uploadBackup(sourceInputStream, dropboxStorageSettings, backupName, testTaskID);
             try (
-                    InputStream downloadedBackup = dropboxStorage.downloadBackup(dropboxStorageSettings, backupName)
+                    InputStream downloadedBackup = dropboxStorage.downloadBackup(dropboxStorageSettings, backupName, testTaskID)
             ) {
                 assertTrue(testUtils.streamsContentEquals(new ByteArrayInputStream(source), downloadedBackup));
             }
@@ -74,9 +76,9 @@ public class DropboxStorageTests extends ApplicationTests {
         try (
                 ByteArrayInputStream sourceInputStream = new ByteArrayInputStream(source)
         ) {
-            dropboxStorage.uploadBackup(sourceInputStream, dropboxStorageSettings, backupName);
+            dropboxStorage.uploadBackup(sourceInputStream, dropboxStorageSettings, backupName, testTaskID);
             try (
-                    InputStream downloadedBackup = dropboxStorage.downloadBackup(dropboxStorageSettings, backupName)
+                    InputStream downloadedBackup = dropboxStorage.downloadBackup(dropboxStorageSettings, backupName, testTaskID)
             ) {
                 assertTrue(testUtils.streamsContentEquals(new ByteArrayInputStream(source), downloadedBackup));
             }
@@ -92,8 +94,8 @@ public class DropboxStorageTests extends ApplicationTests {
         try (
                 ByteArrayInputStream sourceInputStream = new ByteArrayInputStream(source)
         ) {
-            dropboxStorage.uploadBackup(sourceInputStream, dropboxStorageSettings, backupName);
-            dropboxStorage.deleteBackup(dropboxStorageSettings, backupName);
+            dropboxStorage.uploadBackup(sourceInputStream, dropboxStorageSettings, backupName, testTaskID);
+            dropboxStorage.deleteBackup(dropboxStorageSettings, backupName, testTaskID);
 
             DbxRequestConfig config = DbxRequestConfig.newBuilder("dbBackupDeleted").build();
             DropboxSettings dropboxSettings = dropboxStorageSettings.getDropboxSettings().orElseThrow(RuntimeException::new);

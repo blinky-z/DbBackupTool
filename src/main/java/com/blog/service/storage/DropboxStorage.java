@@ -1,5 +1,6 @@
 package com.blog.service.storage;
 
+import com.blog.controllers.ErrorCallback;
 import com.blog.entities.storage.DropboxSettings;
 import com.blog.entities.storage.StorageSettings;
 import com.dropbox.core.DbxException;
@@ -10,6 +11,7 @@ import com.dropbox.core.v2.files.Metadata;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -18,6 +20,13 @@ import java.util.List;
 @Service
 public class DropboxStorage implements Storage {
     private static final Logger logger = LoggerFactory.getLogger(DropboxStorage.class);
+
+    private ErrorCallback errorCallback;
+
+    @Autowired
+    public void setErrorCallback(ErrorCallback errorCallback) {
+        this.errorCallback = errorCallback;
+    }
 
     private String getCurrentFilePartAsAbsolutePath(String backupFolderPath, String backupName, long backupPart) {
         String filename = String.format(FILENAME_TEMPLATE, backupName, backupPart);
@@ -29,7 +38,8 @@ public class DropboxStorage implements Storage {
      * <p>
      * Backup is saved into root folder, which is usually an app folder
      */
-    public void uploadBackup(@NotNull InputStream in, @NotNull StorageSettings storageSettings, @NotNull String backupName) {
+    public void uploadBackup(@NotNull InputStream in, @NotNull StorageSettings storageSettings, @NotNull String backupName,
+                             Integer id) {
         String backupFolderPath = "/" + backupName;
         DbxRequestConfig config = DbxRequestConfig.newBuilder("dbBackupUploader").build();
         DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(() -> new RuntimeException(
@@ -78,7 +88,7 @@ public class DropboxStorage implements Storage {
     /**
      * Downloads backup from Dropbox
      */
-    public InputStream downloadBackup(@NotNull StorageSettings storageSettings, @NotNull String backupName) {
+    public InputStream downloadBackup(@NotNull StorageSettings storageSettings, @NotNull String backupName, Integer id) {
         String backupFolderPath = "/" + backupName;
         DbxRequestConfig config = DbxRequestConfig.newBuilder("dbBackupDownloader").build();
         DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(() -> new RuntimeException(
@@ -100,7 +110,8 @@ public class DropboxStorage implements Storage {
             PipedInputStream in = new PipedInputStream();
             in.connect(out);
 
-            Thread backupDownloader = new Thread(new BackupDownloader(out, dbxClient, backupFolderPath, backupName, filesCount));
+            Thread backupDownloader =
+                    new Thread(new BackupDownloader(out, dbxClient, backupFolderPath, backupName, filesCount, id));
             backupDownloader.start();
 
             return in;
@@ -110,7 +121,7 @@ public class DropboxStorage implements Storage {
     }
 
     @Override
-    public void deleteBackup(StorageSettings storageSettings, String backupName) {
+    public void deleteBackup(StorageSettings storageSettings, String backupName, Integer id) {
         String backupFolderPath = "/" + backupName;
         DbxRequestConfig config = DbxRequestConfig.newBuilder("dbBackupDeleted").build();
         DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(() -> new RuntimeException(
@@ -136,13 +147,16 @@ public class DropboxStorage implements Storage {
 
         private String backupName;
 
+        private Integer id;
+
         BackupDownloader(OutputStream out, DbxClientV2 dbxClient, String backupFolderPath,
-                         String backupName, long filesCount) {
+                         String backupName, long filesCount, Integer id) {
             this.out = out;
             this.dbxClient = dbxClient;
             this.backupFolderPath = backupFolderPath;
             this.backupName = backupName;
             this.filesCount = filesCount;
+            this.id = id;
         }
 
         public void run() {
@@ -155,9 +169,9 @@ public class DropboxStorage implements Storage {
                 }
                 out.close();
             } catch (DbxException | IOException ex) {
-                throw new RuntimeException(
+                errorCallback.onError(new RuntimeException(
                         String.format("Error occurred while downloading backup from Dropbox. Backup folder: %s",
-                                backupFolderPath), ex);
+                                backupFolderPath), ex), id);
             }
         }
     }

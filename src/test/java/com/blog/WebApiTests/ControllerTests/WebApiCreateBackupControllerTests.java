@@ -29,6 +29,8 @@ import static org.junit.Assert.assertTrue;
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class WebApiCreateBackupControllerTests extends ApplicationTests {
+    private static final Integer testTaskID = 0;
+
     @Autowired
     private TestRestTemplate restTemplate;
 
@@ -134,7 +136,7 @@ public class WebApiCreateBackupControllerTests extends ApplicationTests {
 
             try (
                     InputStream in = databaseBackupManager.createBackup(masterPostgresDatabaseSettings, 0);
-                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties)
+                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID)
             ) {
                 assertTrue(testUtils.streamsContentEquals(in, downloadedBackup));
             }
@@ -201,7 +203,7 @@ public class WebApiCreateBackupControllerTests extends ApplicationTests {
 
             try (
                     InputStream in = databaseBackupManager.createBackup(masterPostgresDatabaseSettings, 0);
-                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties)
+                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID)
             ) {
                 assertTrue(testUtils.streamsContentEquals(in, downloadedBackup));
             }

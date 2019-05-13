@@ -36,12 +36,23 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
     private DatabaseBackupManager databaseBackupManager;
     private BackupProcessorManager backupProcessorManager;
     private BackupLoadManager backupLoadManager;
+
     private StorageSettingsManager storageSettingsManager;
     private DatabaseSettingsManager databaseSettingsManager;
     @Autowired
     private List<StorageSettings> allStorageSettings;
     @Autowired
     private List<DatabaseSettings> allDatabaseSettings;
+
+    @Autowired
+    public void setStorageSettingsManager(StorageSettingsManager storageSettingsManager) {
+        this.storageSettingsManager = storageSettingsManager;
+    }
+
+    @Autowired
+    public void setDatabaseSettingsManager(DatabaseSettingsManager databaseSettingsManager) {
+        this.databaseSettingsManager = databaseSettingsManager;
+    }
 
     @Autowired
     public void setTestUtils(TestUtils testUtils) {
@@ -93,16 +104,6 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
         this.backupLoadManager = backupLoadManager;
     }
 
-    @Autowired
-    public void setStorageSettingsManager(StorageSettingsManager storageSettingsManager) {
-        this.storageSettingsManager = storageSettingsManager;
-    }
-
-    @Autowired
-    public void setDatabaseSettingsManager(DatabaseSettingsManager databaseSettingsManager) {
-        this.databaseSettingsManager = databaseSettingsManager;
-    }
-
     @Before
     public void init() {
         testUtils.clearDatabase(jdbcPostgresMasterTemplate);
@@ -138,9 +139,9 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
         ) {
             BackupProperties backupProperties = backupLoadManager.initNewBackupProperties(
                     localFileSystemStorageSettings, processors, masterPostgresDatabaseSettings.getName());
-            backupLoadManager.uploadBackup(backupStream, backupProperties);
+            backupLoadManager.uploadBackup(backupStream, backupProperties, testTaskID);
             try (
-                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties)
+                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID)
             ) {
                 databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings, testTaskID);
             }
@@ -158,9 +159,9 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
         ) {
             BackupProperties backupProperties = backupLoadManager.initNewBackupProperties(
                     dropboxStorageSettings, processors, masterPostgresDatabaseSettings.getName());
-            backupLoadManager.uploadBackup(backupStream, backupProperties);
+            backupLoadManager.uploadBackup(backupStream, backupProperties, testTaskID);
             try (
-                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties)
+                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID)
             ) {
                 databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings, testTaskID);
             }
@@ -180,9 +181,9 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
         ) {
             BackupProperties backupProperties = backupLoadManager.initNewBackupProperties(
                     localFileSystemStorageSettings, processors, masterPostgresDatabaseSettings.getName());
-            backupLoadManager.uploadBackup(compressedBackup, backupProperties);
+            backupLoadManager.uploadBackup(compressedBackup, backupProperties, testTaskID);
             try (
-                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties);
+                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID);
                     InputStream decompressedBackup = backupProcessorManager.deprocess(downloadedBackup, processors)
             ) {
                 databaseBackupManager.restoreBackup(decompressedBackup, copyPostgresDatabaseSettings, testTaskID);
@@ -203,10 +204,10 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
         ) {
             BackupProperties backupProperties = backupLoadManager.initNewBackupProperties(
                     dropboxStorageSettings, processors, masterPostgresDatabaseSettings.getName());
-            backupLoadManager.uploadBackup(compressedBackup, backupProperties);
+            backupLoadManager.uploadBackup(compressedBackup, backupProperties, testTaskID);
 
             try (
-                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties);
+                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID);
                     InputStream decompressedBackup = backupProcessorManager.deprocess(downloadedBackup, processors)
             ) {
                 databaseBackupManager.restoreBackup(decompressedBackup, copyPostgresDatabaseSettings, testTaskID);
@@ -234,9 +235,9 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
             ) {
                 BackupProperties backupProperties = backupLoadManager.initNewBackupProperties(
                         localFileSystemStorageSettings, processors, masterPostgresDatabaseSettings.getName());
-                backupLoadManager.uploadBackup(inputStream, backupProperties);
+                backupLoadManager.uploadBackup(inputStream, backupProperties, testTaskID);
                 try (
-                        InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties)
+                        InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID)
                 ) {
                     databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings, testTaskID);
                 }
@@ -253,9 +254,9 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
             ) {
                 BackupProperties backupProperties = backupLoadManager.initNewBackupProperties(
                         dropboxStorageSettings, processors, masterPostgresDatabaseSettings.getName());
-                backupLoadManager.uploadBackup(inputStream, backupProperties);
+                backupLoadManager.uploadBackup(inputStream, backupProperties, testTaskID);
                 try (
-                        InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties)
+                        InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID)
                 ) {
                     databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings, testTaskID);
                 }
@@ -284,9 +285,9 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
             ) {
                 BackupProperties backupProperties = backupLoadManager.initNewBackupProperties(
                         localFileSystemStorageSettings, processors, masterPostgresDatabaseSettings.getName());
-                backupLoadManager.uploadBackup(inputStream, backupProperties);
+                backupLoadManager.uploadBackup(inputStream, backupProperties, testTaskID);
                 try (
-                        InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties);
+                        InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID);
                         InputStream deprocessedBackup = backupProcessorManager.deprocess(downloadedBackup, processors)
                 ) {
                     databaseBackupManager.restoreBackup(deprocessedBackup, copyPostgresDatabaseSettings, testTaskID);
@@ -304,9 +305,9 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
             ) {
                 BackupProperties backupProperties = backupLoadManager.initNewBackupProperties(
                         dropboxStorageSettings, processors, masterPostgresDatabaseSettings.getName());
-                backupLoadManager.uploadBackup(inputStream, backupProperties);
+                backupLoadManager.uploadBackup(inputStream, backupProperties, testTaskID);
                 try (
-                        InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties);
+                        InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID);
                         InputStream deprocessedBackup = backupProcessorManager.deprocess(downloadedBackup, processors)
                 ) {
                     databaseBackupManager.restoreBackup(deprocessedBackup, copyPostgresDatabaseSettings, testTaskID);
@@ -341,9 +342,9 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
             BackupProperties backupProperties =
                     backupLoadManager.initNewBackupProperties(
                             localFileSystemStorageSettings, processors, masterPostgresDatabaseSettings.getName());
-            backupLoadManager.uploadBackup(backupStream, backupProperties);
+            backupLoadManager.uploadBackup(backupStream, backupProperties, testTaskID);
             try (
-                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties)
+                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID)
             ) {
                 databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings, testTaskID);
             }

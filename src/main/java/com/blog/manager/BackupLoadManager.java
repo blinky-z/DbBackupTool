@@ -60,9 +60,11 @@ public class BackupLoadManager {
         return backupPropertiesManager.save(backupProperties);
     }
 
-    public void uploadBackup(@NotNull InputStream backupStream, @NotNull BackupProperties backupProperties) {
+    public void uploadBackup(@NotNull InputStream backupStream, @NotNull BackupProperties backupProperties,
+                             @NotNull Integer id) {
         Objects.requireNonNull(backupStream);
         Objects.requireNonNull(backupProperties);
+        Objects.requireNonNull(id);
 
         String settingsName = backupProperties.getStorageSettingsName();
         StorageSettings storageSettings = storageSettingsManager.getById(settingsName).
@@ -75,11 +77,11 @@ public class BackupLoadManager {
 
         switch (storageType) {
             case LOCAL_FILE_SYSTEM: {
-                fileSystemStorage.uploadBackup(backupStream, storageSettings, backupName);
+                fileSystemStorage.uploadBackup(backupStream, storageSettings, backupName, id);
                 break;
             }
             case DROPBOX: {
-                dropboxStorage.uploadBackup(backupStream, storageSettings, backupName);
+                dropboxStorage.uploadBackup(backupStream, storageSettings, backupName, id);
                 break;
             }
             default: {
@@ -90,7 +92,7 @@ public class BackupLoadManager {
         logger.info("Backup successfully uploaded to {}. Backup name: {}", storageType, backupName);
     }
 
-    public InputStream downloadBackup(@NotNull BackupProperties backupProperties) {
+    public InputStream downloadBackup(@NotNull BackupProperties backupProperties, @NotNull Integer id) {
         Objects.requireNonNull(backupProperties);
 
         logger.info("Downloading backup... Backup properties: {}", backupProperties);
@@ -105,11 +107,11 @@ public class BackupLoadManager {
         InputStream downloadedBackup;
         switch (storageType) {
             case LOCAL_FILE_SYSTEM: {
-                downloadedBackup = fileSystemStorage.downloadBackup(storageSettings, backupName);
+                downloadedBackup = fileSystemStorage.downloadBackup(storageSettings, backupName, id);
                 break;
             }
             case DROPBOX: {
-                downloadedBackup = dropboxStorage.downloadBackup(storageSettings, backupName);
+                downloadedBackup = dropboxStorage.downloadBackup(storageSettings, backupName, id);
                 break;
             }
             default: {
@@ -121,7 +123,7 @@ public class BackupLoadManager {
         return downloadedBackup;
     }
 
-    public void deleteBackup(@NotNull BackupProperties backupProperties) {
+    public void deleteBackup(@NotNull BackupProperties backupProperties, @NotNull Integer id) {
         Objects.requireNonNull(backupProperties);
 
         logger.info("Deleting backup... Backup properties: {}", backupProperties);
@@ -135,11 +137,11 @@ public class BackupLoadManager {
 
         switch (storageType) {
             case LOCAL_FILE_SYSTEM: {
-                fileSystemStorage.deleteBackup(storageSettings, backupName);
+                fileSystemStorage.deleteBackup(storageSettings, backupName, id);
                 break;
             }
             case DROPBOX: {
-                dropboxStorage.deleteBackup(storageSettings, backupName);
+                dropboxStorage.deleteBackup(storageSettings, backupName, id);
                 break;
             }
             default: {
