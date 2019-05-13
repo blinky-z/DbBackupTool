@@ -50,9 +50,9 @@ public class BackupStateWatcher {
     }
 
     @Async
-    public void cleanCompletedTasks() {
+    public void cleanCompletedAndInterruptedTasks() {
         for (BackupTask backupTask : backupTaskManager.getBackupTasks()) {
-            if (backupTask.getState() == BackupTaskState.COMPLETED) {
+            if (!backupTask.isError()) {
                 backupTaskManager.removeTask(backupTask.getId());
             }
         }
@@ -75,7 +75,7 @@ public class BackupStateWatcher {
                     }
                 } else {
                     logger.error(
-                            "No future task with ID {}. Can't abort operation. Probably server shutdown unexpectedly and lost all tasks",
+                            "No future task with ID {}. Can't abort operation. Probably server shutdown unexpectedly and all tasks has been lost",
                             taskId);
                 }
 
@@ -88,8 +88,24 @@ public class BackupStateWatcher {
                                 state, backupPropertiesId)));
 
                 switch (state) {
+                    case DOWNLOADING:
+                    case APPLYING_DEPROCESSORS:
+                    case RESTORING:
+                    case DELETING: {
+                        logger.error("Error occurred while {} operation. No extra actions required", state.toString());
+
+                        break;
+                    }
+                    case CREATING:
+                    case APPLYING_PROCESSORS: {
+                        logger.error("Error occurred while {} operation. Delete backup properties...", state.toString());
+
+                        backupPropertiesManager.deleteById(backupPropertiesId);
+
+                        break;
+                    }
                     case UPLOADING: {
-                        logger.error("Error occurred while {} backup. Deleting backup from storage...", state);
+                        logger.error("Error occurred while {} operation. Deleting backup from storage...", state);
 
                         executorService.submit(
                                 new Runnable() {
@@ -99,14 +115,15 @@ public class BackupStateWatcher {
                                     }
                                 }
                         );
+
+                        backupPropertiesManager.deleteById(backupPropertiesId);
+
                         break;
                     }
                     default: {
-                        logger.error("Error occurred while {} operation. No extra actions required...", state.toString());
+                        logger.error("Can't handle error occurred while {}: Wrong state", state);
                     }
                 }
-
-                backupPropertiesManager.deleteById(backupPropertiesId);
             }
         }
     }
