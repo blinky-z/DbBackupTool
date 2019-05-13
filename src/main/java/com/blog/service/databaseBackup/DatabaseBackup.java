@@ -22,8 +22,4 @@ public interface DatabaseBackup {
      * @param dumpData input stream contains the plain text database backup
      */
     void restoreBackup(InputStream dumpData, @NotNull DatabaseSettings databaseSettings, @NotNull Integer id);
-
-    interface ErrorCallback {
-        void onError(@NotNull Throwable t, @NotNull Integer id);
-    }
 }

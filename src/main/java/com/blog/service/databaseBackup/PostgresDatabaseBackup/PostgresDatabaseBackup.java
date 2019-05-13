@@ -1,5 +1,6 @@
 package com.blog.service.databaseBackup.PostgresDatabaseBackup;
 
+import com.blog.controllers.ErrorCallback;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.service.databaseBackup.DatabaseBackup;
 import com.blog.service.databaseBackup.PostgresDatabaseBackup.Errors.InternalPostgresToolError;
