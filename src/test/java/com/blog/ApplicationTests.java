@@ -7,7 +7,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {DemoApplication.class, TestConfiguration.class})
+@ContextConfiguration(classes = {Application.class, TestConfiguration.class})
 @FlywayTest
 @AutoConfigureEmbeddedDatabase(beanName = "dataSource") // replace standard data source
 @AutoConfigureEmbeddedDatabase(beanName = "masterPostgresDataSource")
