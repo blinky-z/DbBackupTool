@@ -120,7 +120,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
                         errorCallback.onError(new RuntimeException("pg_dump process terminated with error"), id);
                     }
 
-                    logger.info("Waiting for complete reading of backup process's output stream buffer...");
+                    logger.info("Pg_dump has ended creating backup. Waiting for complete reading of output stream buffer...");
 
                     InputStream inputStream = process.getInputStream();
                     try {

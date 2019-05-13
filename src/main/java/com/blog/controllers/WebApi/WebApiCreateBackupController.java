@@ -88,8 +88,6 @@ public class WebApiCreateBackupController {
 
         webCreateBackupRequestValidator.validate(webCreateBackupRequest, bindingResult);
         if (bindingResult.hasErrors()) {
-            logger.info("Has errors: {}", bindingResult.getAllErrors());
-
             return "dashboard";
         }
 

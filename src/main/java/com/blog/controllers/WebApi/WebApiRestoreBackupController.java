@@ -86,8 +86,6 @@ public class WebApiRestoreBackupController {
 
         webRestoreBackupRequestValidator.validate(webRestoreBackupRequest, bindingResult);
         if (bindingResult.hasErrors()) {
-            logger.info("Has errors: {}", bindingResult.getAllErrors());
-
             return "dashboard";
         }
 

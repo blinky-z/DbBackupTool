@@ -62,12 +62,10 @@ public class WebApiDeleteBackupController {
 
     @DeleteMapping
     public String deleteBackup(WebDeleteBackupRequest webDeleteBackupRequest, BindingResult bindingResult) {
-        logger.info("restoreBackup(): Got backup deletion job");
+        logger.info("deleteBackup(): Got backup deletion job");
 
         webDeleteBackupRequestValidator.validate(webDeleteBackupRequest, bindingResult);
         if (bindingResult.hasErrors()) {
-            logger.info("Has errors: {}", bindingResult.getAllErrors());
-
             throw new ValidationError("Invalid backup deletion request");
         }
 

@@ -79,8 +79,6 @@ public class WebApiDatabaseController {
 
         webAddDatabaseRequestValidator.validate(addDatabaseRequest, bindingResult);
         if (bindingResult.hasErrors()) {
-            logger.info("Has errors: {}", bindingResult.getAllErrors());
-
             return "dashboard";
         }
 
