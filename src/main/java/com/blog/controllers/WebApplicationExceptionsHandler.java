@@ -1,6 +1,5 @@
 package com.blog.controllers;
 
-import com.blog.controllers.Errors.DataAccessError;
 import com.blog.controllers.Errors.ValidationError;
 import com.blog.service.databaseBackup.PostgresDatabaseBackup.Errors.InternalPostgresToolError;
 import org.slf4j.Logger;
@@ -17,23 +16,11 @@ import javax.servlet.http.HttpServletRequest;
 public class WebApplicationExceptionsHandler {
     private static final Logger logger = LoggerFactory.getLogger(WebApplicationExceptionsHandler.class);
 
-    private static final String ERROR_CODE_RENDER_FIELD = "errorCode";
+    private static final String ERROR_PAGE_CODE_FIELD = "errorCode";
 
-    private static final String ERROR_MESSAGE_RENDER_FIELD = "errorMessage";
+    private static final String ERROR_PAGE_MESSAGE_FIELD = "errorMessage";
 
     private static final String ERROR_VIEW = "error";
-
-    @ExceptionHandler(value = {DataAccessError.class})
-    @ResponseStatus(value = HttpStatus.BAD_REQUEST)
-    public ModelAndView handleDataAccessUserError(HttpServletRequest request, DataAccessError ex) {
-        logger.error("Data Access Error Exception at request {} : {}", request.getRequestURL(), ex.getMessage());
-
-        ModelAndView mav = new ModelAndView();
-        mav.addObject(ERROR_CODE_RENDER_FIELD, HttpStatus.BAD_REQUEST.value());
-        mav.addObject(ERROR_MESSAGE_RENDER_FIELD, ex.getMessage());
-        mav.setViewName(ERROR_VIEW);
-        return mav;
-    }
 
     @ExceptionHandler(value = {ValidationError.class})
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
@@ -41,8 +28,8 @@ public class WebApplicationExceptionsHandler {
         logger.error("Validation Error Exception at request {} : {}", request.getRequestURL(), ex.getMessage());
 
         ModelAndView mav = new ModelAndView();
-        mav.addObject(ERROR_CODE_RENDER_FIELD, HttpStatus.BAD_REQUEST.value());
-        mav.addObject(ERROR_MESSAGE_RENDER_FIELD, ex.getMessage());
+        mav.addObject(ERROR_PAGE_CODE_FIELD, HttpStatus.BAD_REQUEST.value());
+        mav.addObject(ERROR_PAGE_MESSAGE_FIELD, ex.getMessage());
         mav.setViewName(ERROR_VIEW);
         return mav;
     }
@@ -53,8 +40,8 @@ public class WebApplicationExceptionsHandler {
         logger.error("Runtime Exception at request {}", request.getRequestURL(), ex);
 
         ModelAndView mav = new ModelAndView();
-        mav.addObject(ERROR_CODE_RENDER_FIELD, HttpStatus.INTERNAL_SERVER_ERROR.value());
-        mav.addObject(ERROR_MESSAGE_RENDER_FIELD, HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
+        mav.addObject(ERROR_PAGE_CODE_FIELD, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        mav.addObject(ERROR_PAGE_MESSAGE_FIELD, HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
         mav.setViewName(ERROR_VIEW);
         return mav;
     }
