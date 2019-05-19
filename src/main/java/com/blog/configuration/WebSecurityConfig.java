@@ -34,13 +34,13 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         http
                 .authorizeRequests()
                 .antMatchers("/css/**", "/js/**", "/images/**").permitAll()
-                .anyRequest().permitAll()
+                .anyRequest().authenticated()
 
                 .and()
                 .formLogin().loginPage("/login").loginProcessingUrl("/api/login").permitAll()
 
                 .and()
-                .logout().logoutSuccessUrl("/").logoutUrl("/api/logout")
+                .logout().logoutSuccessUrl("/").logoutUrl("/api/logout").deleteCookies("JSESSIONID")
 
                 .and()
                 .csrf().disable();
@@ -50,7 +50,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     public UserDetailsService userDetailsService() {
         UserDetails user =
-                User.builder().username(userSettings.getWebUILogin()).password(passwordEncoder().encode(userSettings.getWebUIPassword()))
+                User.builder()
+                        .username(userSettings.getWebUILogin())
+                        .password(passwordEncoder().encode(userSettings.getWebUIPassword()))
                         .roles("USER").build();
 
         return new InMemoryUserDetailsManager(user);
