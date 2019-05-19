@@ -3,77 +3,48 @@ package com.blog.service.storage;
 import com.blog.entities.storage.StorageSettings;
 
 import java.io.InputStream;
-import java.text.SimpleDateFormat;
 
 /**
- * General Storage interface
+ * This interface provides API to work with backup on storages.
+ * <p>
+ * All storage services implementing this interface should obey the following rules:
+ * <ul>
+ * <li>Upload/download/delete strategy is based on backup name - backup name is an identifier of the backup.
+ * It is not mandatory to use backup name in internal representation, but passing backup name to any of interface methods
+ * backup should have proper effect.</li>
+ * <li>If service uses additional threads except main the ones should notify about occurred exception using
+ * {@link com.blog.controllers.ErrorCallback} if the exception is critical and work can not be continued.</li>
+ * </ul>
+ *
+ * @see StorageConstants - there are default constants that can be useful at implementing storage service.
  */
 public interface Storage {
     /**
-     * Date formatter used to build backup name
-     * <p>
-     * Example of formatted time: 04-04-2019_15-24-55-839
-     */
-    SimpleDateFormat dateFormatter = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss-SS");
-
-    /**
-     * Backup name have following representation:
-     * backup_<database name>_<creation date>
-     * <p>
-     * Backup name created by <b>BackupLoadManager</b> class
-     * <p>
-     * Example of backup name: backup_testDb_04-04-2019_15-24-55-839
-     */
-    String BACKUP_NAME_TEMPLATE = "backup_%s_%s";
-
-    /**
-     * Backup files have following representation:
-     * <backup name>_part<backup part>
-     * <p>
-     * Example of file name: backup_testDb_04-04-2019_15-24-55-839_part0
-     */
-    String FILENAME_TEMPLATE = "%s_part%d";
-
-
-    /**
-     * Backup files extension
-     * <p>
-     * Used to create file with extension
-     * <p>
-     * Example of created file: backup_testDb_04-04-2019_15-24-55-839_part0.dat
-     */
-    String FILE_EXTENSION = ".dat";
-
-    /**
-     * Saves backup on specified storage
-     * <p>
-     * Backup always saved into folder named exactly as backup name
-     * <p>
-     * The following is an example of typical uploaded backup:
-     * /backup_postgres_04-04-2019_15-24-51-970/backup_postgres_04-04-2019_15-24-51-970_part0.dat
-     * /backup_postgres_04-04-2019_15-24-51-970/backup_postgres_04-04-2019_15-24-51-970_part1.dat
+     * Saves backup on storage.
      *
      * @param in              the input stream to read backup from
      * @param storageSettings storage settings to access storage where backup stored
-     * @param backupName      backup name to name backup folder
+     * @param backupName      backup name
+     * @param id              backup upload task ID
      */
     void uploadBackup(InputStream in, StorageSettings storageSettings, String backupName, Integer id);
 
     /**
-     * Downloads backup from the specified storage
+     * Downloads backup from storage.
      *
      * @param storageSettings storage settings to access storage where backup stored
-     * @param backupName      backup name to retrieve backup folder
+     * @param backupName      backup name
+     * @param id              backup download task ID
      * @return input stream, from which backup can be read after download complete
      */
     InputStream downloadBackup(StorageSettings storageSettings, String backupName, Integer id);
 
-
     /**
-     * Deletes backup from the specified storage
+     * Deletes backup from storage.
      *
      * @param storageSettings storage settings to access storage where backup stored
-     * @param backupName      backup name to delete backup folder
+     * @param backupName      backup name
+     * @param id              backup deletion task ID
      */
     void deleteBackup(StorageSettings storageSettings, String backupName, Integer id);
 }
