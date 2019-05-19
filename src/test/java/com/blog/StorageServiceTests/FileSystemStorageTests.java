@@ -4,7 +4,7 @@ import com.blog.ApplicationTests;
 import com.blog.TestUtils;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.service.storage.FileSystemStorage;
-import com.blog.service.storage.Storage;
+import com.blog.service.storage.StorageConstants;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +49,7 @@ public class FileSystemStorageTests extends ApplicationTests {
     @Test
     public void whenUploadSmallBackupAndDownload_contentIsEqual() throws IOException {
         String backupName = "whenUploadSmallBackupAndDownload_contentIsEqual";
-        backupName = backupName + "_" + Storage.dateFormatter.format(new Date());
+        backupName = backupName + "_" + StorageConstants.dateFormatter.format(new Date());
         byte[] source = testUtils.getRandomBytes(1000);
 
         try (
@@ -68,7 +68,7 @@ public class FileSystemStorageTests extends ApplicationTests {
     @Test
     public void whenUploadBigBackupAndDownload_contentIsEqual() throws IOException {
         String backupName = "whenUploadBigBackupAndDownload_contentIsEqual";
-        backupName = backupName + "_" + Storage.dateFormatter.format(new Date());
+        backupName = backupName + "_" + StorageConstants.dateFormatter.format(new Date());
         byte[] source = testUtils.getRandomBytes(1000000);
 
         try (
@@ -87,7 +87,7 @@ public class FileSystemStorageTests extends ApplicationTests {
     @Test
     public void whenUploadBackupAndDelete_backupIsDeletedOnStorage() throws IOException {
         String backupName = "whenUploadBackupAndDelete_backupIsDeletedOnStorage";
-        backupName = backupName + "_" + Storage.dateFormatter.format(new Date());
+        backupName = backupName + "_" + StorageConstants.dateFormatter.format(new Date());
         byte[] source = testUtils.getRandomBytes(1000000);
 
         try (

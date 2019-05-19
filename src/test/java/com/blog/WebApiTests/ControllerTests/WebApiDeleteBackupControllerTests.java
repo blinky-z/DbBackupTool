@@ -4,7 +4,6 @@ import com.blog.ApplicationTests;
 import com.blog.TestUtils;
 import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.backup.BackupTask;
-import com.blog.entities.backup.BackupTaskState;
 import com.blog.entities.storage.StorageType;
 import com.blog.manager.BackupPropertiesManager;
 import com.blog.manager.BackupTaskManager;
@@ -108,7 +107,7 @@ public class WebApiDeleteBackupControllerTests extends ApplicationTests {
             BackupTask backupTask = backupTaskManager.findAllByOrderByDateDesc().iterator().next();
             Integer id = backupTask.getId();
 
-            while (backupTaskManager.getBackupTask(id).orElseThrow(RuntimeException::new).getState() != BackupTaskState.COMPLETED) {
+            while (backupTaskManager.getBackupTask(id).orElseThrow(RuntimeException::new).getState() != BackupTask.State.COMPLETED) {
                 Thread.sleep(300);
             }
         }
@@ -133,7 +132,7 @@ public class WebApiDeleteBackupControllerTests extends ApplicationTests {
             BackupTask deleteTask = backupTaskManager.findAllByOrderByDateDesc().iterator().next();
             Integer id = deleteTask.getId();
 
-            while (backupTaskManager.getBackupTask(id).orElseThrow(RuntimeException::new).getState() != BackupTaskState.COMPLETED) {
+            while (backupTaskManager.getBackupTask(id).orElseThrow(RuntimeException::new).getState() != BackupTask.State.COMPLETED) {
                 Thread.sleep(300);
             }
 
@@ -192,7 +191,7 @@ public class WebApiDeleteBackupControllerTests extends ApplicationTests {
             BackupTask backupTask = backupTaskManager.findAllByOrderByDateDesc().iterator().next();
             Integer id = backupTask.getId();
 
-            while (backupTaskManager.getBackupTask(id).orElseThrow(RuntimeException::new).getState() != BackupTaskState.COMPLETED) {
+            while (backupTaskManager.getBackupTask(id).orElseThrow(RuntimeException::new).getState() != BackupTask.State.COMPLETED) {
                 Thread.sleep(300);
             }
         }
@@ -217,7 +216,7 @@ public class WebApiDeleteBackupControllerTests extends ApplicationTests {
             BackupTask deleteTask = backupTaskManager.findAllByOrderByDateDesc().iterator().next();
             Integer id = deleteTask.getId();
 
-            while (backupTaskManager.getBackupTask(id).orElseThrow(RuntimeException::new).getState() != BackupTaskState.COMPLETED) {
+            while (backupTaskManager.getBackupTask(id).orElseThrow(RuntimeException::new).getState() != BackupTask.State.COMPLETED) {
                 Thread.sleep(300);
             }
 

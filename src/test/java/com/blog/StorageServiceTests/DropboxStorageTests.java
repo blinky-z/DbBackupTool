@@ -5,7 +5,7 @@ import com.blog.TestUtils;
 import com.blog.entities.storage.DropboxSettings;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.service.storage.DropboxStorage;
-import com.blog.service.storage.Storage;
+import com.blog.service.storage.StorageConstants;
 import com.dropbox.core.DbxException;
 import com.dropbox.core.DbxRequestConfig;
 import com.dropbox.core.v2.DbxClientV2;
@@ -52,7 +52,7 @@ public class DropboxStorageTests extends ApplicationTests {
     @Test
     public void whenUploadSmallBackupAndDownload_contentIsEqual() throws IOException {
         String backupName = "dropboxStorage_whenUploadSmallBackupAndDownload_contentIsEqual";
-        backupName = backupName + "_" + Storage.dateFormatter.format(new Date());
+        backupName = backupName + "_" + StorageConstants.dateFormatter.format(new Date());
         byte[] source = testUtils.getRandomBytes(1000);
 
         try (
@@ -70,7 +70,7 @@ public class DropboxStorageTests extends ApplicationTests {
     @Test
     public void whenUploadBigBackupAndDownload_contentIsEqual() throws IOException {
         String backupName = "dropboxStorage_whenUploadBigBackupAndDownload_contentIsEqual";
-        backupName = backupName + "_" + Storage.dateFormatter.format(new Date());
+        backupName = backupName + "_" + StorageConstants.dateFormatter.format(new Date());
         byte[] source = testUtils.getRandomBytes(1000000);
 
         try (
@@ -88,7 +88,7 @@ public class DropboxStorageTests extends ApplicationTests {
     @Test
     public void whenUploadBackupAndDelete_backupIsDeletedOnStorage() throws IOException, DbxException {
         String backupName = "whenUploadBackupAndDelete_backupIsDeletedOnStorage";
-        backupName = backupName + "_" + Storage.dateFormatter.format(new Date());
+        backupName = backupName + "_" + StorageConstants.dateFormatter.format(new Date());
         byte[] source = testUtils.getRandomBytes(1000000);
 
         try (

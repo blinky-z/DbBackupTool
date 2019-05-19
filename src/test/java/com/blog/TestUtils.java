@@ -64,7 +64,9 @@ public class TestUtils {
      * Compares tables not loading all table data in memory.
      * Table must contain 'id' column.
      *
-     * @param tableNames table names to compare
+     * @param tableNames         table names to compare
+     * @param jdbcMasterTemplate the master database
+     * @param jdbcCopyTemplate   the slave database
      */
     public void compareLargeTables(List<String> tableNames, JdbcTemplate jdbcMasterTemplate, JdbcTemplate jdbcCopyTemplate) {
         long startRangeId;
