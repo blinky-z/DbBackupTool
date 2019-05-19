@@ -1,7 +1,7 @@
 package com.blog.controllers.Errors;
 
 /**
- * Error that occurs when request validation failed
+ * This exception is thrown when request validation failed and request was not sent by input form (e.g. deletion request).
  */
 public class ValidationError extends RuntimeException {
     public ValidationError(String error) {

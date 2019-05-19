@@ -10,6 +10,9 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * This manager class wraps {@link DatabaseSettingsRepository} and adds extra logic for calls.
+ */
 @Component
 public class DatabaseSettingsManager {
     private DatabaseSettingsRepository databaseSettingsRepository;
@@ -27,16 +30,8 @@ public class DatabaseSettingsManager {
         return databaseSettingsRepository.saveAll(databaseSettings);
     }
 
-    public boolean existsById(@NotNull String id) {
-        return databaseSettingsRepository.existsById(id);
-    }
-
     public void deleteById(@NotNull String id) {
-        databaseSettingsRepository.deleteById(id);
-    }
-
-    public Iterable<DatabaseSettings> getAll() {
-        return databaseSettingsRepository.findAll();
+        databaseSettingsRepository.findById(id).ifPresent(databaseSettings -> databaseSettingsRepository.delete(databaseSettings));
     }
 
     public Optional<DatabaseSettings> getById(@NotNull String id) {

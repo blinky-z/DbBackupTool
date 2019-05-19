@@ -17,6 +17,9 @@ import org.springframework.stereotype.Service;
 import java.io.*;
 import java.util.List;
 
+/**
+ * Implementation of {@link Storage} interface for Dropbox.
+ */
 @Service
 public class DropboxStorage implements Storage {
     private static final Logger logger = LoggerFactory.getLogger(DropboxStorage.class);
@@ -29,14 +32,14 @@ public class DropboxStorage implements Storage {
     }
 
     private String getCurrentFilePartAsAbsolutePath(String backupFolderPath, String backupName, long backupPart) {
-        String filename = String.format(FILENAME_TEMPLATE, backupName, backupPart);
-        return backupFolderPath + "/" + filename + FILE_EXTENSION;
+        String filename = String.format(StorageConstants.DEFAULT_FILENAME_TEMPLATE, backupName, backupPart);
+        return backupFolderPath + "/" + filename + StorageConstants.DEFAULT_FILE_EXTENSION;
     }
 
     /**
-     * Uploads backup to Dropbox
+     * Uploads backup to Dropbox.
      * <p>
-     * Backup is saved into root folder, which is usually an app folder
+     * Backup is saved into root folder, which is usually an app folder depending on token type.
      */
     public void uploadBackup(@NotNull InputStream in, @NotNull StorageSettings storageSettings, @NotNull String backupName,
                              Integer id) {
@@ -86,7 +89,7 @@ public class DropboxStorage implements Storage {
     }
 
     /**
-     * Downloads backup from Dropbox
+     * Downloads backup from Dropbox.
      */
     public InputStream downloadBackup(@NotNull StorageSettings storageSettings, @NotNull String backupName, Integer id) {
         String backupFolderPath = "/" + backupName;

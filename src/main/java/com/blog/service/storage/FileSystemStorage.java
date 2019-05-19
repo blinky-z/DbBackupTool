@@ -12,13 +12,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Implementation of {@link Storage} interface for Local File System.
+ */
 @Service
 public class FileSystemStorage implements Storage {
     private static final Logger logger = LoggerFactory.getLogger(FileSystemStorage.class);
 
     private String getCurrentFilePartAsAbsolutePath(String backupFolderPath, String backupName, long currentBackupPart) {
-        String filename = String.format(FILENAME_TEMPLATE, backupName, currentBackupPart);
-        return backupFolderPath + File.separator + filename + FILE_EXTENSION;
+        String filename = String.format(StorageConstants.DEFAULT_FILENAME_TEMPLATE, backupName, currentBackupPart);
+        return backupFolderPath + File.separator + filename + StorageConstants.DEFAULT_FILE_EXTENSION;
     }
 
     /**

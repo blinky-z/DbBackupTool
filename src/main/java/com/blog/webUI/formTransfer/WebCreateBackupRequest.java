@@ -3,6 +3,11 @@ package com.blog.webUI.formTransfer;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+/**
+ * This class represents creating database backup form
+ * <p>
+ * Passed to router "/create-backup" on POST request
+ */
 public class WebCreateBackupRequest {
     private String databaseSettingsName;
 

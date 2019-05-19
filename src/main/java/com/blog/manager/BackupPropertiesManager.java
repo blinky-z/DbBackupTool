@@ -9,6 +9,9 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.Optional;
 
+/**
+ * This manager class wraps {@link BackupPropertiesRepository} and adds extra logic for calls.
+ */
 @Component
 public class BackupPropertiesManager {
     private BackupPropertiesRepository backupPropertiesRepository;
@@ -18,7 +21,7 @@ public class BackupPropertiesManager {
         this.backupPropertiesRepository = backupPropertiesRepository;
     }
 
-    public BackupProperties save(@NotNull BackupProperties backupProperties) {
+    BackupProperties save(@NotNull BackupProperties backupProperties) {
         return backupPropertiesRepository.save(backupProperties);
     }
 

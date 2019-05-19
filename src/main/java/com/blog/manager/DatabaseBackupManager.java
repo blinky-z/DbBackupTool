@@ -12,6 +12,9 @@ import org.springframework.stereotype.Component;
 import java.io.InputStream;
 import java.util.Objects;
 
+/**
+ * This manager class provides API to work with database backups.
+ */
 @Component
 public class DatabaseBackupManager {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseBackupManager.class);
@@ -23,9 +26,17 @@ public class DatabaseBackupManager {
         this.postgresDatabaseBackup = postgresDatabaseBackup;
     }
 
+    /**
+     * Created database backup.
+     *
+     * @param databaseSettings database settings of database to dump
+     * @param id               create backup task ID
+     * @return input stream, from which created plain text backup can be read.
+     */
     public InputStream createBackup(@NotNull DatabaseSettings databaseSettings, @NotNull Integer id) {
         Objects.requireNonNull(databaseSettings);
         Objects.requireNonNull(id);
+
         logger.info("Creating backup of database {}... Database Settings: {}", databaseSettings.getName(), databaseSettings);
 
         InputStream backupStream;
@@ -46,16 +57,24 @@ public class DatabaseBackupManager {
         return backupStream;
     }
 
-    public void restoreBackup(@NotNull InputStream backup, @NotNull DatabaseSettings databaseSettings, @NotNull Integer id) {
-        Objects.requireNonNull(backup);
+    /**
+     * Restores database backup.
+     *
+     * @param in               input stream, from which plain text backup can be read.
+     * @param databaseSettings database settings of database to restore backup to
+     * @param id               restore backup task ID
+     */
+    public void restoreBackup(@NotNull InputStream in, @NotNull DatabaseSettings databaseSettings, @NotNull Integer id) {
+        Objects.requireNonNull(in);
         Objects.requireNonNull(databaseSettings);
         Objects.requireNonNull(id);
+
         logger.info("Restoring backup to database {}... Database Settings: {}", databaseSettings.getName(), databaseSettings);
 
         DatabaseType databaseType = databaseSettings.getType();
         switch (databaseType) {
             case POSTGRES: {
-                postgresDatabaseBackup.restoreBackup(backup, databaseSettings, id);
+                postgresDatabaseBackup.restoreBackup(in, databaseSettings, id);
                 break;
             }
             default: {

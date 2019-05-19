@@ -7,6 +7,9 @@ import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * This entity represents storage settings.
+ */
 @Entity
 @Table(name = "storage_settings")
 public class StorageSettings {

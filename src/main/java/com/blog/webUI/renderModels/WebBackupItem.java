@@ -1,50 +1,21 @@
 package com.blog.webUI.renderModels;
 
+/**
+ * This class represents created backup information
+ */
 public class WebBackupItem {
-    private int id;
+    private final int id;
 
-    private String desc;
+    private final String desc;
 
-    private String name;
+    private final String name;
 
-    private String time;
+    private final String time;
 
-    public WebBackupItem(int id, String desc, String name, String time) {
+    private WebBackupItem(int id, String desc, String name, String time) {
         this.id = id;
         this.desc = desc;
         this.name = name;
-        this.time = time;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDesc() {
-        return desc;
-    }
-
-    public void setDesc(String desc) {
-        this.desc = desc;
-    }
-
-    public String getTime() {
-        return time;
-    }
-
-    public void setTime(String time) {
         this.time = time;
     }
 
@@ -56,5 +27,40 @@ public class WebBackupItem {
                 ", name='" + name + '\'' +
                 ", time='" + time + '\'' +
                 '}';
+    }
+
+
+    public static final class Builder {
+        private int id;
+        private String desc;
+        private String name;
+        private String time;
+
+        public Builder() {
+        }
+
+        public Builder withId(int id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder withDesc(String desc) {
+            this.desc = desc;
+            return this;
+        }
+
+        public Builder withName(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder withTime(String time) {
+            this.time = time;
+            return this;
+        }
+
+        public WebBackupItem build() {
+            return new WebBackupItem(id, desc, name, time);
+        }
     }
 }

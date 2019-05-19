@@ -1,5 +1,8 @@
 package com.blog.webUI.formTransfer.storage;
 
+/**
+ * This class stores Local File System storage specific fields
+ */
 public class WebLocalFileSystemSettings {
     private String backupPath;
 

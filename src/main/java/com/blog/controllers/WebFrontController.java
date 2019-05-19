@@ -21,8 +21,6 @@ import com.blog.webUI.renderModels.WebBackupItem;
 import com.blog.webUI.renderModels.WebBackupTask;
 import com.blog.webUI.renderModels.WebDatabaseItem;
 import com.blog.webUI.renderModels.WebStorageItem;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -38,8 +36,6 @@ import java.util.List;
 @Controller
 @ControllerAdvice
 public class WebFrontController {
-    private static final Logger logger = LoggerFactory.getLogger(WebFrontController.class);
-
     private SimpleDateFormat dateFormat;
 
     private DatabaseSettingsManager databaseSettingsManager;
@@ -87,9 +83,11 @@ public class WebFrontController {
 
     @ModelAttribute
     public void addLists(Model model) {
+        // add storage settings
         {
             List<WebStorageItem> storageList = new ArrayList<>();
 
+            // add local file system settings
             for (StorageSettings storageSettings : storageSettingsManager.getAllByType(StorageType.LOCAL_FILE_SYSTEM)) {
                 LocalFileSystemSettings localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(
                         RuntimeException::new);
@@ -98,10 +96,17 @@ public class WebFrontController {
                 storageProperties.put("Settings name", storageSettings.getSettingsName());
                 storageProperties.put("Backup path", localFileSystemSettings.getBackupPath());
 
-                WebStorageItem storageItem = new WebStorageItem(storageSettings.getType(), storageSettings.getSettingsName(),
-                        storageProperties.toString(), dateFormat.format(storageSettings.getDate()));
+                WebStorageItem storageItem = new WebStorageItem.Builder()
+                        .withType(storageSettings.getType())
+                        .withSettingsName(storageSettings.getSettingsName())
+                        .withDesc(storageProperties.toString())
+                        .withTime(dateFormat.format(storageSettings.getDate()))
+                        .build();
+
                 storageList.add(storageItem);
             }
+
+            // add dropbox settings
             for (StorageSettings storageSettings : storageSettingsManager.getAllByType(StorageType.DROPBOX)) {
                 DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(RuntimeException::new);
 
@@ -109,14 +114,20 @@ public class WebFrontController {
                 storageProperties.put("Settings name", storageSettings.getSettingsName());
                 storageProperties.put("Access token", dropboxSettings.getAccessToken());
 
-                WebStorageItem storageItem = new WebStorageItem(storageSettings.getType(), storageSettings.getSettingsName(),
-                        storageProperties.toString(), dateFormat.format(storageSettings.getDate()));
+                WebStorageItem storageItem = new WebStorageItem.Builder()
+                        .withType(storageSettings.getType())
+                        .withSettingsName(storageSettings.getSettingsName())
+                        .withDesc(storageProperties.toString())
+                        .withTime(dateFormat.format(storageSettings.getDate()))
+                        .build();
+
                 storageList.add(storageItem);
             }
 
             model.addAttribute("storageList", storageList);
         }
 
+        // add database settings
         {
             List<WebDatabaseItem> databaseList = new ArrayList<>();
 
@@ -129,14 +140,20 @@ public class WebFrontController {
                 databaseProperties.put("Port", Integer.toString(databaseSettings.getPort()));
                 databaseProperties.put("Database name", databaseSettings.getName());
 
-                WebDatabaseItem databaseItem = new WebDatabaseItem(databaseSettings.getType(), databaseSettings.getSettingsName(),
-                        databaseProperties.toString(), dateFormat.format(databaseSettings.getDate()));
+                WebDatabaseItem databaseItem = new WebDatabaseItem.Builder()
+                        .withType(databaseSettings.getType())
+                        .withSettingsName(databaseSettings.getSettingsName())
+                        .withDesc(databaseProperties.toString())
+                        .withTime(dateFormat.format(databaseSettings.getDate()))
+                        .build();
+
                 databaseList.add(databaseItem);
             }
 
             model.addAttribute("databaseList", databaseList);
         }
 
+        // add created backup list
         {
             List<WebBackupItem> backupList = new ArrayList<>();
 
@@ -151,28 +168,39 @@ public class WebFrontController {
                 backupProperties.put("Processors", currentBackupProperties.getProcessors().toString());
                 backupProperties.put("Stored on", storageSettings.getType().toString());
 
-                WebBackupItem webBackupItem = new WebBackupItem(currentBackupProperties.getId(),
-                        backupProperties.toString(),
-                        currentBackupProperties.getBackupName(),
-                        dateFormat.format(currentBackupProperties.getDate()));
+                WebBackupItem webBackupItem = new WebBackupItem.Builder()
+                        .withId(currentBackupProperties.getId())
+                        .withDesc(backupProperties.toString())
+                        .withName(currentBackupProperties.getBackupName())
+                        .withTime(dateFormat.format(currentBackupProperties.getDate()))
+                        .build();
+
                 backupList.add(webBackupItem);
             }
 
             model.addAttribute("backupList", backupList);
         }
 
+        // add executing backup task list
         {
             List<WebBackupTask> backupTaskList = new ArrayList<>();
 
             for (BackupTask backupTask : backupTaskManager.getBackupTasks()) {
-                WebBackupTask webBackupTask = new WebBackupTask(backupTask.getId(), backupTask.getType().toString(),
-                        backupTask.getState().toString(), dateFormat.format(backupTask.getDate()), backupTask.isError());
+                WebBackupTask webBackupTask = new WebBackupTask.Builder()
+                        .withId(backupTask.getId())
+                        .withType(backupTask.getType().toString())
+                        .withState(backupTask.getState().toString())
+                        .withIsError(backupTask.isError())
+                        .withTime(dateFormat.format(backupTask.getDate()))
+                        .build();
+
                 backupTaskList.add(webBackupTask);
             }
 
             model.addAttribute("backupTasks", backupTaskList);
         }
 
+        // add forms for input
         model.addAttribute("webAddDatabaseRequest", new WebAddDatabaseRequest());
         model.addAttribute("webAddStorageRequest", new WebAddStorageRequest());
         model.addAttribute("webCreateBackupRequest", new WebCreateBackupRequest());

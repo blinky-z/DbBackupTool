@@ -1,5 +1,10 @@
 package com.blog.webUI.formTransfer;
 
+/**
+ * This class represents restoring database backup form
+ * <p>
+ * Passed to router "/restore-backup" on POST request
+ */
 public class WebRestoreBackupRequest {
     private String backupId;
 

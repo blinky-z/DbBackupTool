@@ -7,22 +7,21 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.text.SimpleDateFormat;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @Configuration
-@EnableAsync
-@EnableScheduling
 public class WebControllersConfiguration {
     private static final Logger logger = LoggerFactory.getLogger("ErrorCallBack");
 
     private BackupTaskManager backupTaskManager;
 
-    private static final String TIME_FORMAT = "dd.MM.yyyy HH:mm:ss";
+    /**
+     * This time format is used in all elements of front-end (backup creation time, task start time and so on).
+     */
+    private static final String WEB_TIME_FORMAT = "dd.MM.yyyy HH:mm:ss";
 
     @Autowired
     public void setBackupTaskManager(BackupTaskManager backupTaskManager) {
@@ -47,6 +46,6 @@ public class WebControllersConfiguration {
 
     @Bean
     public SimpleDateFormat dateFormat() {
-        return new SimpleDateFormat(TIME_FORMAT);
+        return new SimpleDateFormat(WEB_TIME_FORMAT);
     }
 }

@@ -19,7 +19,7 @@ class AdditionalDatabaseSettings {
         return type;
     }
 
-    public PostgresSettings getPostgresSettings() {
+    PostgresSettings getPostgresSettings() {
         return postgresSettings;
     }
 

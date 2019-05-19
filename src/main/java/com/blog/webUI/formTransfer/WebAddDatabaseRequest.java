@@ -2,6 +2,11 @@ package com.blog.webUI.formTransfer;
 
 import com.blog.webUI.formTransfer.database.WebPostgresSettings;
 
+/**
+ * This class represents database settings creation form
+ * <p>
+ * Passed to router "/database" on POST request
+ */
 public class WebAddDatabaseRequest {
     private String databaseType;
 

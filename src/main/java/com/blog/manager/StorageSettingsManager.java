@@ -10,6 +10,9 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * This manager class wraps {@link StorageSettingsRepository} and adds extra logic for calls.
+ */
 @Component
 public class StorageSettingsManager {
     private StorageSettingsRepository storageSettingsRepository;
@@ -27,20 +30,12 @@ public class StorageSettingsManager {
         return storageSettingsRepository.saveAll(storageSettings);
     }
 
-    public boolean existsById(@NotNull String id) {
-        return storageSettingsRepository.existsById(id);
-    }
-
     public void deleteById(@NotNull String id) {
-        storageSettingsRepository.deleteById(id);
+        storageSettingsRepository.findById(id).ifPresent(storageSettings -> storageSettingsRepository.delete(storageSettings));
     }
 
     public Optional<StorageSettings> getById(@NotNull String id) {
         return storageSettingsRepository.findById(id);
-    }
-
-    public Iterable<StorageSettings> getAll() {
-        return storageSettingsRepository.findAll();
     }
 
     public Iterable<StorageSettings> getAllByType(@NotNull StorageType type) {

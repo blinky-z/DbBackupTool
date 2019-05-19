@@ -3,6 +3,9 @@ package com.blog.settings;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+/**
+ * This class contains required user config fields from *application.properties*.
+ */
 @Component
 @ConfigurationProperties(prefix = "user-config")
 public class UserSettings {

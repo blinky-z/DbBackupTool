@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * This class class handles PostgreSQL database backups
+ * Implementation of {@link DatabaseBackup} interface for PostgreSQL.
  */
 @Service
 public class PostgresDatabaseBackup implements DatabaseBackup {
@@ -83,13 +83,12 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
 
     /**
      * Creates PostgreSQL database plan-text backup.
-     * Backup is created by <i>pg_dump</i> tool
+     * Backup is created by <i>pg_dump</i> tool.
      * <p>
      * If pg_dump reports about error while executing, InternalPostgresToolError will be thrown
-     * In such case, you can find process's stderr messages in the class log
+     * In such case, you can find process's stderr messages in the log of this class.
      * <p>
      * Note, that this function returns directly process's stdin stream, that is you will not have to wait for full backup creation.
-     * Further reading is performing by processor or storage service.
      *
      * @return input stream, connected to the normal output stream of the process, from which backup can be read
      */
@@ -149,10 +148,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
      * Backup is restored by <i>psql</i> tool.
      * <p>
      * If psql reports about error while executing, InternalPostgresToolError will be thrown
-     * In such case, you can find process's stderr messages in the class log
-     * <p>
-     * Note, that there are two types of possible errors: the one from psql tool executing in separate process,
-     * and the second one produced by Java (IO Exception) while writing backup to process output stream
+     * In such case, you can find process's stderr messages in the log of this class.
      *
      * @param backupSource the input stream to read backup from
      */
@@ -223,37 +219,9 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
         }
     }
 
-    private static final class ProcessStdoutStreamReadWorker implements Runnable {
-        InputStream outputStream;
 
-        private String STDOUT_PRINT_FORMAT;
-
-        private JobType jobType;
-
-        ProcessStdoutStreamReadWorker(InputStream outputStream, JobType jobType) {
-            this.outputStream = outputStream;
-            this.jobType = jobType;
-            this.STDOUT_PRINT_FORMAT = jobType.getJobPrefix() + " stdout: {}";
-        }
-
-        @Override
-        public void run() {
-            logger.info("Reading process standard output stream...");
-            try (
-                    BufferedReader outputStreamReader = new BufferedReader(new InputStreamReader(outputStream))
-            ) {
-                String currentLine;
-                while ((currentLine = outputStreamReader.readLine()) != null) {
-                    logger.info(STDOUT_PRINT_FORMAT, currentLine);
-                }
-            } catch (IOException ex) {
-                throw new RuntimeException("Error occurred while reading process standard output stream", ex);
-            }
-        }
-    }
-
-    private static final class ProcessStderrStreamReadWorker implements Runnable {
-        InputStream errorStream;
+    private class ProcessStderrStreamReadWorker implements Runnable {
+        private InputStream in;
 
         private JobType jobType;
 
@@ -261,8 +229,8 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
 
         private Integer id;
 
-        private ProcessStderrStreamReadWorker(InputStream errorStream, JobType jobType, Integer id) {
-            this.errorStream = errorStream;
+        ProcessStderrStreamReadWorker(InputStream in, JobType jobType, Integer id) {
+            this.in = in;
             this.jobType = jobType;
             this.id = id;
 
@@ -273,7 +241,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
         public void run() {
             logger.info("Reading process standard error stream...");
             try (
-                    BufferedReader errorStreamReader = new BufferedReader(new InputStreamReader(errorStream))
+                    BufferedReader errorStreamReader = new BufferedReader(new InputStreamReader(in))
             ) {
                 boolean isErrorOccurred = false;
                 String error;
@@ -291,4 +259,34 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
             }
         }
     }
+
+    private class ProcessStdoutStreamReadWorker implements Runnable {
+        private InputStream out;
+
+        private String STDOUT_PRINT_FORMAT;
+
+        private JobType jobType;
+
+        ProcessStdoutStreamReadWorker(InputStream out, JobType jobType) {
+            this.out = out;
+            this.jobType = jobType;
+            this.STDOUT_PRINT_FORMAT = jobType.getJobPrefix() + " stdout: {}";
+        }
+
+        @Override
+        public void run() {
+            logger.info("Reading process standard output stream...");
+            try (
+                    BufferedReader outputStreamReader = new BufferedReader(new InputStreamReader(out))
+            ) {
+                String currentLine;
+                while ((currentLine = outputStreamReader.readLine()) != null) {
+                    logger.info(STDOUT_PRINT_FORMAT, currentLine);
+                }
+            } catch (IOException ex) {
+                throw new RuntimeException("Error occurred while reading process standard output stream", ex);
+            }
+        }
+    }
+
 }

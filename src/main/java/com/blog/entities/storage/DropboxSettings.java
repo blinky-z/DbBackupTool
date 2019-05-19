@@ -1,5 +1,8 @@
 package com.blog.entities.storage;
 
+/**
+ * This class represents Dropbox specific properties.
+ */
 public class DropboxSettings {
     private String accessToken;
 

@@ -10,6 +10,9 @@ import java.util.Objects;
 import java.util.zip.DeflaterInputStream;
 import java.util.zip.InflaterInputStream;
 
+/**
+ * Backup compressor processor.
+ */
 @Service
 public class BackupCompressor implements Processor {
     private static final Logger logger = LoggerFactory.getLogger(BackupCompressor.class);
@@ -21,7 +24,7 @@ public class BackupCompressor implements Processor {
     private static final String processorName = "Compressor";
 
     /**
-     * Compress backup
+     * Compresses backup.
      *
      * @param uncompressedBackup the stream contains data to compress
      * @return input stream, from which compressed data can be read
@@ -33,7 +36,7 @@ public class BackupCompressor implements Processor {
     }
 
     /**
-     * Decompress backup
+     * Decompresses backup.
      *
      * @param compressedBackup the stream contains compressed data
      * @return input stream, from which decompressed data can be read

@@ -1,52 +1,71 @@
 package com.blog.webUI.renderModels;
 
 import com.blog.entities.database.DatabaseType;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
+
+/**
+ * This class represents database settings
+ */
 public class WebDatabaseItem {
-    private String settingsName;
+    private final String settingsName;
 
-    private DatabaseType type;
+    private final DatabaseType type;
 
-    private String desc;
+    private final String desc;
 
-    private String time;
+    private final String time;
 
-    public WebDatabaseItem(DatabaseType type, String settingsName, String desc, String time) {
-        this.type = type;
-        this.settingsName = settingsName;
-        this.desc = desc;
-        this.time = time;
+    private WebDatabaseItem(@NotNull DatabaseType type, @NotNull String settingsName, @NotNull String desc, @NotNull String time) {
+        this.type = Objects.requireNonNull(type);
+        this.settingsName = Objects.requireNonNull(settingsName);
+        this.desc = Objects.requireNonNull(desc);
+        this.time = Objects.requireNonNull(time);
     }
 
-    public String getSettingsName() {
-        return settingsName;
+    @Override
+    public String toString() {
+        return "WebDatabaseItem{" +
+                "settingsName='" + settingsName + '\'' +
+                ", type=" + type +
+                ", desc='" + desc + '\'' +
+                ", time='" + time + '\'' +
+                '}';
     }
 
-    public void setSettingsName(String settingsName) {
-        this.settingsName = settingsName;
-    }
 
-    public DatabaseType getType() {
-        return type;
-    }
+    public static final class Builder {
+        private String settingsName;
+        private DatabaseType type;
+        private String desc;
+        private String time;
 
-    public void setType(DatabaseType type) {
-        this.type = type;
-    }
+        public Builder() {
+        }
 
-    public String getDesc() {
-        return desc;
-    }
+        public Builder withSettingsName(String settingsName) {
+            this.settingsName = settingsName;
+            return this;
+        }
 
-    public void setDesc(String desc) {
-        this.desc = desc;
-    }
+        public Builder withType(DatabaseType type) {
+            this.type = type;
+            return this;
+        }
 
-    public String getTime() {
-        return time;
-    }
+        public Builder withDesc(String desc) {
+            this.desc = desc;
+            return this;
+        }
 
-    public void setTime(String time) {
-        this.time = time;
+        public Builder withTime(String time) {
+            this.time = time;
+            return this;
+        }
+
+        public WebDatabaseItem build() {
+            return new WebDatabaseItem(type, settingsName, desc, time);
+        }
     }
 }

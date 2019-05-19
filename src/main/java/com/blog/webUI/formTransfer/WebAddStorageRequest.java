@@ -3,6 +3,11 @@ package com.blog.webUI.formTransfer;
 import com.blog.webUI.formTransfer.storage.WebDropboxSettings;
 import com.blog.webUI.formTransfer.storage.WebLocalFileSystemSettings;
 
+/**
+ * This class represents storage settings creation form
+ * <p>
+ * Passed to router "/storage" on POST request
+ */
 public class WebAddStorageRequest {
     private String storageType;
 

@@ -1,17 +1,24 @@
 package com.blog.webUI.renderModels;
 
+
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * This class represents currently executing, completed or erroneous backup task
+ */
 public class WebBackupTask {
-    private Integer id;
+    private final Integer id;
 
-    private String type;
+    private final String type;
 
-    private String state;
+    private final String state;
 
-    private String time;
+    private final String time;
 
-    private Boolean isError;
+    private final Boolean isError;
 
-    public WebBackupTask(Integer id, String type, String state, String time, Boolean isError) {
+    private WebBackupTask(@NotNull Integer id, @NotNull String type, @NotNull String state,
+                          @NotNull String time, @NotNull Boolean isError) {
         this.id = id;
         this.type = type;
         this.state = state;
@@ -19,43 +26,55 @@ public class WebBackupTask {
         this.isError = isError;
     }
 
-    public Integer getId() {
-        return id;
+    @Override
+    public String toString() {
+        return "WebBackupTask{" +
+                "id=" + id +
+                ", type='" + type + '\'' +
+                ", state='" + state + '\'' +
+                ", time='" + time + '\'' +
+                ", isError=" + isError +
+                '}';
     }
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
 
-    public String getType() {
-        return type;
-    }
+    public static final class Builder {
+        private Integer id;
+        private String type;
+        private String state;
+        private String time;
+        private Boolean isError;
 
-    public void setType(String type) {
-        this.type = type;
-    }
+        public Builder() {
+        }
 
-    public String getState() {
-        return state;
-    }
+        public Builder withId(Integer id) {
+            this.id = id;
+            return this;
+        }
 
-    public void setState(String state) {
-        this.state = state;
-    }
+        public Builder withType(String type) {
+            this.type = type;
+            return this;
+        }
 
-    public String getTime() {
-        return time;
-    }
+        public Builder withState(String state) {
+            this.state = state;
+            return this;
+        }
 
-    public void setTime(String time) {
-        this.time = time;
-    }
+        public Builder withTime(String time) {
+            this.time = time;
+            return this;
+        }
 
-    public Boolean getError() {
-        return isError;
-    }
+        public Builder withIsError(Boolean isError) {
+            this.isError = isError;
+            return this;
+        }
 
-    public void setError(Boolean error) {
-        isError = error;
+        public WebBackupTask build() {
+            return new WebBackupTask(id, type, state, time, isError);
+        }
     }
 }

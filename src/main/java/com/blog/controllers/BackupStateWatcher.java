@@ -2,23 +2,28 @@ package com.blog.controllers;
 
 import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.backup.BackupTask;
-import com.blog.entities.backup.BackupTaskState;
-import com.blog.entities.backup.BackupTaskType;
 import com.blog.manager.BackupLoadManager;
 import com.blog.manager.BackupPropertiesManager;
 import com.blog.manager.BackupTaskManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+/**
+ * This class checks completed, interrupted or erroneous tasks and handles them depending on state.
+ * <p>
+ * All task states are persisted in database, so even after server fail they will be available for handling.
+ * Backup tasks are first checked on server startup and then periodically.
+ */
 @Component
-public class BackupStateWatcher {
+@EnableScheduling
+class BackupStateWatcher {
     private static final Logger logger = LoggerFactory.getLogger(BackupStateWatcher.class);
 
     private BackupTaskManager backupTaskManager;
@@ -50,8 +55,7 @@ public class BackupStateWatcher {
         this.backupPropertiesManager = backupPropertiesManager;
     }
 
-    @Async
-    public void cleanCompletedAndInterruptedTasks() {
+    void cleanCompletedAndInterruptedTasks() {
         for (BackupTask backupTask : backupTaskManager.getBackupTasks()) {
             if (!backupTask.isError()) {
                 backupTaskManager.removeTask(backupTask.getId());
@@ -60,11 +64,10 @@ public class BackupStateWatcher {
     }
 
     @Scheduled(fixedRate = 2000)
-    @Async
-    public void watchStates() {
+    void watchStates() {
         for (BackupTask backupTask : backupTaskManager.getBackupTasks()) {
             if (backupTask.isError()) {
-                BackupTaskState state = backupTask.getState();
+                BackupTask.State state = backupTask.getState();
 
                 Integer taskId = backupTask.getId();
                 Future task = backupTaskManager.getTaskFuture(taskId);
@@ -108,16 +111,16 @@ public class BackupStateWatcher {
                     case UPLOADING: {
                         logger.error("Error occurred while {} operation. Deleting backup from storage...", state);
 
-                        Integer deletionTaskId = backupTaskManager.initNewTask(BackupTaskType.DELETE_BACKUP, backupProperties);
+                        Integer deletionTaskId = backupTaskManager.initNewTask(BackupTask.Type.DELETE_BACKUP, backupProperties);
                         Future deletionTask = executorService.submit(
                                 new Runnable() {
                                     @Override
                                     public void run() {
-                                        backupTaskManager.updateTaskState(deletionTaskId, BackupTaskState.DELETING);
+                                        backupTaskManager.updateTaskState(deletionTaskId, BackupTask.State.DELETING);
 
                                         try {
                                             backupLoadManager.deleteBackup(backupProperties, deletionTaskId);
-                                            backupTaskManager.updateTaskState(deletionTaskId, BackupTaskState.COMPLETED);
+                                            backupTaskManager.updateTaskState(deletionTaskId, BackupTask.State.COMPLETED);
                                         } catch (RuntimeException ex) {
                                             logger.error("Can't delete broken backup", ex);
                                         }

@@ -1,5 +1,8 @@
 package com.blog.webUI.formTransfer.storage;
 
+/**
+ * This class stores Dropbox storage specific fields
+ */
 public class WebDropboxSettings {
     private String accessToken;
 

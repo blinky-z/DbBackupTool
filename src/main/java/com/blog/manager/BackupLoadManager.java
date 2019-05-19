@@ -5,7 +5,7 @@ import com.blog.entities.storage.StorageSettings;
 import com.blog.entities.storage.StorageType;
 import com.blog.service.storage.DropboxStorage;
 import com.blog.service.storage.FileSystemStorage;
-import com.blog.service.storage.Storage;
+import com.blog.service.storage.StorageConstants;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +17,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * This manager class provides API to work with backups.
+ */
 @Component
 public class BackupLoadManager {
     private static final Logger logger = LoggerFactory.getLogger(BackupLoadManager.class);
@@ -49,17 +52,32 @@ public class BackupLoadManager {
         this.fileSystemStorage = fileSystemStorage;
     }
 
+    /**
+     * Use this method to build new {@link BackupProperties} before uploading backup to storage.
+     *
+     * @param storageSettings storage settings where backup will be uploaded to
+     * @param processors      processors that applies on backup
+     * @param databaseName    database name of database of which backup was created
+     * @return new BackupProperties with required fields set
+     */
     public BackupProperties initNewBackupProperties(@NotNull StorageSettings storageSettings, @NotNull List<String> processors,
                                                     @NotNull String databaseName) {
         Date creationTime = new Date();
         String backupName = String.format(
-                Storage.BACKUP_NAME_TEMPLATE, databaseName, Storage.dateFormatter.format(creationTime));
+                StorageConstants.BACKUP_NAME_TEMPLATE, databaseName, StorageConstants.dateFormatter.format(creationTime));
 
         BackupProperties backupProperties =
                 new BackupProperties(backupName, processors, creationTime, storageSettings.getSettingsName());
         return backupPropertiesManager.save(backupProperties);
     }
 
+    /**
+     * Uploads backup.
+     *
+     * @param backupStream     InputStream from which backup can be read
+     * @param backupProperties pre-created BackupProperties of backup that should be uploaded to storage
+     * @param id               backup upload task ID
+     */
     public void uploadBackup(@NotNull InputStream backupStream, @NotNull BackupProperties backupProperties,
                              @NotNull Integer id) {
         Objects.requireNonNull(backupStream);
@@ -92,6 +110,13 @@ public class BackupLoadManager {
         logger.info("Backup successfully uploaded to {}. Backup name: {}", storageType, backupName);
     }
 
+    /**
+     * Downloads backup.
+     *
+     * @param backupProperties BackupProperties of created backup
+     * @param id               backup restoration task ID
+     * @return InputStream from which downloaded backup can be read
+     */
     public InputStream downloadBackup(@NotNull BackupProperties backupProperties, @NotNull Integer id) {
         Objects.requireNonNull(backupProperties);
 
@@ -123,6 +148,12 @@ public class BackupLoadManager {
         return downloadedBackup;
     }
 
+    /**
+     * Deletes backup.
+     *
+     * @param backupProperties BackupProperties of created backup
+     * @param id               backup deletion task ID
+     */
     public void deleteBackup(@NotNull BackupProperties backupProperties, @NotNull Integer id) {
         Objects.requireNonNull(backupProperties);
 

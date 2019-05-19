@@ -1,9 +1,16 @@
 package com.blog.entities.backup;
 
+import com.blog.entities.storage.StorageSettings;
+
 import javax.persistence.*;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * This entity represents created backup properties.
+ *
+ * @see com.blog.manager.BackupLoadManager#initNewBackupProperties(StorageSettings, List, String)
+ */
 @Entity
 @Table(name = "backup_properties")
 public class BackupProperties {

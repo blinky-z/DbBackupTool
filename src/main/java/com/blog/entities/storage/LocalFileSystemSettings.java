@@ -1,5 +1,8 @@
 package com.blog.entities.storage;
 
+/**
+ * This class represents Local File System specific properties.
+ */
 public class LocalFileSystemSettings {
     private String backupPath;
 

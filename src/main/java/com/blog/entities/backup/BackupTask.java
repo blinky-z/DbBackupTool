@@ -3,6 +3,9 @@ package com.blog.entities.backup;
 import javax.persistence.*;
 import java.util.Date;
 
+/**
+ * This entity represents backup task.
+ */
 @Entity
 @Table(name = "backup_tasks")
 public class BackupTask {
@@ -13,10 +16,10 @@ public class BackupTask {
 
     @Enumerated(EnumType.STRING)
     @Column(updatable = false)
-    private BackupTaskType type;
+    private Type type;
 
     @Enumerated(EnumType.STRING)
-    private BackupTaskState state;
+    private State state;
 
     private Integer backupPropertiesId;
 
@@ -33,19 +36,19 @@ public class BackupTask {
         this.id = id;
     }
 
-    public BackupTaskType getType() {
+    public Type getType() {
         return type;
     }
 
-    public void setType(BackupTaskType type) {
+    public void setType(Type type) {
         this.type = type;
     }
 
-    public BackupTaskState getState() {
+    public State getState() {
         return state;
     }
 
-    public void setState(BackupTaskState state) {
+    public void setState(State state) {
         this.state = state;
     }
 
@@ -82,5 +85,38 @@ public class BackupTask {
                 ", isError=" + isError +
                 ", date=" + date +
                 '}';
+    }
+
+    public enum State {
+        PLANNED,
+        CREATING,
+        RESTORING,
+        DELETING,
+        APPLYING_PROCESSORS,
+        APPLYING_DEPROCESSORS,
+        DOWNLOADING,
+        UPLOADING,
+        COMPLETED
+    }
+
+    public enum Type {
+        CREATE_BACKUP {
+            @Override
+            public String toString() {
+                return "CREATE BACKUP";
+            }
+        },
+        RESTORE_BACKUP {
+            @Override
+            public String toString() {
+                return "RESTORE BACKUP";
+            }
+        },
+        DELETE_BACKUP {
+            @Override
+            public String toString() {
+                return "DELETE BACKUP";
+            }
+        }
     }
 }

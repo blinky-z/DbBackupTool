@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import javax.persistence.AttributeConverter;
 import java.io.IOException;
 
-public class AdditionalStorageSettingsConverter implements AttributeConverter<AdditionalStorageSettings, String> {
+class AdditionalStorageSettingsConverter implements AttributeConverter<AdditionalStorageSettings, String> {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final Logger logger = LoggerFactory.getLogger(AdditionalStorageSettingsConverter.class);

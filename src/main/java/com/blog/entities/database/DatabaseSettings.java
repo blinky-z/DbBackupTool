@@ -7,6 +7,9 @@ import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * This entity represents database settings.
+ */
 @Entity
 @Table(name = "database_settings")
 public class DatabaseSettings {

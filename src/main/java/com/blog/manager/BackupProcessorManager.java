@@ -9,6 +9,9 @@ import org.springframework.stereotype.Component;
 import java.io.InputStream;
 import java.util.List;
 
+/**
+ * This manager class provides API to work with processors.
+ */
 @Component
 public class BackupProcessorManager {
     private static final Logger logger = LoggerFactory.getLogger(BackupProcessorManager.class);
@@ -20,8 +23,15 @@ public class BackupProcessorManager {
         this.processors = processors;
     }
 
+    /**
+     * Applies processors on backup.
+     *
+     * @param in            InputStream from which backup can be read.
+     * @param processorList processor names to apply
+     * @return a processed backup
+     */
     public InputStream process(InputStream in, List<String> processorList) {
-        logger.info("Applying processors on backup. Processors: {}", processorList);
+        logger.info("Processing backup... Processors: {}", processorList);
         int processorsAmount = processorList.size();
         for (int currentProcessor = 0; currentProcessor < processorsAmount; currentProcessor++) {
             String processorName = processorList.get(currentProcessor);
@@ -36,11 +46,18 @@ public class BackupProcessorManager {
         return in;
     }
 
-    public InputStream deprocess(InputStream in, List<String> processorList) {
-        logger.info("Deprocessing backup. Processors: {}", processorList);
-        int processorsAmount = processorList.size();
+    /**
+     * Applies deprocessors on backup..
+     *
+     * @param in              InputStream from which backup can be read.
+     * @param deprocessorList deprocessor names to apply
+     * @return a deprocessed backup
+     */
+    public InputStream deprocess(InputStream in, List<String> deprocessorList) {
+        logger.info("Deprocessing backup... Processors: {}", deprocessorList);
+        int processorsAmount = deprocessorList.size();
         for (int currentProcessor = 0; currentProcessor < processorsAmount; currentProcessor++) {
-            String processorName = processorList.get(currentProcessor);
+            String processorName = deprocessorList.get(currentProcessor);
             logger.info("Applying deprocessor [{}/{}]: {}", currentProcessor + 1, processorsAmount, processorName);
             for (Processor processor : processors) {
                 if (processor.getName().equals(processorName)) {
