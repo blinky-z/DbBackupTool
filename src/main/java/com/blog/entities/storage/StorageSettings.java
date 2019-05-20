@@ -8,7 +8,22 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * This entity represents storage settings.
+ * This entity represents ыещкфпу settings.
+ * <p>
+ * To create a new instance of this entity use one of the static builder factory for each database type.
+ * (e.g. {@link #dropboxSettings(DropboxSettings)}.
+ * <p>
+ * Example of creating a new instance:
+ * <code>
+ * DropboxSettings dropboxSettings = new DropboxSettings();
+ * dropboxSettings.setAccessToken(token);
+ * <p>
+ * StorageSettings storageSettings = StorageSettings.dropboxSettings(dropboxSettings)
+ * .withSettingsName(name)
+ * .build();
+ * </code>
+ * <p>
+ * This entity is mainly used by {@link com.blog.service.storage.Storage} services to access storage.
  */
 @Entity
 @Table(name = "storage_settings")
