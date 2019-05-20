@@ -23,7 +23,7 @@ public class StorageConstants {
      * Backup name is created by {@link com.blog.manager.BackupLoadManager} and then passed to required service
      * depending on storage type.
      * <p>
-     * Example of backup name of database named "testDb" and creation date "04-04-2019_15-24-55-839":
+     * Example of backup name of database named "testDb" and with backup creation date "04-04-2019_15-24-55-839":
      * <i>backup_testDb_04-04-2019_15-24-55-839</i>
      */
     public static final String BACKUP_NAME_TEMPLATE = "backup_%s_%s";
