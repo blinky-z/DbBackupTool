@@ -16,7 +16,7 @@ class InitializeBackupStateWatcher {
 
     @PostConstruct
     private void initialize() {
-        backupStateWatcher.cleanCompletedAndInterruptedTasks();
-        backupStateWatcher.watchStates();
+        backupStateWatcher.handleCompletedAndInterruptedTasks();
+        backupStateWatcher.watchErrorTasks();
     }
 }
