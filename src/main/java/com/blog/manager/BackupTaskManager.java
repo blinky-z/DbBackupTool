@@ -67,13 +67,13 @@ public class BackupTaskManager {
     }
 
     /**
-     * Returns Future task.
+     * Returns Future task
      *
      * @param id ID of task
-     * @return Future task
+     * @return Optional Future task
      */
-    public Future getTaskFuture(Integer id) {
-        return tasks.get(id);
+    public Optional<Future> getTaskFuture(Integer id) {
+        return Optional.ofNullable(tasks.get(id));
     }
 
     /**
@@ -95,7 +95,7 @@ public class BackupTaskManager {
      * @param id ID of task
      */
     public void removeTask(Integer id) {
-        backupTaskRepository.deleteById(id);
+        backupTaskRepository.findById(id).ifPresent(backupTask -> backupTaskRepository.delete(backupTask));
         tasks.remove(id);
     }
 

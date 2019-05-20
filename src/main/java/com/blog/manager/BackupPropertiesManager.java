@@ -42,6 +42,7 @@ public class BackupPropertiesManager {
     }
 
     public void deleteById(@NotNull Integer id) {
-        backupPropertiesRepository.deleteById(id);
+        backupPropertiesRepository.findById(id).ifPresent(
+                backupProperties -> backupPropertiesRepository.delete(backupProperties));
     }
 }
