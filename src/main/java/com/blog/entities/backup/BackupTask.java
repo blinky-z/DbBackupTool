@@ -4,7 +4,7 @@ import javax.persistence.*;
 import java.util.Date;
 
 /**
- * This entity represents backup task.
+ * This entity represents backup task: creating, restoring, uploading, downloading or deleting backup.
  */
 @Entity
 @Table(name = "backup_tasks")
@@ -20,7 +20,7 @@ public class BackupTask {
     /**
      * Backup task type.
      * <p>
-     * Type is set at the very start of any task and can't be changed, so prevent updating of this field.
+     * Type is set at the very start of any task and can't be changed.
      *
      * @see BackupTask.Type
      */
@@ -41,14 +41,14 @@ public class BackupTask {
     /**
      * Identifier of {@link BackupProperties}.
      * <p>
-     * We should know ID of backup that being executed to make it possible to handle occurred errors.
+     * We should know backup ID to be able to handle occurred errors while executing task.
      */
     private Integer backupPropertiesId;
 
     /**
-     * This field is set by {@link com.blog.controllers.ErrorCallback} if error occurred.
+     * This field is set by {@link com.blog.controllers.ErrorCallback} when error occurred.
      * <p>
-     * Erroneous backup tasks is handled by <b>BackupStateWatcher</b> class.
+     * Erroneous backup tasks wil be handled by <b>BackupStateWatcher</b> class automatically.
      */
     private Boolean isError;
 
