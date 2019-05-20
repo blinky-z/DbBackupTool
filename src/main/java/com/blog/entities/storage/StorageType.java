@@ -2,6 +2,9 @@ package com.blog.entities.storage;
 
 import java.util.Optional;
 
+/**
+ * Storage type.
+ */
 public enum StorageType {
     DROPBOX("dropbox") {
         public String toString() {

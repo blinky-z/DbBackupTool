@@ -2,6 +2,9 @@ package com.blog.entities.database;
 
 import java.util.Optional;
 
+/**
+ * Database type
+ */
 public enum DatabaseType {
     POSTGRES("postgres") {
         public String toString() {
