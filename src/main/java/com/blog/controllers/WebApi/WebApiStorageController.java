@@ -48,10 +48,12 @@ public class WebApiStorageController {
 
     @PostMapping
     public String createStorage(WebAddStorageRequest addStorageRequest, BindingResult bindingResult) {
-        logger.info("createStorage(): Got storage configuration creation job");
+        logger.info("createStorage(): Got storage settings creation request");
 
         webAddStorageRequestValidator.validate(addStorageRequest, bindingResult);
         if (bindingResult.hasErrors()) {
+            logger.info("createStorage(): Invalid storage settings creation request. Errors: {}", bindingResult.getAllErrors());
+
             return "dashboard";
         }
 
@@ -110,6 +112,8 @@ public class WebApiStorageController {
 
     @DeleteMapping
     public String deleteStorage(@RequestParam(value = "settingsName") Optional<String> optionalSettingsName) {
+        logger.info("deleteDatabase(): Got storage settings deletion request");
+
         String error = validateDeleteStorageRequest(optionalSettingsName.orElse(null));
         if (error != null) {
             throw new ValidationError(error);
@@ -117,7 +121,7 @@ public class WebApiStorageController {
 
         String settingsName = optionalSettingsName.get();
 
-        logger.info("deleteStorage(): Got storage settings deletion job. Settings name: {}", settingsName);
+        logger.info("deleteStorage(): Deleting storage settings with name: {}", settingsName);
 
         storageSettingsManager.deleteById(settingsName);
 

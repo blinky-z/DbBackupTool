@@ -19,9 +19,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -104,17 +106,20 @@ public class WebApiBackupController {
     }
 
     @PostMapping(path = "/create-backup")
-    public String createBackup(WebCreateBackupRequest webCreateBackupRequest, BindingResult bindingResult) {
-        logger.info("createBackup(): Got backup creation job");
+    public String createBackup(WebCreateBackupRequest webCreateBackupRequest,
+                               BindingResult bindingResult) {
+        logger.info("createBackup(): Got backup creation request");
 
         webCreateBackupRequestValidator.validate(webCreateBackupRequest, bindingResult);
         if (bindingResult.hasErrors()) {
+            logger.info("Invalid backup creation request. Errors: {}", bindingResult.getAllErrors());
+
             return "dashboard";
         }
 
         String databaseSettingsName = webCreateBackupRequest.getDatabaseSettingsName();
         DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseSettingsName).orElseThrow(() ->
-                new RuntimeException(String.format("Can't retrieve database settings. Error: no database settings with name %d",
+                new RuntimeException(String.format("Can't retrieve database settings. Error: no database settings with name %s",
                         databaseSettingsName)));
         String databaseName = databaseSettings.getName();
 
@@ -124,15 +129,17 @@ public class WebApiBackupController {
         logger.info("createBackup(): Uploading to storages started. Total storages amount: {}", storagesCount);
 
         int currentStorage = 1;
-        for (WebCreateBackupRequest.BackupCreationProperties backupCreationProperties :
-                webCreateBackupRequest.getBackupCreationProperties().values()) {
-            String storageSettingsName = backupCreationProperties.getStorageSettingsName();
+        for (Map.Entry<String, WebCreateBackupRequest.BackupCreationProperties> entry :
+                webCreateBackupRequest.getBackupCreationProperties().entrySet()) {
+            String storageSettingsName = entry.getKey();
             StorageSettings storageSettings = storageSettingsManager.getById(storageSettingsName).orElseThrow(() ->
                     new RuntimeException(String.format(
-                            "createBackup(): Can't retrieve storage settings. Error: no storage settings with name %d",
+                            "createBackup(): Can't retrieve storage settings. Error: no storage settings with name %s",
                             storageSettingsName)));
 
             logger.info("createBackup(): Current storage - [{}/{}]. Storage settings: {}", currentStorage, storagesCount, storageSettings);
+
+            WebCreateBackupRequest.BackupCreationProperties backupCreationProperties = entry.getValue();
 
             List<String> processorList = backupCreationProperties.getProcessors();
             BackupProperties backupProperties =
@@ -181,10 +188,12 @@ public class WebApiBackupController {
 
     @PostMapping(path = "/restore-backup")
     public String restoreBackup(WebRestoreBackupRequest webRestoreBackupRequest, BindingResult bindingResult) {
-        logger.info("restoreBackup(): Got backup restoration job");
+        logger.info("restoreBackup(): Got backup restoration request");
 
         webRestoreBackupRequestValidator.validate(webRestoreBackupRequest, bindingResult);
         if (bindingResult.hasErrors()) {
+            logger.info("Invalid backup restoration request. Errors: {}", bindingResult.getAllErrors());
+
             return "dashboard";
         }
 
@@ -256,10 +265,12 @@ public class WebApiBackupController {
 
     @DeleteMapping(path = "/delete-backup")
     public String deleteBackup(WebDeleteBackupRequest webDeleteBackupRequest) {
-        logger.info("deleteBackup(): Got backup deletion job");
+        logger.info("deleteBackup(): Got backup deletion request");
 
         String error = validateDeleteBackupRequest(webDeleteBackupRequest);
         if (error != null) {
+            logger.info("Invalid backup deletion request. Error: {}", error);
+
             throw new ValidationError(error);
         }
 

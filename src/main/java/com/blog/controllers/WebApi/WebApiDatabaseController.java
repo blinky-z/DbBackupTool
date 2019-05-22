@@ -44,10 +44,12 @@ public class WebApiDatabaseController {
 
     @PostMapping
     public String createDatabase(WebAddDatabaseRequest addDatabaseRequest, BindingResult bindingResult) {
-        logger.info("createDatabase(): Got database configuration creation job");
+        logger.info("createDatabase(): Got database settings creation request");
 
         webAddDatabaseRequestValidator.validate(addDatabaseRequest, bindingResult);
         if (bindingResult.hasErrors()) {
+            logger.info("Invalid database settings creation request. Errors: {}", bindingResult.getAllErrors());
+
             return "dashboard";
         }
 
@@ -95,14 +97,18 @@ public class WebApiDatabaseController {
 
     @DeleteMapping
     public String deleteDatabase(@RequestParam(value = "settingsName") Optional<String> optionalSettingsName) {
+        logger.info("deleteDatabase(): Got database settings deletion request");
+
         String error = validateDeleteDatabaseRequest(optionalSettingsName.orElse(null));
         if (error != null) {
+            logger.info("Invalid database settings deletion request. Error: {}", error);
+
             throw new ValidationError(error);
         }
 
         String settingsName = optionalSettingsName.get();
 
-        logger.info("deleteDatabase(): Got database settings deletion job. Settings name: {}", settingsName);
+        logger.info("deleteDatabase(): Deleting settings with name: {}", settingsName);
 
         databaseSettingsManager.deleteById(settingsName);
 
