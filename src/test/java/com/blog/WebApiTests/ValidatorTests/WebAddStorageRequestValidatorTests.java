@@ -5,20 +5,20 @@ import com.blog.controllers.WebApi.Validator.WebAddStorageRequestValidator;
 import com.blog.webUI.formTransfer.WebAddStorageRequest;
 import com.blog.webUI.formTransfer.storage.WebDropboxSettings;
 import com.blog.webUI.formTransfer.storage.WebLocalFileSystemSettings;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest
-public class WebAddStorageRequestValidatorTests extends ApplicationTests {
+class WebAddStorageRequestValidatorTests extends ApplicationTests {
     @Autowired
     private WebAddStorageRequestValidator webAddStorageRequestValidator;
 
@@ -58,7 +58,7 @@ public class WebAddStorageRequestValidatorTests extends ApplicationTests {
     }
 
     @Test
-    public void validate_ShouldRejectStorageTypeField_whenMissingStorageType() {
+    void validate_ShouldRejectStorageTypeField_whenMissingStorageType() {
         WebAddStorageRequest webAddStorageRequest = new WebAddStorageRequest();
 
         Errors errors = new BeanPropertyBindingResult(webAddStorageRequest, "");
@@ -69,7 +69,7 @@ public class WebAddStorageRequestValidatorTests extends ApplicationTests {
     }
 
     @Test
-    public void validate_ShouldRejectStorageTypeField_whenSetInvalidStorageType() {
+    void validate_ShouldRejectStorageTypeField_whenSetInvalidStorageType() {
         WebAddStorageRequest webAddStorageRequest = new WebAddStorageRequest();
         webAddStorageRequest.setStorageType("invalidStorage");
 
@@ -81,7 +81,7 @@ public class WebAddStorageRequestValidatorTests extends ApplicationTests {
     }
 
     @Test
-    public void validate_ShouldRejectSettingsNameField_whenMissingSettingsName() {
+    void validate_ShouldRejectSettingsNameField_whenMissingSettingsName() {
         WebAddStorageRequest webAddStorageRequest = getWebAddStorageRequestForTestingCommonFields();
 
         Errors errors = new BeanPropertyBindingResult(webAddStorageRequest, "");
@@ -92,7 +92,7 @@ public class WebAddStorageRequestValidatorTests extends ApplicationTests {
     }
 
     @Test
-    public void validate_ShouldRejectRequiredDropboxFields_whenStorageSetButMissingStorageSpecificRequiredFields() {
+    void validate_ShouldRejectRequiredDropboxFields_whenStorageSetButMissingStorageSpecificRequiredFields() {
         WebAddStorageRequest webAddStorageRequest = getWebAddStorageRequestForTestingDropboxFields();
 
         Errors errors = new BeanPropertyBindingResult(webAddStorageRequest, "");
@@ -103,7 +103,7 @@ public class WebAddStorageRequestValidatorTests extends ApplicationTests {
     }
 
     @Test
-    public void validate_ShouldRejectRequiredLocalFileSystemFields_whenStorageSetButMissingStorageSpecificRequiredFields() {
+    void validate_ShouldRejectRequiredLocalFileSystemFields_whenStorageSetButMissingStorageSpecificRequiredFields() {
         WebAddStorageRequest webAddStorageRequest = getWebAddStorageRequestForTestingLocalFileSystemFields();
 
         Errors errors = new BeanPropertyBindingResult(webAddStorageRequest, "");
@@ -114,7 +114,7 @@ public class WebAddStorageRequestValidatorTests extends ApplicationTests {
     }
 
     @Test
-    public void validate_shouldPass_whenGivenProperDropboxSettings() {
+    void validate_shouldPass_whenGivenProperDropboxSettings() {
         WebAddStorageRequest webAddStorageRequest = getWebAddStorageRequestForTestingDropboxFields();
         WebDropboxSettings webDropboxSettings = new WebDropboxSettings();
         webDropboxSettings.setAccessToken("testDropboxAccessToken");
@@ -128,7 +128,7 @@ public class WebAddStorageRequestValidatorTests extends ApplicationTests {
     }
 
     @Test
-    public void validate_shouldPass_whenGivenProperLocalFileSystemSettings() {
+    void validate_shouldPass_whenGivenProperLocalFileSystemSettings() {
         WebAddStorageRequest webAddStorageRequest = getWebAddStorageRequestForTestingLocalFileSystemFields();
         WebLocalFileSystemSettings webLocalFileSystemSettings = new WebLocalFileSystemSettings();
         webLocalFileSystemSettings.setBackupPath("testBackupPath");

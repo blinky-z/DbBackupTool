@@ -3,36 +3,36 @@ package com.blog.WebApiTests.ControllerTests;
 import com.blog.ApplicationTests;
 import com.blog.TestUtils;
 import com.blog.entities.backup.BackupProperties;
-import com.blog.entities.backup.BackupTask;
+import com.blog.entities.database.DatabaseSettings;
+import com.blog.entities.database.DatabaseType;
+import com.blog.entities.storage.StorageSettings;
+import com.blog.entities.storage.StorageType;
 import com.blog.manager.BackupPropertiesManager;
-import com.blog.manager.BackupTaskManager;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import com.blog.manager.DatabaseSettingsManager;
+import com.blog.manager.StorageSettingsManager;
+import com.blog.webUI.formTransfer.WebCreateBackupRequest;
+import com.blog.webUI.formTransfer.WebRestoreBackupRequest;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.*;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Objects;
+import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-
-@RunWith(SpringRunner.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class WebApiRestoreBackupControllerTests extends ApplicationTests {
+class WebApiRestoreBackupControllerTests extends ApplicationTests {
     private static final java.util.List<String> tableNames = new ArrayList<>(Arrays.asList("comments"));
+
     @Autowired
     private TestRestTemplate restTemplate;
-    @Autowired
-    private BackupTaskManager backupTaskManager;
     @Autowired
     private TestUtils testUtils;
     @Autowired
@@ -42,13 +42,28 @@ public class WebApiRestoreBackupControllerTests extends ApplicationTests {
     @Autowired
     private BackupPropertiesManager backupPropertiesManager;
     @Autowired
-    private MultiValueMap<String, Object> masterPostgresDatabaseSettingsAsMultiValueMap;
+    private ControllersHttpClient controllersHttpClient;
+
     @Autowired
-    private MultiValueMap<String, Object> copyPostgresDatabaseSettingsAsMultiValueMap;
+    private HashMap<StorageType, String> storageSettingsNameMap;
+
     @Autowired
-    private MultiValueMap<String, Object> localFileSystemStorageSettingsAsMultiValueMap;
+    private HashMap<DatabaseType, String> databaseSettingsNameMap;
+
     @Autowired
-    private MultiValueMap<String, Object> dropboxStorageSettingsAsMultiValueMap;
+    private HashMap<DatabaseType, String> slaveDatabaseSettingsNameMap;
+
+    @Autowired
+    private DatabaseSettingsManager databaseSettingsManager;
+
+    @Autowired
+    private StorageSettingsManager storageSettingsManager;
+
+    @Autowired
+    private List<DatabaseSettings> allDatabaseSettings;
+
+    @Autowired
+    private List<StorageSettings> allStorageSettings;
 
     private void addTables(JdbcTemplate jdbcTemplate) {
         jdbcTemplate.execute("CREATE TABLE comments" +
@@ -67,222 +82,68 @@ public class WebApiRestoreBackupControllerTests extends ApplicationTests {
                 "from generate_series(0, ?) s(i)", rowsToInsert);
     }
 
-    @Before
-    public void init() {
+    @BeforeAll
+    void setup() {
+        databaseSettingsManager.saveAll(allDatabaseSettings);
+        storageSettingsManager.saveAll(allStorageSettings);
+        controllersHttpClient.setRestTemplate(restTemplate);
+        controllersHttpClient.login();
+    }
+
+    @BeforeEach
+    void init() {
         testUtils.clearDatabase(jdbcPostgresMasterTemplate);
         testUtils.clearDatabase(jdbcPostgresCopyTemplate);
         addTables(jdbcPostgresMasterTemplate);
     }
 
     @Test
-    public void givenProperRequestAndBackupIsLocatedOnLocalFileSystem_restoreBackup_shouldRestoreBackupSuccessfully_whenSendRequest() throws InterruptedException {
-        String settingsName =
-                "givenProperRequestAndBackupIsLocatedOnLocalFileSystem_restoreBackup_shouldRestoreBackupSuccessfully_whenSendRequest";
-
+    void givenPostgresBackupLocatedOnLocalFileSystem_restoreBackup_shouldRestoreBackupSuccessfully_whenSendRequest() throws InterruptedException {
         {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            WebCreateBackupRequest request = controllersHttpClient.buildCreateBackupRequest(
+                    databaseSettingsNameMap.get(DatabaseType.POSTGRES), storageSettingsNameMap.get(StorageType.LOCAL_FILE_SYSTEM));
+            controllersHttpClient.createBackup(request);
 
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(localFileSystemStorageSettingsAsMultiValueMap);
-            body.add("settingsName", settingsName);
-
-            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
-            ResponseEntity<String> responseEntity = restTemplate.exchange("/storage", HttpMethod.POST, entity, String.class);
-
-            assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
+            controllersHttpClient.waitForLastOperationComplete();
         }
 
-        String masterDatabaseSettingsName = settingsName + "_1";
         {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(masterPostgresDatabaseSettingsAsMultiValueMap);
-            body.add("settingsName", masterDatabaseSettingsName);
-
-            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
-            ResponseEntity<String> responseEntity = restTemplate.exchange("/database", HttpMethod.POST, entity, String.class);
-
-            assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-        }
-
-        // create backup of master database
-        {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("databaseSettingsName", masterDatabaseSettingsName);
-            body.add("backupCreationProperties[" + settingsName + "].storageSettingsName", settingsName);
-
-            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
-            ResponseEntity<String> responseEntity = restTemplate.exchange(
-                    "/create-backup", HttpMethod.POST, entity, String.class);
-
-            assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-
-            BackupTask backupTask = backupTaskManager.findAllByOrderByDateDesc().iterator().next();
-            Integer id = backupTask.getId();
-
-            while (backupTaskManager.getBackupTask(id).orElseThrow(RuntimeException::new).getState() != BackupTask.State.COMPLETED) {
-                Thread.sleep(300);
-            }
-        }
-
-        String copyDatabaseSettingsName = settingsName + "_2";
-        {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(copyPostgresDatabaseSettingsAsMultiValueMap);
-            body.add("settingsName", copyDatabaseSettingsName);
-
-            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
-            ResponseEntity<String> responseEntity = restTemplate.exchange("/database", HttpMethod.POST, entity, String.class);
-
-            assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-        }
-
-        // restore backup into copy database
-        {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
             Collection<BackupProperties> backupPropertiesCollection = backupPropertiesManager.findAllByOrderByIdDesc();
             BackupProperties backupProperties = Objects.requireNonNull(backupPropertiesCollection.iterator().next());
 
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("backupId", String.valueOf(backupProperties.getId()));
-            body.add("databaseSettingsName", copyDatabaseSettingsName);
+            WebRestoreBackupRequest request = controllersHttpClient.buildRestoreBackupRequest(
+                    backupProperties.getId(), slaveDatabaseSettingsNameMap.get(DatabaseType.POSTGRES));
+            controllersHttpClient.restoreBackup(request);
 
-            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
-            ResponseEntity<String> responseEntity = restTemplate.exchange(
-                    "/restore-backup", HttpMethod.POST, entity, String.class);
-
-            assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
+            controllersHttpClient.waitForLastOperationComplete();
         }
 
         // assert successful restoration
-        {
-            BackupTask backupTask = backupTaskManager.findAllByOrderByDateDesc().iterator().next();
-            Integer id = backupTask.getId();
-
-            while (backupTaskManager.getBackupTask(id).orElseThrow(RuntimeException::new).getState() != BackupTask.State.COMPLETED) {
-                Thread.sleep(300);
-            }
-
-            testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
-        }
+        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
     }
 
     @Test
-    public void givenProperRequestAndBackupIsLocatedOnDropbox_restoreBackup_shouldRestoreBackupSuccessfully_whenSendRequest() throws InterruptedException {
-        String settingsName =
-                "givenProperRequestAndBackupIsLocatedOnDropbox_restoreBackup_shouldRestoreBackupSuccessfully_whenSendRequest";
-
+    void givenPostgresBackupLocatedOnDropbox_restoreBackup_shouldRestoreBackupSuccessfully_whenSendRequest() throws InterruptedException {
         {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            WebCreateBackupRequest request = controllersHttpClient.buildCreateBackupRequest(
+                    databaseSettingsNameMap.get(DatabaseType.POSTGRES), storageSettingsNameMap.get(StorageType.DROPBOX));
+            controllersHttpClient.createBackup(request);
 
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(dropboxStorageSettingsAsMultiValueMap);
-            body.add("settingsName", settingsName);
-
-            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
-            ResponseEntity<String> responseEntity = restTemplate.exchange("/storage", HttpMethod.POST, entity, String.class);
-
-            assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
+            controllersHttpClient.waitForLastOperationComplete();
         }
 
-        String masterDatabaseSettingsName = settingsName + "_1";
         {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(masterPostgresDatabaseSettingsAsMultiValueMap);
-            body.add("settingsName", masterDatabaseSettingsName);
-
-            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
-            ResponseEntity<String> responseEntity = restTemplate.exchange("/database", HttpMethod.POST, entity, String.class);
-
-            assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-        }
-
-        // create backup of master database
-        {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("databaseSettingsName", masterDatabaseSettingsName);
-            body.add("backupCreationProperties[" + settingsName + "].storageSettingsName", settingsName);
-
-            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
-            ResponseEntity<String> responseEntity = restTemplate.exchange(
-                    "/create-backup", HttpMethod.POST, entity, String.class);
-
-            assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-
-            BackupTask backupTask = backupTaskManager.findAllByOrderByDateDesc().iterator().next();
-            Integer id = backupTask.getId();
-
-            while (backupTaskManager.getBackupTask(id).orElseThrow(RuntimeException::new).getState() != BackupTask.State.COMPLETED) {
-                Thread.sleep(300);
-            }
-        }
-
-        String copyDatabaseSettingsName = settingsName + "_2";
-        {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(copyPostgresDatabaseSettingsAsMultiValueMap);
-            body.add("settingsName", copyDatabaseSettingsName);
-
-            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
-            ResponseEntity<String> responseEntity = restTemplate.exchange("/database", HttpMethod.POST, entity, String.class);
-
-            assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-        }
-
-        // restore backup into copy database
-        {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
             Collection<BackupProperties> backupPropertiesCollection = backupPropertiesManager.findAllByOrderByIdDesc();
             BackupProperties backupProperties = Objects.requireNonNull(backupPropertiesCollection.iterator().next());
 
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("backupId", String.valueOf(backupProperties.getId()));
-            body.add("databaseSettingsName", copyDatabaseSettingsName);
+            WebRestoreBackupRequest request = controllersHttpClient.buildRestoreBackupRequest(
+                    backupProperties.getId(), slaveDatabaseSettingsNameMap.get(DatabaseType.POSTGRES));
+            controllersHttpClient.restoreBackup(request);
 
-            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
-            ResponseEntity<String> responseEntity = restTemplate.exchange(
-                    "/restore-backup", HttpMethod.POST, entity, String.class);
-
-            assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
+            controllersHttpClient.waitForLastOperationComplete();
         }
 
         // assert successful restoration
-        {
-            BackupTask backupTask = backupTaskManager.findAllByOrderByDateDesc().iterator().next();
-            Integer id = backupTask.getId();
-
-            while (backupTaskManager.getBackupTask(id).orElseThrow(RuntimeException::new).getState() != BackupTask.State.COMPLETED) {
-                Thread.sleep(300);
-            }
-
-            testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
-        }
+        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
     }
 }

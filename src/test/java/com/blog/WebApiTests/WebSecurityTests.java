@@ -2,31 +2,28 @@ package com.blog.WebApiTests;
 
 import com.blog.ApplicationTests;
 import com.blog.settings.UserSettings;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.http.*;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import javax.annotation.PostConstruct;
 import java.util.Objects;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class WebSecurityTests extends ApplicationTests {
-    private static String LOGIN_PAGE_URL;
+class WebSecurityTests extends ApplicationTests {
+    private String LOGIN_PAGE_URL;
     @Autowired
     private TestRestTemplate restTemplate;
-    @Autowired
-    private MultiValueMap<String, Object> localFileSystemStorageSettingsAsMultiValueMap;
     @LocalServerPort
     private int port;
     @Autowired
@@ -38,16 +35,14 @@ public class WebSecurityTests extends ApplicationTests {
     }
 
     @Test
-    public void givenNonAuthRequestOnSecuredPath_shouldRespondWithError() {
-        System.out.println(port);
+    void givenNonAuthRequestOnSecuredPath_shouldRespondWithError() {
         ResponseEntity<String> resp =
                 restTemplate.exchange("/storage", HttpMethod.POST, null, String.class);
         assertEquals(LOGIN_PAGE_URL, Objects.requireNonNull(resp.getHeaders().getFirst("Location")));
     }
 
     @Test
-    public void givenAuthRequestOnSecuredPath_shouldNotRespondWithError() {
-        String settingsName = "givenAuthRequestOnSecuredPath_shouldNotRespondWithError";
+    void givenAuthRequestOnSecuredPath_shouldNotRespondWithError() {
         String jsessionId;
         {
             HttpHeaders headers = new HttpHeaders();
@@ -59,27 +54,25 @@ public class WebSecurityTests extends ApplicationTests {
 
             HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
 
-            ResponseEntity<String> resp = restTemplate
-                    .exchange("/api/login", HttpMethod.POST, entity, String.class);
-            jsessionId = Objects.requireNonNull(resp.getHeaders().getFirst(HttpHeaders.SET_COOKIE));
-            jsessionId = jsessionId.substring(0, jsessionId.indexOf(";"));
+            ResponseEntity<String> resp = restTemplate.exchange(
+                    "/api/login", HttpMethod.POST, entity, String.class);
+
+            String jsessionCookie = Objects.requireNonNull(resp.getHeaders().getFirst(HttpHeaders.SET_COOKIE));
+            jsessionId = jsessionCookie.substring(0, jsessionCookie.indexOf(";"));
         }
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Cookie", jsessionId);
 
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(localFileSystemStorageSettingsAsMultiValueMap);
-        body.add("settingsName", settingsName);
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.add("Cookie", jsessionId);
 
-        HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(headers);
+        HttpEntity entity = new HttpEntity(httpHeaders);
 
         ResponseEntity<String> resp = restTemplate
-                .exchange("/storage", HttpMethod.POST, entity, String.class);
-        System.out.println(resp.toString());
-        assertNotEquals(LOGIN_PAGE_URL, Objects.requireNonNull(resp.getHeaders().getFirst("Location")));
+                .exchange("/dashboard", HttpMethod.GET, entity, String.class);
+        assertEquals(HttpStatus.OK, resp.getStatusCode());
     }
 
     @Test
-    public void givenNonAuthRequestOnUnsecuredPath_shouldNotRespondWithError() {
+    void givenNonAuthRequestOnUnsecuredPath_shouldNotRespondWithError() {
         ResponseEntity<String> resp = restTemplate.getForEntity("/css/dashboard.css", String.class);
         assertEquals(HttpStatus.OK, resp.getStatusCode());
     }

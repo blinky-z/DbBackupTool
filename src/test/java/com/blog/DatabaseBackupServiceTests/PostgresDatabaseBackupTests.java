@@ -6,13 +6,13 @@ import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.manager.*;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -21,16 +21,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest
-public class PostgresDatabaseBackupTests extends ApplicationTests {
+class PostgresDatabaseBackupTests extends ApplicationTests {
     private static final List<String> tableNames = new ArrayList<>(Arrays.asList("comments"));
     private static final Integer testTaskID = 0;
     private TestUtils testUtils;
     private JdbcTemplate jdbcPostgresMasterTemplate;
     private JdbcTemplate jdbcPostgresCopyTemplate;
     private DatabaseSettings masterPostgresDatabaseSettings;
-    private DatabaseSettings copyPostgresDatabaseSettings;
+    private DatabaseSettings slavePostgresDatabaseSettings;
     private StorageSettings dropboxStorageSettings;
     private StorageSettings localFileSystemStorageSettings;
     private DatabaseBackupManager databaseBackupManager;
@@ -45,67 +45,67 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
     private List<DatabaseSettings> allDatabaseSettings;
 
     @Autowired
-    public void setStorageSettingsManager(StorageSettingsManager storageSettingsManager) {
+    void setStorageSettingsManager(StorageSettingsManager storageSettingsManager) {
         this.storageSettingsManager = storageSettingsManager;
     }
 
     @Autowired
-    public void setDatabaseSettingsManager(DatabaseSettingsManager databaseSettingsManager) {
+    void setDatabaseSettingsManager(DatabaseSettingsManager databaseSettingsManager) {
         this.databaseSettingsManager = databaseSettingsManager;
     }
 
     @Autowired
-    public void setTestUtils(TestUtils testUtils) {
+    void setTestUtils(TestUtils testUtils) {
         this.testUtils = testUtils;
     }
 
     @Autowired
-    public void setJdbcPostgresMasterTemplate(JdbcTemplate jdbcPostgresMasterTemplate) {
+    void setJdbcPostgresMasterTemplate(JdbcTemplate jdbcPostgresMasterTemplate) {
         this.jdbcPostgresMasterTemplate = jdbcPostgresMasterTemplate;
     }
 
     @Autowired
-    public void setJdbcPostgresCopyTemplate(JdbcTemplate jdbcPostgresCopyTemplate) {
+    void setJdbcPostgresCopyTemplate(JdbcTemplate jdbcPostgresCopyTemplate) {
         this.jdbcPostgresCopyTemplate = jdbcPostgresCopyTemplate;
     }
 
     @Autowired
-    public void setMasterPostgresDatabaseSettings(DatabaseSettings masterPostgresDatabaseSettings) {
+    void setMasterPostgresDatabaseSettings(DatabaseSettings masterPostgresDatabaseSettings) {
         this.masterPostgresDatabaseSettings = masterPostgresDatabaseSettings;
     }
 
     @Autowired
-    public void setCopyPostgresDatabaseSettings(DatabaseSettings copyPostgresDatabaseSettings) {
-        this.copyPostgresDatabaseSettings = copyPostgresDatabaseSettings;
+    void setSlavePostgresDatabaseSettings(DatabaseSettings slavePostgresDatabaseSettings) {
+        this.slavePostgresDatabaseSettings = slavePostgresDatabaseSettings;
     }
 
     @Autowired
-    public void setDropboxStorageSettings(StorageSettings dropboxStorageSettings) {
+    void setDropboxStorageSettings(StorageSettings dropboxStorageSettings) {
         this.dropboxStorageSettings = dropboxStorageSettings;
     }
 
     @Autowired
-    public void setLocalFileSystemStorageSettings(StorageSettings localFileSystemStorageSettings) {
+    void setLocalFileSystemStorageSettings(StorageSettings localFileSystemStorageSettings) {
         this.localFileSystemStorageSettings = localFileSystemStorageSettings;
     }
 
     @Autowired
-    public void setDatabaseBackupManager(DatabaseBackupManager databaseBackupManager) {
+    void setDatabaseBackupManager(DatabaseBackupManager databaseBackupManager) {
         this.databaseBackupManager = databaseBackupManager;
     }
 
     @Autowired
-    public void setBackupProcessorManager(BackupProcessorManager backupProcessorManager) {
+    void setBackupProcessorManager(BackupProcessorManager backupProcessorManager) {
         this.backupProcessorManager = backupProcessorManager;
     }
 
     @Autowired
-    public void setBackupLoadManager(BackupLoadManager backupLoadManager) {
+    void setBackupLoadManager(BackupLoadManager backupLoadManager) {
         this.backupLoadManager = backupLoadManager;
     }
 
-    @Before
-    public void init() {
+    @BeforeEach
+    void init() {
         testUtils.clearDatabase(jdbcPostgresMasterTemplate);
         testUtils.clearDatabase(jdbcPostgresCopyTemplate);
         storageSettingsManager.saveAll(allStorageSettings);
@@ -113,7 +113,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
         addTables(jdbcPostgresMasterTemplate);
     }
 
-    public void addTables(JdbcTemplate jdbcTemplate) {
+    void addTables(JdbcTemplate jdbcTemplate) {
         jdbcTemplate.execute("CREATE TABLE comments" +
                 "(" +
                 "ID        SERIAL PRIMARY KEY," +
@@ -131,7 +131,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
     }
 
     @Test
-    public void whenCreatePostgresBackupAndUploadToLocalFileSystemAndRestore_databasesIsEqual() throws IOException {
+    void whenCreatePostgresBackupAndUploadToLocalFileSystemAndRestore_databasesIsEqual() throws IOException {
         List<String> processors = new ArrayList<>();
 
         try (
@@ -143,7 +143,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
             try (
                     InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID)
             ) {
-                databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings, testTaskID);
+                databaseBackupManager.restoreBackup(downloadedBackup, slavePostgresDatabaseSettings, testTaskID);
             }
         }
 
@@ -151,7 +151,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
     }
 
     @Test
-    public void whenCreatePostgresBackupAndUploadToDropboxAndRestore_databasesIsEqual() throws IOException {
+    void whenCreatePostgresBackupAndUploadToDropboxAndRestore_databasesIsEqual() throws IOException {
         List<String> processors = new ArrayList<>();
 
         try (
@@ -163,7 +163,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
             try (
                     InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID)
             ) {
-                databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings, testTaskID);
+                databaseBackupManager.restoreBackup(downloadedBackup, slavePostgresDatabaseSettings, testTaskID);
             }
         }
 
@@ -171,7 +171,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
     }
 
     @Test
-    public void whenCreatePostgresBackupAndCompressAndUploadToLocalFileSystemAndDecompressAndRestore_databasesIsEqual() throws IOException {
+    void whenCreatePostgresBackupAndCompressAndUploadToLocalFileSystemAndDecompressAndRestore_databasesIsEqual() throws IOException {
         List<String> processors = new ArrayList<>();
         processors.add("Compressor");
 
@@ -186,7 +186,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
                     InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID);
                     InputStream decompressedBackup = backupProcessorManager.deprocess(downloadedBackup, processors)
             ) {
-                databaseBackupManager.restoreBackup(decompressedBackup, copyPostgresDatabaseSettings, testTaskID);
+                databaseBackupManager.restoreBackup(decompressedBackup, slavePostgresDatabaseSettings, testTaskID);
             }
         }
 
@@ -194,7 +194,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
     }
 
     @Test
-    public void whenCreatePostgresBackupAndCompressAndUploadToDropboxAndDecompressAndRestore_databasesIsEqual() throws IOException {
+    void whenCreatePostgresBackupAndCompressAndUploadToDropboxAndDecompressAndRestore_databasesIsEqual() throws IOException {
         List<String> processors = new ArrayList<>();
         processors.add("Compressor");
 
@@ -210,7 +210,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
                     InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID);
                     InputStream decompressedBackup = backupProcessorManager.deprocess(downloadedBackup, processors)
             ) {
-                databaseBackupManager.restoreBackup(decompressedBackup, copyPostgresDatabaseSettings, testTaskID);
+                databaseBackupManager.restoreBackup(decompressedBackup, slavePostgresDatabaseSettings, testTaskID);
             }
         }
 
@@ -218,7 +218,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
     }
 
     @Test
-    public void whenCreateBackupAndUploadToDifferentStoragesAndRestoreEachIntoSeparateDatabases_databasesIsEqual() throws IOException {
+    void whenCreateBackupAndUploadToDifferentStoragesAndRestoreEachIntoSeparateDatabases_databasesIsEqual() throws IOException {
         List<String> processors = new ArrayList<>();
 
         byte[] createdBackupAsByteArray;
@@ -239,7 +239,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
                 try (
                         InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID)
                 ) {
-                    databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings, testTaskID);
+                    databaseBackupManager.restoreBackup(downloadedBackup, slavePostgresDatabaseSettings, testTaskID);
                 }
                 testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
             }
@@ -258,7 +258,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
                 try (
                         InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID)
                 ) {
-                    databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings, testTaskID);
+                    databaseBackupManager.restoreBackup(downloadedBackup, slavePostgresDatabaseSettings, testTaskID);
                 }
                 testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
             }
@@ -266,7 +266,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
     }
 
     @Test
-    public void whenCreateBackupAndUploadToDifferentStoragesAndRestoreEachIntoSeparateDatabasesApplyingCompressor_databasesIsEqual() throws IOException {
+    void whenCreateBackupAndUploadToDifferentStoragesAndRestoreEachIntoSeparateDatabasesApplyingCompressor_databasesIsEqual() throws IOException {
         List<String> processors = new ArrayList<>();
         processors.add("compressor");
 
@@ -290,7 +290,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
                         InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID);
                         InputStream deprocessedBackup = backupProcessorManager.deprocess(downloadedBackup, processors)
                 ) {
-                    databaseBackupManager.restoreBackup(deprocessedBackup, copyPostgresDatabaseSettings, testTaskID);
+                    databaseBackupManager.restoreBackup(deprocessedBackup, slavePostgresDatabaseSettings, testTaskID);
                 }
                 testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
             }
@@ -310,7 +310,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
                         InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID);
                         InputStream deprocessedBackup = backupProcessorManager.deprocess(downloadedBackup, processors)
                 ) {
-                    databaseBackupManager.restoreBackup(deprocessedBackup, copyPostgresDatabaseSettings, testTaskID);
+                    databaseBackupManager.restoreBackup(deprocessedBackup, slavePostgresDatabaseSettings, testTaskID);
                 }
                 testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
             }
@@ -318,7 +318,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
     }
 
     @Test
-    public void givenAddMultipleTables_whenCreatePostgresBackupAndUploadToLocalFileSystemAndRestore_databasesIsEqual() throws IOException {
+    void givenAddMultipleTables_whenCreatePostgresBackupAndUploadToLocalFileSystemAndRestore_databasesIsEqual() throws IOException {
         List<String> processors = new ArrayList<>();
 
         jdbcPostgresMasterTemplate.execute("CREATE TABLE users" +
@@ -346,7 +346,7 @@ public class PostgresDatabaseBackupTests extends ApplicationTests {
             try (
                     InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID)
             ) {
-                databaseBackupManager.restoreBackup(downloadedBackup, copyPostgresDatabaseSettings, testTaskID);
+                databaseBackupManager.restoreBackup(downloadedBackup, slavePostgresDatabaseSettings, testTaskID);
             }
         }
 

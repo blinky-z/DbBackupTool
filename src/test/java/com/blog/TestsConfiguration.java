@@ -6,6 +6,7 @@ import com.blog.entities.database.PostgresSettings;
 import com.blog.entities.storage.DropboxSettings;
 import com.blog.entities.storage.LocalFileSystemSettings;
 import com.blog.entities.storage.StorageSettings;
+import com.blog.entities.storage.StorageType;
 import com.blog.manager.DatabaseSettingsManager;
 import com.blog.manager.StorageSettingsManager;
 import com.dropbox.core.DbxRequestConfig;
@@ -15,8 +16,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.util.FileSystemUtils;
 
@@ -27,14 +28,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Objects;
 
-@Configuration
-public class TestConfiguration {
-    private static final Logger logger = LoggerFactory.getLogger(TestConfiguration.class);
+@TestConfiguration
+public class TestsConfiguration {
+    private static final Logger logger = LoggerFactory.getLogger(TestsConfiguration.class);
     private static final String dropboxAccessToken = "tzFnUqsYFXAAAAAAAAAAG-irDd6KaODXHm7TlYvPwBytOxGRTJz-F0u4grmndSg3";
+    private static final String localFileSystemStorageSettingsName = "localFileSystemStorageSettings";
+    private static final String dropboxStorageSettingsName = "dropboxStorageSettings";
+    private static final String masterPostgresDatabaseSettingsName = "masterPostgresDatabaseSettings";
+    private static final String slavePostgresDatabaseSettingsName = "slavePostgresDatabaseSettings";
     @Autowired
     private StorageSettingsManager storageSettingsManager;
     @Autowired
@@ -45,6 +49,28 @@ public class TestConfiguration {
     @Autowired
     @Qualifier("copyPostgresDataSource")
     private DataSource copyPostgresDataSource;
+
+    @Bean
+    public HashMap<StorageType, String> storageSettingsNameMap() {
+        HashMap<StorageType, String> map = new HashMap<>();
+        map.put(StorageType.LOCAL_FILE_SYSTEM, localFileSystemStorageSettingsName);
+        map.put(StorageType.DROPBOX, dropboxStorageSettingsName);
+        return map;
+    }
+
+    @Bean
+    public HashMap<DatabaseType, String> databaseSettingsNameMap() {
+        HashMap<DatabaseType, String> map = new HashMap<>();
+        map.put(DatabaseType.POSTGRES, masterPostgresDatabaseSettingsName);
+        return map;
+    }
+
+    @Bean
+    public HashMap<DatabaseType, String> slaveDatabaseSettingsNameMap() {
+        HashMap<DatabaseType, String> map = new HashMap<>();
+        map.put(DatabaseType.POSTGRES, slavePostgresDatabaseSettingsName);
+        return map;
+    }
 
     @Bean
     public DbxClientV2 dbxClient() {
@@ -99,14 +125,14 @@ public class TestConfiguration {
     @Bean
     public DatabaseSettings masterPostgresDatabaseSettings() throws SQLException {
         return Objects.requireNonNull(databaseSettingsManager.save(
-                buildDatabaseSettings(DatabaseType.POSTGRES, "masterPostgresTestDatabaseSettings",
+                buildDatabaseSettings(DatabaseType.POSTGRES, masterPostgresDatabaseSettingsName,
                         masterPostgresDataSource)));
     }
 
     @Bean
-    public DatabaseSettings copyPostgresDatabaseSettings() throws SQLException {
+    public DatabaseSettings slavePostgresDatabaseSettings() throws SQLException {
         return Objects.requireNonNull(databaseSettingsManager.save(
-                buildDatabaseSettings(DatabaseType.POSTGRES, "copyPostgresTestDatabaseSettings",
+                buildDatabaseSettings(DatabaseType.POSTGRES, slavePostgresDatabaseSettingsName,
                         copyPostgresDataSource)));
     }
 
@@ -117,7 +143,7 @@ public class TestConfiguration {
 
         return Objects.requireNonNull(storageSettingsManager.save(
                 StorageSettings.dropboxSettings(dropboxSettings)
-                        .withSettingsName("testDropboxStorageSettings")
+                        .withSettingsName(dropboxStorageSettingsName)
                         .build()));
     }
 
@@ -146,17 +172,7 @@ public class TestConfiguration {
 
         return Objects.requireNonNull(storageSettingsManager.save(
                 StorageSettings.localFileSystemSettings(localFileSystemSettings)
-                        .withSettingsName("testLocalFileSystemStorageSettings")
+                        .withSettingsName(localFileSystemStorageSettingsName)
                         .build()));
-    }
-
-    @Bean
-    public List<StorageSettings> allStorageSettings() throws IOException {
-        return Arrays.asList(localFileSystemStorageSettings(), dropboxStorageSettings());
-    }
-
-    @Bean
-    public List<DatabaseSettings> allDatabaseSettings() throws SQLException {
-        return Arrays.asList(masterPostgresDatabaseSettings(), copyPostgresDatabaseSettings());
     }
 }

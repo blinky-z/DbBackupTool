@@ -3,35 +3,50 @@ package com.blog.WebApiTests.ControllerTests;
 import com.blog.ApplicationTests;
 import com.blog.TestUtils;
 import com.blog.entities.backup.BackupProperties;
-import com.blog.entities.backup.BackupTask;
+import com.blog.entities.database.DatabaseSettings;
+import com.blog.entities.database.DatabaseType;
+import com.blog.entities.storage.StorageSettings;
 import com.blog.entities.storage.StorageType;
 import com.blog.manager.BackupPropertiesManager;
-import com.blog.manager.BackupTaskManager;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import com.blog.manager.DatabaseSettingsManager;
+import com.blog.manager.StorageSettingsManager;
+import com.blog.webUI.formTransfer.WebCreateBackupRequest;
+import com.blog.webUI.formTransfer.WebDeleteBackupRequest;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.*;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
-@RunWith(SpringRunner.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class WebApiDeleteBackupControllerTests extends ApplicationTests {
+class WebApiDeleteBackupControllerTests extends ApplicationTests {
     @Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
     private TestUtils testUtils;
+
+    @Autowired
+    private ControllersHttpClient controllersHttpClient;
+
+    @Autowired
+    private HashMap<StorageType, String> storageSettingsNameMap;
+
+    @Autowired
+    private HashMap<DatabaseType, String> databaseSettingsNameMap;
 
     @Autowired
     private JdbcTemplate jdbcPostgresMasterTemplate;
@@ -40,188 +55,76 @@ public class WebApiDeleteBackupControllerTests extends ApplicationTests {
     private BackupPropertiesManager backupPropertiesManager;
 
     @Autowired
-    private BackupTaskManager backupTaskManager;
+    private DatabaseSettingsManager databaseSettingsManager;
 
     @Autowired
-    private MultiValueMap<String, Object> masterPostgresDatabaseSettingsAsMultiValueMap;
+    private StorageSettingsManager storageSettingsManager;
 
     @Autowired
-    private MultiValueMap<String, Object> localFileSystemStorageSettingsAsMultiValueMap;
+    private List<DatabaseSettings> allDatabaseSettings;
 
     @Autowired
-    private MultiValueMap<String, Object> dropboxStorageSettingsAsMultiValueMap;
+    private List<StorageSettings> allStorageSettings;
 
-    @Before
-    public void init() {
+    @BeforeAll
+    void setup() {
+        databaseSettingsManager.saveAll(allDatabaseSettings);
+        storageSettingsManager.saveAll(allStorageSettings);
+        controllersHttpClient.setRestTemplate(restTemplate);
+        controllersHttpClient.login();
+    }
+
+    @BeforeEach
+    void init() {
         testUtils.clearDatabase(jdbcPostgresMasterTemplate);
         testUtils.initDatabase(jdbcPostgresMasterTemplate);
     }
 
     @Test
-    public void givenBackupSavedOnLocalFileSystem_deleteBackup_shouldDeleteBackup() throws InterruptedException {
-        String settingsName = "givenBackupSavedOnLocalFileSystem_deleteBackup_shouldDeleteBackup";
-
+    void givenBackupSavedOnLocalFileSystem_deleteBackup_shouldDeleteBackup() throws InterruptedException {
         {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            WebCreateBackupRequest request = controllersHttpClient.buildCreateBackupRequest(
+                    databaseSettingsNameMap.get(DatabaseType.POSTGRES), storageSettingsNameMap.get(StorageType.LOCAL_FILE_SYSTEM));
+            controllersHttpClient.createBackup(request);
 
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(localFileSystemStorageSettingsAsMultiValueMap);
-            body.add("settingsName", settingsName);
-
-            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
-            ResponseEntity<String> responseEntity = restTemplate.exchange("/storage", HttpMethod.POST, entity, String.class);
-
-            assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-        }
-
-        {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(masterPostgresDatabaseSettingsAsMultiValueMap);
-            body.add("settingsName", settingsName);
-
-            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
-            ResponseEntity<String> responseEntity = restTemplate.exchange("/database", HttpMethod.POST, entity, String.class);
-
-            assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-        }
-
-        {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("databaseSettingsName", settingsName);
-            body.add("backupCreationProperties[" + settingsName + "].storageSettingsName", settingsName);
-
-            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
-            ResponseEntity<String> responseEntity = restTemplate.exchange(
-                    "/create-backup", HttpMethod.POST, entity, String.class);
-
-            assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-
-            BackupTask backupTask = backupTaskManager.findAllByOrderByDateDesc().iterator().next();
-            Integer id = backupTask.getId();
-
-            while (backupTaskManager.getBackupTask(id).orElseThrow(RuntimeException::new).getState() != BackupTask.State.COMPLETED) {
-                Thread.sleep(300);
-            }
+            controllersHttpClient.waitForLastOperationComplete();
         }
 
         {
             Collection<BackupProperties> backupPropertiesCollection = backupPropertiesManager.findAllByOrderByIdDesc();
             BackupProperties backupProperties = backupPropertiesCollection.iterator().next();
-            Integer backupId = backupProperties.getId();
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            WebDeleteBackupRequest request = controllersHttpClient.buildDeleteBackupRequest(backupProperties.getId());
+            controllersHttpClient.deleteBackup(request);
 
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("backupId", String.valueOf(backupId));
+            controllersHttpClient.waitForLastOperationComplete();
 
-            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
-            ResponseEntity<String> responseEntity = restTemplate.exchange("/delete-backup", HttpMethod.DELETE, entity, String.class);
-
-            assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-
-            BackupTask deleteTask = backupTaskManager.findAllByOrderByDateDesc().iterator().next();
-            Integer id = deleteTask.getId();
-
-            while (backupTaskManager.getBackupTask(id).orElseThrow(RuntimeException::new).getState() != BackupTask.State.COMPLETED) {
-                Thread.sleep(300);
-            }
-
-            assertFalse(backupPropertiesManager.existsById(backupId));
+            assertFalse(backupPropertiesManager.existsById(backupProperties.getId()));
             assertFalse(testUtils.backupExistsOnStorage(StorageType.LOCAL_FILE_SYSTEM, backupProperties.getBackupName()));
         }
     }
 
     @Test
-    public void givenBackupSavedOnDropbox_deleteBackup_shouldDeleteBackup() throws InterruptedException {
-        String settingsName = "givenBackupSavedOnDropbox_deleteBackup_shouldDeleteBackup";
-
+    void givenBackupSavedOnDropbox_deleteBackup_shouldDeleteBackup() throws InterruptedException {
         {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            WebCreateBackupRequest request = controllersHttpClient.buildCreateBackupRequest(
+                    databaseSettingsNameMap.get(DatabaseType.POSTGRES), storageSettingsNameMap.get(StorageType.DROPBOX));
+            controllersHttpClient.createBackup(request);
 
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(dropboxStorageSettingsAsMultiValueMap);
-            body.add("settingsName", settingsName);
-
-            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
-            ResponseEntity<String> responseEntity = restTemplate.exchange("/storage", HttpMethod.POST, entity, String.class);
-
-            assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-        }
-
-        {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>(masterPostgresDatabaseSettingsAsMultiValueMap);
-            body.add("settingsName", settingsName);
-
-            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
-            ResponseEntity<String> responseEntity = restTemplate.exchange("/database", HttpMethod.POST, entity, String.class);
-
-            assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-        }
-
-        {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("databaseSettingsName", settingsName);
-            body.add("backupCreationProperties[" + settingsName + "].storageSettingsName", settingsName);
-
-            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
-            ResponseEntity<String> responseEntity = restTemplate.exchange(
-                    "/create-backup", HttpMethod.POST, entity, String.class);
-
-            assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-
-            BackupTask backupTask = backupTaskManager.findAllByOrderByDateDesc().iterator().next();
-            Integer id = backupTask.getId();
-
-            while (backupTaskManager.getBackupTask(id).orElseThrow(RuntimeException::new).getState() != BackupTask.State.COMPLETED) {
-                Thread.sleep(300);
-            }
+            controllersHttpClient.waitForLastOperationComplete();
         }
 
         {
             Collection<BackupProperties> backupPropertiesCollection = backupPropertiesManager.findAllByOrderByIdDesc();
             BackupProperties backupProperties = backupPropertiesCollection.iterator().next();
-            Integer backupId = backupProperties.getId();
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            WebDeleteBackupRequest request = controllersHttpClient.buildDeleteBackupRequest(backupProperties.getId());
+            controllersHttpClient.deleteBackup(request);
 
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("backupId", String.valueOf(backupId));
+            controllersHttpClient.waitForLastOperationComplete();
 
-            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
-
-            ResponseEntity<String> responseEntity = restTemplate.exchange("/delete-backup", HttpMethod.DELETE, entity, String.class);
-
-            assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-
-            BackupTask deleteTask = backupTaskManager.findAllByOrderByDateDesc().iterator().next();
-            Integer id = deleteTask.getId();
-
-            while (backupTaskManager.getBackupTask(id).orElseThrow(RuntimeException::new).getState() != BackupTask.State.COMPLETED) {
-                Thread.sleep(300);
-            }
-
-            assertFalse(backupPropertiesManager.existsById(backupId));
-            assertFalse(testUtils.backupExistsOnStorage(StorageType.DROPBOX, backupProperties.getBackupName()));
+            assertFalse(backupPropertiesManager.existsById(backupProperties.getId()));
+            assertFalse(testUtils.backupExistsOnStorage(StorageType.LOCAL_FILE_SYSTEM, backupProperties.getBackupName()));
         }
     }
 }

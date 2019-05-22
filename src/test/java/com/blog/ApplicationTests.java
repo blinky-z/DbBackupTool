@@ -2,12 +2,9 @@ package com.blog;
 
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import org.flywaydb.test.annotation.FlywayTest;
-import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
 
-@RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {Application.class, TestConfiguration.class})
+@ContextConfiguration(classes = {Application.class, TestsConfiguration.class})
 @FlywayTest
 @AutoConfigureEmbeddedDatabase(beanName = "dataSource") // replace standard data source
 @AutoConfigureEmbeddedDatabase(beanName = "masterPostgresDataSource")

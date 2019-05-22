@@ -3,24 +3,24 @@ package com.blog.WebApiTests.ValidatorTests;
 import com.blog.ApplicationTests;
 import com.blog.controllers.WebApi.Validator.WebRestoreBackupRequestValidator;
 import com.blog.webUI.formTransfer.WebRestoreBackupRequest;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest
-public class WebRestoreBackupRequestValidatorTests extends ApplicationTests {
+class WebRestoreBackupRequestValidatorTests extends ApplicationTests {
     @Autowired
     private WebRestoreBackupRequestValidator webRestoreBackupRequestValidator;
 
     @Test
-    public void validate_shouldRejectBackupIfField_whenMissingBackupId() {
+    void validate_shouldRejectBackupIfField_whenMissingBackupId() {
         WebRestoreBackupRequest webRestoreBackupRequest = new WebRestoreBackupRequest();
 
         Errors errors = new BeanPropertyBindingResult(webRestoreBackupRequest, "");
@@ -31,7 +31,7 @@ public class WebRestoreBackupRequestValidatorTests extends ApplicationTests {
     }
 
     @Test
-    public void validate_shouldRejectBackupIfField_whenBackupIdMalformed() {
+    void validate_shouldRejectBackupIfField_whenBackupIdMalformed() {
         WebRestoreBackupRequest webRestoreBackupRequest = new WebRestoreBackupRequest();
         webRestoreBackupRequest.setBackupId("134f");
 
@@ -43,7 +43,7 @@ public class WebRestoreBackupRequestValidatorTests extends ApplicationTests {
     }
 
     @Test
-    public void validate_shouldRejectDatabaseSettingsName_whenMissingDatabaseSettingsName() {
+    void validate_shouldRejectDatabaseSettingsName_whenMissingDatabaseSettingsName() {
         WebRestoreBackupRequest webRestoreBackupRequest = new WebRestoreBackupRequest();
 
         Errors errors = new BeanPropertyBindingResult(webRestoreBackupRequest, "");
