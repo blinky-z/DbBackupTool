@@ -6,7 +6,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
 
 /**
- * This class represents database settings
+ * This class represents database settings.
+ *
+ * Getters are required for thymeleaf expressions evaluating.
  */
 public class WebDatabaseItem {
     private final String settingsName;
@@ -22,6 +24,22 @@ public class WebDatabaseItem {
         this.settingsName = Objects.requireNonNull(settingsName);
         this.desc = Objects.requireNonNull(desc);
         this.time = Objects.requireNonNull(time);
+    }
+
+    public String getSettingsName() {
+        return settingsName;
+    }
+
+    public DatabaseType getType() {
+        return type;
+    }
+
+    public String getDesc() {
+        return desc;
+    }
+
+    public String getTime() {
+        return time;
     }
 
     @Override

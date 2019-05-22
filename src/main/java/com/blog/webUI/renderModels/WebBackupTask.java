@@ -4,7 +4,9 @@ package com.blog.webUI.renderModels;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * This class represents currently executing, completed or erroneous backup task
+ * This class represents currently executing, completed or erroneous backup task.
+ *
+ *  Getters are required for thymeleaf expressions evaluating.
  */
 public class WebBackupTask {
     private final Integer id;
@@ -24,6 +26,26 @@ public class WebBackupTask {
         this.state = state;
         this.time = time;
         this.isError = isError;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public String getTime() {
+        return time;
+    }
+
+    public Boolean getError() {
+        return isError;
     }
 
     @Override

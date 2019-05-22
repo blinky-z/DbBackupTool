@@ -6,7 +6,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
 
 /**
- * This class represents storage settings
+ * This class represents storage settings.
+ * <p>
+ * Getters are required for thymeleaf expressions evaluating.
  */
 public class WebStorageItem {
     private final String settingsName;
@@ -22,6 +24,22 @@ public class WebStorageItem {
         this.settingsName = Objects.requireNonNull(settingsName);
         this.desc = Objects.requireNonNull(desc);
         this.time = Objects.requireNonNull(time);
+    }
+
+    public String getSettingsName() {
+        return settingsName;
+    }
+
+    public StorageType getType() {
+        return type;
+    }
+
+    public String getDesc() {
+        return desc;
+    }
+
+    public String getTime() {
+        return time;
     }
 
     @Override

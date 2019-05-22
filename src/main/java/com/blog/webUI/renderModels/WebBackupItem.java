@@ -1,7 +1,9 @@
 package com.blog.webUI.renderModels;
 
 /**
- * This class represents created backup information
+ * This class represents created backup information.
+ *
+ * Getters are required for thymeleaf expressions evaluating.
  */
 public class WebBackupItem {
     private final int id;
@@ -17,6 +19,22 @@ public class WebBackupItem {
         this.desc = desc;
         this.name = name;
         this.time = time;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public String getDesc() {
+        return desc;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getTime() {
+        return time;
     }
 
     @Override
