@@ -4,7 +4,6 @@ import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.backup.BackupTask;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.database.DatabaseType;
-import com.blog.entities.database.PostgresSettings;
 import com.blog.entities.storage.DropboxSettings;
 import com.blog.entities.storage.LocalFileSystemSettings;
 import com.blog.entities.storage.StorageSettings;
@@ -132,8 +131,6 @@ public class WebFrontController {
             List<WebDatabaseItem> databaseList = new ArrayList<>();
 
             for (DatabaseSettings databaseSettings : databaseSettingsManager.getAllByType(DatabaseType.POSTGRES)) {
-                PostgresSettings postgresSettings = databaseSettings.getPostgresSettings().orElseThrow(RuntimeException::new);
-
                 HashMap<String, String> databaseProperties = new HashMap<>();
                 databaseProperties.put("Settings name", databaseSettings.getSettingsName());
                 databaseProperties.put("Host", databaseSettings.getHost());
