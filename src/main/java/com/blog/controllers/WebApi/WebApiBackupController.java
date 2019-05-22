@@ -19,7 +19,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.io.InputStream;
 import java.util.List;
@@ -125,12 +124,12 @@ public class WebApiBackupController {
 
         logger.info("createBackup(): Database settings: {}", databaseSettings);
 
-        final int storagesCount = webCreateBackupRequest.getBackupCreationProperties().size();
+        final int storagesCount = webCreateBackupRequest.getBackupCreationPropertiesMap().size();
         logger.info("createBackup(): Uploading to storages started. Total storages amount: {}", storagesCount);
 
         int currentStorage = 1;
         for (Map.Entry<String, WebCreateBackupRequest.BackupCreationProperties> entry :
-                webCreateBackupRequest.getBackupCreationProperties().entrySet()) {
+                webCreateBackupRequest.getBackupCreationPropertiesMap().entrySet()) {
             String storageSettingsName = entry.getKey();
             StorageSettings storageSettings = storageSettingsManager.getById(storageSettingsName).orElseThrow(() ->
                     new RuntimeException(String.format(

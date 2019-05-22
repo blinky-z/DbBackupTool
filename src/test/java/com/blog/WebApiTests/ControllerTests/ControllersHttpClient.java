@@ -94,7 +94,7 @@ class ControllersHttpClient {
         WebCreateBackupRequest.BackupCreationProperties backupCreationProperties = new WebCreateBackupRequest.BackupCreationProperties();
         backupCreationPropertiesMap.put(storageSettingsName, backupCreationProperties);
 
-        request.setBackupCreationProperties(backupCreationPropertiesMap);
+        request.setBackupCreationPropertiesMap(backupCreationPropertiesMap);
 
         return request;
     }
@@ -259,20 +259,24 @@ class ControllersHttpClient {
         body.add("databaseSettingsName", request.getDatabaseSettingsName());
 
         for (Map.Entry<String, WebCreateBackupRequest.BackupCreationProperties> entry :
-                request.getBackupCreationProperties().entrySet()) {
+                request.getBackupCreationPropertiesMap().entrySet()) {
+            String storageSettingsName = entry.getKey();
             WebCreateBackupRequest.BackupCreationProperties backupCreationProperties = entry.getValue();
 
-            StringBuilder processors = new StringBuilder("[");
-            Iterator<String> iterator = backupCreationProperties.getProcessors().iterator();
-            while (iterator.hasNext()) {
-                processors.append(iterator.next());
-                if (iterator.hasNext()) {
-                    processors.append(",");
-                }
-            }
-            processors.append("]");
+            body.add("backupCreationPropertiesMap[" + storageSettingsName + "].selected", "true");
 
-            body.add("backupCreationProperties[" + entry.getKey() + "].processors", processors.toString());
+            if (!backupCreationProperties.getProcessors().isEmpty()) {
+                StringBuilder processors = new StringBuilder();
+                Iterator<String> iterator = backupCreationProperties.getProcessors().iterator();
+                while (iterator.hasNext()) {
+                    processors.append(iterator.next());
+                    if (iterator.hasNext()) {
+                        processors.append(",");
+                    }
+                }
+
+                body.add("backupCreationPropertiesMap[" + storageSettingsName + "].processors", processors.toString());
+            }
         }
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(body, httpHeaders);
 

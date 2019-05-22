@@ -38,6 +38,6 @@ class WebCreateBackupRequestValidatorTests extends ApplicationTests {
 
         webCreateBackupRequestValidator.validate(webCreateBackupRequest, errors);
 
-        assertTrue(errors.hasFieldErrors("backupCreationProperties"));
+        assertTrue(errors.hasFieldErrors("backupCreationPropertiesMap"));
     }
 }

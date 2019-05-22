@@ -11,15 +11,7 @@ import java.util.HashMap;
 public class WebCreateBackupRequest {
     private String databaseSettingsName;
 
-    private HashMap<String, BackupCreationProperties> backupCreationProperties = new HashMap<>();
-
-    public HashMap<String, BackupCreationProperties> getBackupCreationProperties() {
-        return backupCreationProperties;
-    }
-
-    public void setBackupCreationProperties(HashMap<String, BackupCreationProperties> backupCreationProperties) {
-        this.backupCreationProperties = backupCreationProperties;
-    }
+    private HashMap<String, BackupCreationProperties> backupCreationPropertiesMap = new HashMap<>();
 
     public String getDatabaseSettingsName() {
         return databaseSettingsName;
@@ -29,15 +21,29 @@ public class WebCreateBackupRequest {
         this.databaseSettingsName = databaseSettingsName;
     }
 
+    public HashMap<String, BackupCreationProperties> getBackupCreationPropertiesMap() {
+        return backupCreationPropertiesMap;
+    }
+
+    public void setBackupCreationPropertiesMap(HashMap<String, BackupCreationProperties> backupCreationPropertiesMap) {
+        this.backupCreationPropertiesMap = backupCreationPropertiesMap;
+    }
+
     @Override
     public String toString() {
         return "WebCreateBackupRequest{" +
                 "databaseSettingsName='" + databaseSettingsName + '\'' +
-                ", backupCreationProperties=" + backupCreationProperties +
+                ", backupCreationPropertiesMap=" + backupCreationPropertiesMap +
                 '}';
     }
 
     public static final class BackupCreationProperties {
+        /**
+         * @implNote We need this field just for to be able adding value to map entry from thymeleaf form in case of no other fields in
+         * this inner class was selected.
+         */
+        private boolean selected;
+
         private ArrayList<String> processors = new ArrayList<>();
 
         public ArrayList<String> getProcessors() {

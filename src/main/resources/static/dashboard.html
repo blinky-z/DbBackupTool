@@ -410,7 +410,7 @@
 
                         <label for="createBackup-selectStorage">Select storage</label>
                         <div class="invalid-feedback d-inline" th:errors="*{backupCreationProperties}"
-                             th:if="${#fields.hasErrors('backupCreationProperties')}"></div>
+                             th:if="${#fields.hasErrors('backupCreationPropertiesMap')}"></div>
                         <table class="table table-hover table-bordered" id="createBackup-selectStorage">
                             <thead class="thead-dark">
                             <tr>
@@ -425,8 +425,8 @@
                             <tr th:each="storage, iterStat: ${storageList}">
                                 <td>
                                     <div class="input-group">
-                                        <input th:name="|backupCreationProperties[__${storage.settingsName}__].storageSettingsName|"
-                                               th:value="${storage.settingsName}"
+                                        <input th:name="|backupCreationPropertiesMap[__${storage.settingsName}__].selected|"
+                                               th:value="true"
                                                type="checkbox">
                                     </div>
                                 </td>
@@ -436,7 +436,7 @@
                                 <td>
                                     <div class="form-check form-group">
                                         <input class="form-check-input"
-                                               th:name="|backupCreationProperties[__${storage.settingsName}__].processors|"
+                                               th:name="|backupCreationPropertiesMap[__${storage.settingsName}__].processors|"
                                                th:value="'Compressor'"
                                                type="checkbox">
                                     </div>
