@@ -38,17 +38,7 @@ public class WebCreateBackupRequest {
     }
 
     public static final class BackupCreationProperties {
-        private String storageSettingsName;
-
         private ArrayList<String> processors = new ArrayList<>();
-
-        public String getStorageSettingsName() {
-            return storageSettingsName;
-        }
-
-        public void setStorageSettingsName(String storageSettingsName) {
-            this.storageSettingsName = storageSettingsName;
-        }
 
         public ArrayList<String> getProcessors() {
             return processors;
@@ -61,7 +51,6 @@ public class WebCreateBackupRequest {
         @Override
         public String toString() {
             return "BackupCreationProperties{" +
-                    "storageSettingsName='" + storageSettingsName + '\'' +
                     ", processors=" + processors +
                     '}';
         }
