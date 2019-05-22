@@ -193,11 +193,6 @@ public class DatabaseSettings {
         this.additionalDatabaseSettings = additionalDatabaseSettings;
     }
 
-    /**
-     * Returns PostgreSQL specific properties.
-     *
-     * @return Postgres settings
-     */
     public Optional<PostgresSettings> getPostgresSettings() {
         return Optional.ofNullable(additionalDatabaseSettings.getPostgresSettings());
     }
