@@ -1,4 +1,4 @@
-package com.blog.WebApiTests.ControllerTests;
+package com.blog.controllers.WebApi;
 
 import com.blog.entities.backup.BackupTask;
 import com.blog.entities.database.DatabaseSettings;

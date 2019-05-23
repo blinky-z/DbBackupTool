@@ -1,4 +1,4 @@
-package com.blog.WebApiTests.ControllerTests;
+package com.blog.controllers.WebApi;
 
 import com.blog.ApplicationTests;
 import com.blog.entities.database.DatabaseSettings;
@@ -37,14 +37,14 @@ class WebApiDatabaseControllerTests extends ApplicationTests {
     @Autowired
     private ControllersHttpClient controllersHttpClient;
 
+    private static Matcher<DatabaseSettings> isEqualToDto(WebAddDatabaseRequest dto) {
+        return new equalsToDto(dto);
+    }
+
     @BeforeAll
     void setup() {
         controllersHttpClient.setRestTemplate(restTemplate);
         controllersHttpClient.login();
-    }
-
-    private static Matcher<DatabaseSettings> isEqualToDto(WebAddDatabaseRequest dto) {
-        return new equalsToDto(dto);
     }
 
     @Test
@@ -75,7 +75,7 @@ class WebApiDatabaseControllerTests extends ApplicationTests {
             controllersHttpClient.addDatabase(request);
         }
 
-        controllersHttpClient.deleteStorage(settingsName);
+        controllersHttpClient.deleteDatabase(settingsName);
 
         assertFalse(databaseSettingsRepository.existsById(settingsName));
     }

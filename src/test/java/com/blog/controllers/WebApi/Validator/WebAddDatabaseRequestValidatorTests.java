@@ -1,7 +1,6 @@
-package com.blog.WebApiTests.ValidatorTests;
+package com.blog.controllers.WebApi.Validator;
 
 import com.blog.ApplicationTests;
-import com.blog.controllers.WebApi.Validator.WebAddDatabaseRequestValidator;
 import com.blog.webUI.formTransfer.WebAddDatabaseRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

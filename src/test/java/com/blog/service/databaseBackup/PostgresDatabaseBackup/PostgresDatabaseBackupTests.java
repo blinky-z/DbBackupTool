@@ -1,4 +1,4 @@
-package com.blog.DatabaseBackupServiceTests;
+package com.blog.service.databaseBackup.PostgresDatabaseBackup;
 
 import com.blog.ApplicationTests;
 import com.blog.TestUtils;

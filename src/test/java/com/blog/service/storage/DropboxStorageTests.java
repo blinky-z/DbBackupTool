@@ -1,11 +1,9 @@
-package com.blog.StorageServiceTests;
+package com.blog.service.storage;
 
 import com.blog.ApplicationTests;
 import com.blog.TestUtils;
 import com.blog.entities.storage.DropboxSettings;
 import com.blog.entities.storage.StorageSettings;
-import com.blog.service.storage.DropboxStorage;
-import com.blog.service.storage.StorageConstants;
 import com.dropbox.core.DbxException;
 import com.dropbox.core.DbxRequestConfig;
 import com.dropbox.core.v2.DbxClientV2;

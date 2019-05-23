@@ -1,7 +1,6 @@
-package com.blog.WebApiTests.ValidatorTests;
+package com.blog.controllers.WebApi.Validator;
 
 import com.blog.ApplicationTests;
-import com.blog.controllers.WebApi.Validator.WebCreateBackupRequestValidator;
 import com.blog.webUI.formTransfer.WebCreateBackupRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

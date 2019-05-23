@@ -1,4 +1,4 @@
-package com.blog.WebApiTests.ControllerTests;
+package com.blog.controllers.WebApi;
 
 import com.blog.ApplicationTests;
 import com.blog.entities.storage.DropboxSettings;
@@ -42,6 +42,12 @@ class WebApiStorageControllerTests extends ApplicationTests {
         return new equalsToDto(dto);
     }
 
+    @BeforeAll
+    void setup() {
+        controllersHttpClient.setRestTemplate(restTemplate);
+        controllersHttpClient.login();
+    }
+
     @Test
     void createStorage_ShouldSaveLocalFileSystemStorageSettingsIntoDatabase_WhenGotRequestToSaveProperRequest() {
         String settingsName = "createStorage_ShouldSaveLocalFileSystemStorageSettingsIntoDatabase_WhenGotRequestToSaveProperRequest";
@@ -52,12 +58,6 @@ class WebApiStorageControllerTests extends ApplicationTests {
         Optional<StorageSettings> optionalStorageSettings = storageSettingsRepository.findById(settingsName);
         assertTrue(optionalStorageSettings.isPresent());
         assertThat(optionalStorageSettings.get(), isEqualToDto(request));
-    }
-
-    @BeforeAll
-    void setup() {
-        controllersHttpClient.setRestTemplate(restTemplate);
-        controllersHttpClient.login();
     }
 
     @Test

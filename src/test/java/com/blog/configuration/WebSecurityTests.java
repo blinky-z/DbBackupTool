@@ -1,4 +1,4 @@
-package com.blog.WebApiTests;
+package com.blog.configuration;
 
 import com.blog.ApplicationTests;
 import com.blog.settings.UserSettings;

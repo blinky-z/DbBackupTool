@@ -1,9 +1,8 @@
-package com.blog.ProcessorServiceTests;
+package com.blog.service.processor;
 
 
 import com.blog.ApplicationTests;
 import com.blog.TestUtils;
-import com.blog.service.processor.BackupCompressor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;

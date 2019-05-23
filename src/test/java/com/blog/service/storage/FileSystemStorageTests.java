@@ -1,10 +1,8 @@
-package com.blog.StorageServiceTests;
+package com.blog.service.storage;
 
 import com.blog.ApplicationTests;
 import com.blog.TestUtils;
 import com.blog.entities.storage.StorageSettings;
-import com.blog.service.storage.FileSystemStorage;
-import com.blog.service.storage.StorageConstants;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
