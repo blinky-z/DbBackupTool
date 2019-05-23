@@ -112,7 +112,7 @@ public class WebApiStorageController {
 
     @DeleteMapping
     public String deleteStorage(@RequestParam(value = "settingsName") Optional<String> optionalSettingsName) {
-        logger.info("deleteDatabase(): Got storage settings deletion request");
+        logger.info("deleteStorage(): Got storage settings deletion request");
 
         String error = validateDeleteStorageRequest(optionalSettingsName.orElse(null));
         if (error != null) {
