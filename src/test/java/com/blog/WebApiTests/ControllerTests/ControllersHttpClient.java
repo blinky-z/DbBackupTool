@@ -141,21 +141,21 @@ class ControllersHttpClient {
     }
 
     WebAddDatabaseRequest buildDefaultAddDatabaseRequest(DatabaseType type, String settingsName) {
-        WebAddDatabaseRequest webAddDatabaseRequest = new WebAddDatabaseRequest();
-        webAddDatabaseRequest.setSettingsName(settingsName);
-
-        webAddDatabaseRequest.setDatabaseName(masterPostgresDatabaseSettings.getName());
-        webAddDatabaseRequest.setHost(masterPostgresDatabaseSettings.getHost());
-        webAddDatabaseRequest.setPort(String.valueOf(masterPostgresDatabaseSettings.getPort()));
-        webAddDatabaseRequest.setLogin(masterPostgresDatabaseSettings.getLogin());
-        webAddDatabaseRequest.setPassword(masterPostgresDatabaseSettings.getPassword());
+        WebAddDatabaseRequest request = new WebAddDatabaseRequest();
+        request.setSettingsName(settingsName);
 
         switch (type) {
             case POSTGRES: {
-                webAddDatabaseRequest.setDatabaseType("postgres");
+                request.setDatabaseName(masterPostgresDatabaseSettings.getName());
+                request.setHost(masterPostgresDatabaseSettings.getHost());
+                request.setPort(String.valueOf(masterPostgresDatabaseSettings.getPort()));
+                request.setLogin(masterPostgresDatabaseSettings.getLogin());
+                request.setPassword(masterPostgresDatabaseSettings.getPassword());
+
+                request.setDatabaseType("postgres");
 
                 WebPostgresSettings webPostgresSettings = new WebPostgresSettings();
-                webAddDatabaseRequest.setPostgresSettings(webPostgresSettings);
+                request.setPostgresSettings(webPostgresSettings);
                 break;
             }
             default: {
@@ -163,7 +163,7 @@ class ControllersHttpClient {
             }
         }
 
-        return webAddDatabaseRequest;
+        return request;
     }
 
     ResponseEntity<String> addDatabase(WebAddDatabaseRequest request) {
