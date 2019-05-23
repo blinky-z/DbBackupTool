@@ -43,7 +43,7 @@ class WebApiDatabaseControllerTests extends ApplicationTests {
         controllersHttpClient.login();
     }
 
-    static Matcher<DatabaseSettings> isEqualToDto(WebAddDatabaseRequest dto) {
+    private static Matcher<DatabaseSettings> isEqualToDto(WebAddDatabaseRequest dto) {
         return new equalsToDto(dto);
     }
 
@@ -81,6 +81,12 @@ class WebApiDatabaseControllerTests extends ApplicationTests {
     }
 
     @Test
+    void deleteDatabase_ShouldRespondWith400Error_WhenDatabaseSettingsNameNotProvided() {
+        ResponseEntity<String> responseEntity = controllersHttpClient.deleteDatabase(null);
+        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+    }
+
+    @Test
     void deleteDatabase_ShouldNotRespondWithError_WhenDatabaseSettingsNameProvidedButNoSuchSettingsToDelete() {
         String settingsName = "deleteDatabase_ShouldNotRespondWithError_WhenDatabaseSettingsNameProvidedButNoSuchSettingsToDelete";
 
@@ -103,12 +109,6 @@ class WebApiDatabaseControllerTests extends ApplicationTests {
             ResponseEntity<String> responseEntity = controllersHttpClient.deleteDatabase(settingsName);
             assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
         }
-    }
-
-    @Test
-    void deleteDatabase_ShouldRespondWith400Error_WhenDatabaseSettingsNameNotProvided() {
-        ResponseEntity<String> responseEntity = controllersHttpClient.deleteDatabase(null);
-        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
     }
 
     private static final class equalsToDto extends TypeSafeMatcher<DatabaseSettings> {

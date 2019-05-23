@@ -100,7 +100,6 @@ class WebApiDeleteBackupControllerTests extends ApplicationTests {
             controllersHttpClient.waitForLastOperationComplete();
 
             assertFalse(backupPropertiesManager.existsById(backupProperties.getId()));
-            assertFalse(testUtils.backupExistsOnStorage(StorageType.LOCAL_FILE_SYSTEM, backupProperties.getBackupName()));
         }
     }
 
@@ -124,7 +123,6 @@ class WebApiDeleteBackupControllerTests extends ApplicationTests {
             controllersHttpClient.waitForLastOperationComplete();
 
             assertFalse(backupPropertiesManager.existsById(backupProperties.getId()));
-            assertFalse(testUtils.backupExistsOnStorage(StorageType.LOCAL_FILE_SYSTEM, backupProperties.getBackupName()));
         }
     }
 }
