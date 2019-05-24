@@ -1,13 +1,17 @@
 package com.blog.controllers.WebApi;
 
 import com.blog.controllers.Errors.ValidationError;
+import com.blog.controllers.WebApi.Validator.WebAddPlannedTaskRequestValidator;
 import com.blog.controllers.WebApi.Validator.WebCreateBackupRequestValidator;
 import com.blog.controllers.WebApi.Validator.WebRestoreBackupRequestValidator;
 import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.backup.BackupTask;
+import com.blog.entities.backup.BackupTaskType;
+import com.blog.entities.backup.PlannedBackupTask;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.manager.*;
+import com.blog.webUI.formTransfer.WebAddPlannedTaskRequest;
 import com.blog.webUI.formTransfer.WebCreateBackupRequest;
 import com.blog.webUI.formTransfer.WebDeleteBackupRequest;
 import com.blog.webUI.formTransfer.WebRestoreBackupRequest;
@@ -23,7 +27,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 
@@ -48,9 +54,13 @@ public class WebApiBackupController {
 
     private WebRestoreBackupRequestValidator webRestoreBackupRequestValidator;
 
-    private ExecutorService executorService;
+    private WebAddPlannedTaskRequestValidator webAddPlannedTaskRequestValidator;
+
+    private ExecutorService executorService = Executors.newFixedThreadPool(10);
 
     private BackupTaskManager backupTaskManager;
+
+    private PlannedBackupTasksManager plannedBackupTasksManager;
 
     private BackupPropertiesManager backupPropertiesManager;
 
@@ -90,13 +100,18 @@ public class WebApiBackupController {
     }
 
     @Autowired
-    public void setExecutorService(ExecutorService executorService) {
-        this.executorService = executorService;
+    public void setWebAddPlannedTaskRequestValidator(WebAddPlannedTaskRequestValidator webAddPlannedTaskRequestValidator) {
+        this.webAddPlannedTaskRequestValidator = webAddPlannedTaskRequestValidator;
     }
 
     @Autowired
     public void setBackupTaskManager(BackupTaskManager backupTaskManager) {
         this.backupTaskManager = backupTaskManager;
+    }
+
+    @Autowired
+    public void setPlannedBackupTasksManager(PlannedBackupTasksManager plannedBackupTasksManager) {
+        this.plannedBackupTasksManager = plannedBackupTasksManager;
     }
 
     @Autowired
@@ -144,7 +159,7 @@ public class WebApiBackupController {
             BackupProperties backupProperties =
                     backupLoadManager.initNewBackupProperties(storageSettings, processorList, databaseName);
 
-            Integer taskId = backupTaskManager.initNewTask(BackupTask.Type.CREATE_BACKUP, backupProperties);
+            Integer taskId = backupTaskManager.initNewTask(BackupTaskType.CREATE_BACKUP, BackupTask.RunType.USER, backupProperties);
             Future task = executorService.submit(
                     new Runnable() {
                         @Override
@@ -204,12 +219,13 @@ public class WebApiBackupController {
         String databaseSettingsName = webRestoreBackupRequest.getDatabaseSettingsName();
         DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseSettingsName).orElseThrow(() ->
                 new RuntimeException(
-                        String.format("Can't retrieve database settings. Error: no database settings with name %d", databaseSettingsName)));
+                        String.format("Can't retrieve database settings. Error: no database settings with name %d",
+                                databaseSettingsName)));
 
         logger.info("restoreBackup(): Backup properties: {}", backupProperties);
         logger.info("restoreBackup(): Database settings: {}", databaseSettings);
 
-        Integer taskId = backupTaskManager.initNewTask(BackupTask.Type.RESTORE_BACKUP, backupProperties);
+        Integer taskId = backupTaskManager.initNewTask(BackupTaskType.RESTORE_BACKUP, BackupTask.RunType.USER, backupProperties);
         Future task = executorService.submit(
                 new Runnable() {
                     @Override
@@ -278,7 +294,7 @@ public class WebApiBackupController {
                 new RuntimeException(String.format(
                         "Can't retrieve backup properties. Error: no backup properties with ID %d", backupId)));
 
-        Integer taskId = backupTaskManager.initNewTask(BackupTask.Type.DELETE_BACKUP, backupProperties);
+        Integer taskId = backupTaskManager.initNewTask(BackupTaskType.DELETE_BACKUP, BackupTask.RunType.USER, backupProperties);
 
         backupPropertiesManager.deleteById(backupId);
         Future task = executorService.submit(
@@ -304,6 +320,54 @@ public class WebApiBackupController {
 
                 });
         backupTaskManager.addTaskFuture(taskId, task);
+
+        return "redirect:/dashboard";
+    }
+
+    @PostMapping(path = "/add-planned-task")
+    public String addPlannedTask(WebAddPlannedTaskRequest webAddPlannedTaskRequest, BindingResult bindingResult) {
+        logger.info("addPlannedTask(): Got planned task creation request");
+
+        webAddPlannedTaskRequestValidator.validate(webAddPlannedTaskRequest, bindingResult);
+        if (bindingResult.hasErrors()) {
+            logger.info("Invalid planned task creation request. Error: {}", bindingResult.getAllErrors());
+
+            return "dashboard";
+        }
+
+        Optional<PlannedBackupTask.Type> optionalType = PlannedBackupTask.Type.of(webAddPlannedTaskRequest.getTaskType());
+        if (!optionalType.isPresent()) {
+            throw new ValidationError("Can't create planned task: Invalid task type");
+        }
+
+        String databaseSettingsName = webAddPlannedTaskRequest.getDatabaseSettingsName();
+        if (!databaseSettingsManager.existsById(databaseSettingsName)) {
+            throw new ValidationError(
+                    String.format("Can't create planned task: Non-existing database: [%s]", databaseSettingsName));
+        }
+
+        List<String> storageSettingsNameList = webAddPlannedTaskRequest.getStorageSettingsNameList();
+        for (String storageSettingsName : storageSettingsNameList) {
+            if (!storageSettingsManager.existsById(storageSettingsName)) {
+                throw new ValidationError(
+                        String.format("Can't create planned task: Non-existing storage: [%s]", storageSettingsName));
+            }
+        }
+
+        List<String> processors = webAddPlannedTaskRequest.getProcessors();
+        for (String processorName : processors) {
+            if (!backupProcessorManager.existsByName(processorName)) {
+                throw new ValidationError(
+                        String.format("Can't create planned task: Non-existing processor: [%s]", processorName));
+            }
+        }
+
+        PlannedBackupTask savedPlannedBackupTask = plannedBackupTasksManager.addNewTask(optionalType.get(),
+                webAddPlannedTaskRequest.getDatabaseSettingsName(),
+                webAddPlannedTaskRequest.getStorageSettingsNameList(), webAddPlannedTaskRequest.getProcessors(),
+                Long.valueOf(webAddPlannedTaskRequest.getInterval()));
+
+        logger.info("Planned backup task saved into database. Saved task: {}", savedPlannedBackupTask);
 
         return "redirect:/dashboard";
     }
