@@ -68,4 +68,14 @@ public class BackupProcessorManager {
 
         return in;
     }
+
+    public boolean existsByName(String processorName) {
+        for (Processor processor : processors) {
+            if (processorName.equals(processor.getName())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
