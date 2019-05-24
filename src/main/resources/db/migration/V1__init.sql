@@ -33,8 +33,19 @@ create table if not exists backup_tasks
     ID                   SERIAL PRIMARY KEY,
     DATE                 TIMESTAMPTZ DEFAULT NOW() not null,
     TYPE                 VARCHAR(64)               not null,
+    RUN_TYPE             VARCHAR(64)               not null,
     STATE                VARCHAR(64)               not null,
     BACKUP_PROPERTIES_ID int                       not null,
     IS_ERROR             boolean                   not null
 );
 
+create table if not exists planned_backup_tasks
+(
+    ID                         SERIAL PRIMARY KEY,
+    TYPE                       VARCHAR(64)   not null,
+    DATABASE_SETTINGS_NAME     varchar(256)  not null,
+    STORAGE_SETTINGS_NAME_LIST varchar(8096) not null,
+    PROCESSORS                 varchar(1024) not null,
+    LAST_STARTED_TIME          timestamp     not null,
+    INTERVAL                   BIGINT        not null
+);
