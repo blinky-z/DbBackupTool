@@ -7,7 +7,7 @@ import java.util.Objects;
 
 /**
  * This class represents database settings.
- *
+ * <p>
  * Getters are required for thymeleaf expressions evaluating.
  */
 public class WebDatabaseItem {

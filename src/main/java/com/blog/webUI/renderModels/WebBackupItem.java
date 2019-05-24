@@ -2,7 +2,7 @@ package com.blog.webUI.renderModels;
 
 /**
  * This class represents created backup information.
- *
+ * <p>
  * Getters are required for thymeleaf expressions evaluating.
  */
 public class WebBackupItem {

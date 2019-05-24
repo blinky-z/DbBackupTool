@@ -13,13 +13,11 @@ import java.text.SimpleDateFormat;
 @Configuration
 public class WebControllersConfiguration {
     private static final Logger logger = LoggerFactory.getLogger("ErrorCallBack");
-
-    private BackupTaskManager backupTaskManager;
-
     /**
      * This time format is used in all elements of front-end (backup creation time, task start time and so on).
      */
     private static final String WEB_TIME_FORMAT = "dd.MM.yyyy HH:mm:ss";
+    private BackupTaskManager backupTaskManager;
 
     @Autowired
     public void setBackupTaskManager(BackupTaskManager backupTaskManager) {

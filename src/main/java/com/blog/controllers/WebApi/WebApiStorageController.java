@@ -120,10 +120,9 @@ public class WebApiStorageController {
         }
 
         String settingsName = optionalSettingsName.get();
-
-        logger.info("deleteStorage(): Deleting storage settings with name: {}", settingsName);
-
         storageSettingsManager.deleteById(settingsName);
+
+        logger.info("deleteStorage(): Storage settings deleted. Settings name: {}", settingsName);
 
         return "redirect:/dashboard";
     }

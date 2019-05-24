@@ -97,6 +97,10 @@ public class BackupTask {
         return isError;
     }
 
+    public void setError(Boolean error) {
+        isError = error;
+    }
+
     public State getState() {
         return state;
     }
@@ -115,10 +119,6 @@ public class BackupTask {
 
     public Boolean isError() {
         return isError;
-    }
-
-    public void setError(Boolean error) {
-        isError = error;
     }
 
     public Date getDate() {

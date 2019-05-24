@@ -74,7 +74,7 @@ class ControllersHttpClient {
         BackupTask backupTask = backupTaskCollection.iterator().next();
         Integer id = backupTask.getId();
 
-        while (backupTaskManager.getBackupTask(id).orElseThrow(RuntimeException::new).getState() != BackupTask.State.COMPLETED) {
+        while (backupTaskManager.findById(id).orElseThrow(RuntimeException::new).getState() != BackupTask.State.COMPLETED) {
             Thread.sleep(300);
         }
     }
