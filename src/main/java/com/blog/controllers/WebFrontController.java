@@ -12,10 +12,7 @@ import com.blog.manager.BackupPropertiesManager;
 import com.blog.manager.BackupTaskManager;
 import com.blog.manager.DatabaseSettingsManager;
 import com.blog.manager.StorageSettingsManager;
-import com.blog.webUI.formTransfer.WebAddDatabaseRequest;
-import com.blog.webUI.formTransfer.WebAddStorageRequest;
-import com.blog.webUI.formTransfer.WebCreateBackupRequest;
-import com.blog.webUI.formTransfer.WebRestoreBackupRequest;
+import com.blog.webUI.formTransfer.*;
 import com.blog.webUI.renderModels.WebBackupItem;
 import com.blog.webUI.renderModels.WebBackupTask;
 import com.blog.webUI.renderModels.WebDatabaseItem;
@@ -182,7 +179,7 @@ public class WebFrontController {
         {
             List<WebBackupTask> backupTaskList = new ArrayList<>();
 
-            for (BackupTask backupTask : backupTaskManager.getBackupTasks()) {
+            for (BackupTask backupTask : backupTaskManager.findAllByRunType(BackupTask.RunType.USER)) {
                 WebBackupTask webBackupTask = new WebBackupTask.Builder()
                         .withId(backupTask.getId())
                         .withType(backupTask.getType().toString())
@@ -202,6 +199,7 @@ public class WebFrontController {
         model.addAttribute("webAddStorageRequest", new WebAddStorageRequest());
         model.addAttribute("webCreateBackupRequest", new WebCreateBackupRequest());
         model.addAttribute("webRestoreBackupRequest", new WebRestoreBackupRequest());
+        model.addAttribute("webAddPlannedTaskRequest", new WebAddPlannedTaskRequest());
     }
 
     @RequestMapping("/dashboard")

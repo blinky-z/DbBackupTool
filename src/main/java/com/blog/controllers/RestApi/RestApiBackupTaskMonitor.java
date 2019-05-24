@@ -38,7 +38,7 @@ public class RestApiBackupTaskMonitor {
     public List<WebBackupTask> getStates() {
         List<WebBackupTask> webBackupTasks = new ArrayList<>();
 
-        for (BackupTask backupTask : backupTaskManager.getBackupTasks()) {
+        for (BackupTask backupTask : backupTaskManager.findAllByRunType(BackupTask.RunType.USER)) {
             WebBackupTask webBackupTask = new WebBackupTask.Builder()
                     .withId(backupTask.getId())
                     .withType(backupTask.getType().toString())
