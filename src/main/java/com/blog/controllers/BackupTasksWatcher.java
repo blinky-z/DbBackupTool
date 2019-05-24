@@ -2,6 +2,7 @@ package com.blog.controllers;
 
 import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.backup.BackupTask;
+import com.blog.entities.backup.BackupTaskType;
 import com.blog.manager.BackupLoadManager;
 import com.blog.manager.BackupPropertiesManager;
 import com.blog.manager.BackupTaskManager;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 /**
@@ -28,13 +30,10 @@ import java.util.concurrent.Future;
  */
 @Component
 @EnableScheduling
-class BackupStateWatcher {
-    private static final Logger logger = LoggerFactory.getLogger(BackupStateWatcher.class);
-
+class BackupTasksWatcher {
+    private static final Logger logger = LoggerFactory.getLogger(BackupTasksWatcher.class);
+    private static final ExecutorService executorService = Executors.newFixedThreadPool(10);
     private BackupTaskManager backupTaskManager;
-
-    private ExecutorService executorService;
-
     private BackupLoadManager backupLoadManager;
 
     private BackupPropertiesManager backupPropertiesManager;
@@ -42,11 +41,6 @@ class BackupStateWatcher {
     @Autowired
     public void setBackupTaskManager(BackupTaskManager backupTaskManager) {
         this.backupTaskManager = backupTaskManager;
-    }
-
-    @Autowired
-    public void setExecutorService(ExecutorService executorService) {
-        this.executorService = executorService;
     }
 
     @Autowired
@@ -63,7 +57,8 @@ class BackupStateWatcher {
     private void deleteUncompletedBackup(@NotNull BackupProperties backupProperties) {
         Objects.requireNonNull(backupProperties);
 
-        Integer deletionTaskId = backupTaskManager.initNewTask(BackupTask.Type.DELETE_BACKUP, backupProperties);
+        Integer deletionTaskId = backupTaskManager.initNewTask(BackupTaskType.DELETE_BACKUP, BackupTask.RunType.INTERNAL,
+                backupProperties);
         Future deletionTask = executorService.submit(
                 new Runnable() {
                     @Override
@@ -71,16 +66,15 @@ class BackupStateWatcher {
                         backupTaskManager.updateTaskState(deletionTaskId, BackupTask.State.DELETING);
 
                         try {
-                            backupPropertiesManager.deleteById(backupProperties.getId());
                             backupLoadManager.deleteBackup(backupProperties, deletionTaskId);
-                            backupTaskManager.updateTaskState(deletionTaskId, BackupTask.State.COMPLETED);
 
-                            // we remove task right after completing deleting, since it's not user's task
-                            backupTaskManager.removeTask(deletionTaskId);
+                            backupTaskManager.updateTaskState(deletionTaskId, BackupTask.State.COMPLETED);
                         } catch (RuntimeException ex) {
                             logger.error("Error occurred while deleting broken backup", ex);
                             backupTaskManager.setError(deletionTaskId);
                         }
+
+                        backupPropertiesManager.deleteById(backupProperties.getId());
                     }
                 }
         );
@@ -127,7 +121,7 @@ class BackupStateWatcher {
      * Erroneous tasks will be handled by daemon function {@link #watchErrorTasks()}
      */
     void handleCompletedAndInterruptedTasks() {
-        for (BackupTask backupTask : backupTaskManager.getBackupTasks()) {
+        for (BackupTask backupTask : backupTaskManager.findAll()) {
             if (!backupTask.isError()) {
                 backupTaskManager.removeTask(backupTask.getId());
 
@@ -152,12 +146,14 @@ class BackupStateWatcher {
      */
     @Scheduled(fixedRate = 2000)
     void watchErrorTasks() {
-        for (BackupTask backupTask : backupTaskManager.getBackupTasks()) {
+        for (BackupTask backupTask : backupTaskManager.findAll()) {
             if (backupTask.isError()) {
                 BackupTask.State state = backupTask.getState();
 
                 Integer taskId = backupTask.getId();
                 Optional<Future> optionalTask = backupTaskManager.getTaskFuture(taskId);
+
+                backupTaskManager.removeTask(taskId);
 
                 if (optionalTask.isPresent()) {
                     Future task = optionalTask.get();
@@ -171,8 +167,6 @@ class BackupStateWatcher {
                             "No future task with ID {}. Can't abort operation. Probably server shutdown unexpectedly and all tasks has been lost",
                             taskId);
                 }
-
-                backupTaskManager.removeTask(taskId);
 
                 Integer backupPropertiesId = backupTask.getBackupPropertiesId();
                 BackupProperties backupProperties = backupPropertiesManager.findById(backupPropertiesId).
