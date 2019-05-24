@@ -28,17 +28,19 @@ public class WebAddStorageRequestValidator {
 
         WebAddStorageRequest addStorageRequest = (WebAddStorageRequest) target;
 
-        Optional<StorageType> optionalStorageType = StorageType.of(addStorageRequest.getStorageType());
-        if (!optionalStorageType.isPresent()) {
-            errors.rejectValue("storageType", "error.addStorageRequest.storageType.malformed",
-                    "Invalid storage type");
-        }
-
         // validate common fields
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "settingsName",
                 "error.addStorageRequest.settingsName.empty", "Settings name must not be empty");
 
+        // validate storage specific fields
         if (!errors.hasFieldErrors("storageType")) {
+            Optional<StorageType> optionalStorageType = StorageType.of(addStorageRequest.getStorageType());
+            if (!optionalStorageType.isPresent()) {
+                errors.rejectValue("storageType", "error.addStorageRequest.storageType.malformed",
+                        "Invalid storage type");
+                return;
+            }
+
             StorageType storageType = optionalStorageType.get();
             switch (storageType) {
                 case DROPBOX: {

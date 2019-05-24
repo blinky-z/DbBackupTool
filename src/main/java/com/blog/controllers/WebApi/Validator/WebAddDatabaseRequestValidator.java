@@ -27,12 +27,6 @@ public class WebAddDatabaseRequestValidator {
 
         WebAddDatabaseRequest webAddDatabaseRequest = (WebAddDatabaseRequest) target;
 
-        Optional<DatabaseType> optionalDatabaseType = DatabaseType.of(webAddDatabaseRequest.getDatabaseType());
-        if (!optionalDatabaseType.isPresent()) {
-            errors.rejectValue("databaseType", "error.addDatabaseRequest.databaseType.malformed",
-                    "Invalid database type");
-        }
-
         // validate common fields
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "settingsName",
                 "error.addDatabaseRequest.settingsName.empty", "Settings name must not be empty");
@@ -54,6 +48,15 @@ public class WebAddDatabaseRequestValidator {
             } catch (NumberFormatException ex) {
                 errors.rejectValue("port", "error.addDatabaseRequest.port.malformed",
                         "Invalid port");
+            }
+        }
+
+        // validate database specific fields
+        if (!errors.hasFieldErrors("databaseType")) {
+            Optional<DatabaseType> optionalDatabaseType = DatabaseType.of(webAddDatabaseRequest.getDatabaseType());
+            if (!optionalDatabaseType.isPresent()) {
+                errors.rejectValue("databaseType", "error.addDatabaseRequest.databaseType.malformed",
+                        "Invalid database type");
             }
         }
     }
