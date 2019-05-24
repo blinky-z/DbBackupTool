@@ -34,6 +34,10 @@ public class DatabaseSettingsManager {
         databaseSettingsRepository.findById(id).ifPresent(databaseSettings -> databaseSettingsRepository.delete(databaseSettings));
     }
 
+    public boolean existsById(@NotNull String id) {
+        return databaseSettingsRepository.existsById(id);
+    }
+
     public Optional<DatabaseSettings> getById(@NotNull String id) {
         return databaseSettingsRepository.findById(id);
     }

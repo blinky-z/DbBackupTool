@@ -34,6 +34,10 @@ public class StorageSettingsManager {
         storageSettingsRepository.findById(id).ifPresent(storageSettings -> storageSettingsRepository.delete(storageSettings));
     }
 
+    public boolean existsById(@NotNull String id) {
+        return storageSettingsRepository.existsById(id);
+    }
+
     public Optional<StorageSettings> getById(@NotNull String id) {
         return storageSettingsRepository.findById(id);
     }
