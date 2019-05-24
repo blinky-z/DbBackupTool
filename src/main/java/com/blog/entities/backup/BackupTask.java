@@ -22,11 +22,22 @@ public class BackupTask {
      * <p>
      * Type is set at the very start of any task and can't be changed.
      *
-     * @see BackupTask.Type
+     * @see BackupTaskType
      */
     @Enumerated(EnumType.STRING)
     @Column(updatable = false)
-    private Type type;
+    private BackupTaskType type;
+
+    /**
+     * Who initiated the task: user or server (e.g. deletion of uncompleted backup by watcher).
+     * <p>
+     * We need to know it to show on front only these tasks that was started by user.
+     *
+     * @see BackupTaskType
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(updatable = false)
+    private RunType runType;
 
     /**
      * Backup task state.
@@ -66,12 +77,24 @@ public class BackupTask {
         this.id = id;
     }
 
-    public Type getType() {
+    public BackupTaskType getType() {
         return type;
     }
 
-    public void setType(Type type) {
+    public void setType(BackupTaskType type) {
         this.type = type;
+    }
+
+    public RunType getRunType() {
+        return runType;
+    }
+
+    public void setRunType(RunType runType) {
+        this.runType = runType;
+    }
+
+    public Boolean getError() {
+        return isError;
     }
 
     public State getState() {
@@ -117,6 +140,11 @@ public class BackupTask {
                 '}';
     }
 
+    public enum RunType {
+        INTERNAL,
+        USER
+    }
+
     public enum State {
         PLANNED,
         CREATING,
@@ -127,26 +155,5 @@ public class BackupTask {
         DOWNLOADING,
         UPLOADING,
         COMPLETED
-    }
-
-    public enum Type {
-        CREATE_BACKUP {
-            @Override
-            public String toString() {
-                return "CREATE BACKUP";
-            }
-        },
-        RESTORE_BACKUP {
-            @Override
-            public String toString() {
-                return "RESTORE BACKUP";
-            }
-        },
-        DELETE_BACKUP {
-            @Override
-            public String toString() {
-                return "DELETE BACKUP";
-            }
-        }
     }
 }
