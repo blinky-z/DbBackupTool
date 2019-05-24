@@ -1,8 +1,8 @@
 package com.blog.manager;
 
-import com.blog.controllers.WebControllersConfiguration;
 import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.backup.BackupTask;
+import com.blog.entities.backup.BackupTaskType;
 import com.blog.repositories.BackupTaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 
 /**
- * This manager class provides API to work with {@link WebControllersConfiguration#executorService()} tasks.
+ * This class provides API to manage currently executed, completed or erroneous backup tasks.
  */
 @Service
 public class BackupTaskManager {
@@ -32,10 +32,11 @@ public class BackupTaskManager {
      * @param backupProperties backup properties of created or being created backup
      * @return ID of created task
      */
-    public Integer initNewTask(BackupTask.Type type, BackupProperties backupProperties) {
+    public Integer initNewTask(BackupTaskType type, BackupTask.RunType runType, BackupProperties backupProperties) {
         BackupTask backupTask = new BackupTask();
         backupTask.setBackupPropertiesId(backupProperties.getId());
         backupTask.setType(type);
+        backupTask.setRunType(runType);
         backupTask.setState(initialBackupTaskState);
         backupTask.setError(Boolean.FALSE);
 
@@ -99,12 +100,16 @@ public class BackupTaskManager {
         tasks.remove(id);
     }
 
-    public Optional<BackupTask> getBackupTask(Integer id) {
+    public Optional<BackupTask> findById(Integer id) {
         return backupTaskRepository.findById(id);
     }
 
-    public Iterable<BackupTask> getBackupTasks() {
+    public Iterable<BackupTask> findAll() {
         return backupTaskRepository.findAll();
+    }
+
+    public Iterable<BackupTask> findAllByRunType(BackupTask.RunType runType) {
+        return backupTaskRepository.findAllByRunType(runType);
     }
 
     public Iterable<BackupTask> findAllByOrderByDateDesc() {
