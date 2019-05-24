@@ -43,11 +43,10 @@ public class BackupProperties {
     /**
      * Applied processors on backup.
      * <p>
-     * This field automatically converted into single string and back to List by
-     * {@link BackupPropertiesProcessorsFieldConverter} class.
+     * This field automatically converted into single string and back to List by {@link ListFieldConverter} class.
      */
     @Column(updatable = false)
-    @Convert(converter = BackupPropertiesProcessorsFieldConverter.class)
+    @Convert(converter = ListFieldConverter.class)
     private List<String> processors;
 
     /**
