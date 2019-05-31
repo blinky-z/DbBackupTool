@@ -5,6 +5,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 @Configuration
 @PropertySource("classpath:postgres.properties")
 @ConfigurationProperties(prefix = "postgres")
@@ -18,6 +21,11 @@ class PostgresDatabaseBackupConfiguration {
 
     public void setPsqlToolPath(String psqlToolPath) {
         this.psqlToolPath = psqlToolPath;
+    }
+
+    @Bean(destroyMethod = "shutdown")
+    public ExecutorService postgresExecutorService() {
+        return Executors.newFixedThreadPool(20);
     }
 
     @Bean

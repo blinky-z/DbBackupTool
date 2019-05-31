@@ -2,6 +2,7 @@ package com.blog.service.storage;
 
 import com.blog.entities.storage.LocalFileSystemSettings;
 import com.blog.entities.storage.StorageSettings;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -78,6 +79,7 @@ public class FileSystemStorage implements Storage {
     /**
      * Downloads backup from Local File System
      */
+    @NotNull
     @Override
     public InputStream downloadBackup(StorageSettings storageSettings, String backupName, Integer id) {
         LocalFileSystemSettings localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(() ->
@@ -114,7 +116,7 @@ public class FileSystemStorage implements Storage {
 
         File backupFolder = new File(backupFolderPath);
         long filesCount = Objects.requireNonNull(backupFolder.list(),
-                String.format("Can't delete backup: invalid or non-existing backup folder at path: %s", backupFolderPath)).length;
+                String.format("Can't delete backup: invalid path or non-existing backup folder. Path: %s", backupFolderPath)).length;
 
         logger.info("Total files in backup folder on Local File System: {}. Backup folder: {}", filesCount, backupFolderPath);
 

@@ -1,6 +1,7 @@
 package com.blog.service.storage;
 
 import com.blog.entities.storage.StorageSettings;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
 
@@ -12,11 +13,11 @@ import java.io.InputStream;
  * <li>Upload/download/delete strategy is based on backup name - backup name is an identifier of the backup.
  * It is not mandatory to use backup name in internal representation, but passing backup name to any of interface methods
  * backup should have proper effect.</li>
- * <li>If service uses additional threads except main the ones should notify about occurred exception using
- * {@link com.blog.controllers.ErrorCallback} if the exception is critical and work can not be continued.</li>
+ * <li>If service uses additional threads they should notify about occurred exception using
+ * {@link com.blog.service.ErrorCallbackService} if the exception is critical and work can not be continued.</li>
  * </ul>
  *
- * @see StorageConstants - there are default constants that can be useful at implementing storage service.
+ * @see StorageConstants
  */
 public interface Storage {
     /**
@@ -37,6 +38,7 @@ public interface Storage {
      * @param id              backup download task ID
      * @return input stream, from which backup can be read after download complete
      */
+    @NotNull
     InputStream downloadBackup(StorageSettings storageSettings, String backupName, Integer id);
 
     /**

@@ -16,6 +16,7 @@ public interface DatabaseBackup {
      * @param id               create backup task ID
      * @return input stream, from which created plain text backup can be read.
      */
+    @NotNull
     InputStream createBackup(@NotNull DatabaseSettings databaseSettings, @NotNull Integer id);
 
     /**

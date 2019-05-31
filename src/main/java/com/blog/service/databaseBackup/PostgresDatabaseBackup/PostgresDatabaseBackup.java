@@ -1,7 +1,7 @@
 package com.blog.service.databaseBackup.PostgresDatabaseBackup;
 
-import com.blog.controllers.ErrorCallback;
 import com.blog.entities.database.DatabaseSettings;
+import com.blog.service.ErrorCallbackService;
 import com.blog.service.databaseBackup.DatabaseBackup;
 import com.blog.service.databaseBackup.PostgresDatabaseBackup.Errors.InternalPostgresToolError;
 import org.jetbrains.annotations.NotNull;
@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Implementation of {@link DatabaseBackup} interface for PostgreSQL.
@@ -20,14 +22,12 @@ import java.util.List;
 @Service
 public class PostgresDatabaseBackup implements DatabaseBackup {
     private static final Logger logger = LoggerFactory.getLogger(PostgresDatabaseBackup.class);
-    private static ErrorCallback errorCallback;
     private String pgDumpToolPath;
     private String psqlToolPath;
 
-    @Autowired
-    public void setErrorCallback(ErrorCallback errorCallback) {
-        PostgresDatabaseBackup.errorCallback = errorCallback;
-    }
+    private ErrorCallbackService errorCallbackService;
+
+    private ExecutorService postgresExecutorService;
 
     @Autowired
     public void setPgDumpToolPath(String pgDumpToolPath) {
@@ -37,6 +37,16 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
     @Autowired
     public void setPsqlToolPath(String psqlToolPath) {
         this.psqlToolPath = psqlToolPath;
+    }
+
+    @Autowired
+    public void setErrorCallbackService(ErrorCallbackService errorCallbackService) {
+        this.errorCallbackService = errorCallbackService;
+    }
+
+    @Autowired
+    public void setPostgresExecutorService(ExecutorService postgresExecutorService) {
+        this.postgresExecutorService = postgresExecutorService;
     }
 
     private ArrayList<String> addCommandParam(ArrayList<String> command, String paramName, String paramValue) {
@@ -83,15 +93,18 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
 
     /**
      * Creates PostgreSQL database plan-text backup.
+     * <p>
      * Backup is created by <i>pg_dump</i> tool.
      * <p>
-     * If pg_dump reports about error while executing, InternalPostgresToolError will be thrown
-     * In such case, you can find process's stderr messages in the log of this class.
+     * If pg_dump exits with non-zero exit code, InternalPostgresToolError will be thrown. In such case, you can find process's stderr
+     * messages in the log.
      * <p>
-     * Note, that this function returns directly process's stdin stream, that is you will not have to wait for full backup creation.
+     * Note, that this function returns directly process's stdin stream, that is you will not have to wait for full backup creation, but
+     * if buffer overflows, pg_dump process hangs until the stream's buffer will not be read.
      *
-     * @return input stream, connected to the normal output stream of the process, from which backup can be read
+     * @return input stream, connected to the output stream of the pg_dump process
      */
+    @NotNull
     public InputStream createBackup(@NotNull DatabaseSettings databaseSettings, @NotNull Integer id)
             throws InternalPostgresToolError {
         List<String> backupCommand = buildBackupCommand(databaseSettings);
@@ -105,40 +118,62 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
             throw new RuntimeException("Error starting PostgreSQL database backup process", ex);
         }
 
-        Thread processStderrReaderThread = new Thread(new ProcessStderrStreamReadWorker(process.getErrorStream(),
-                JobType.BACKUP, id));
-        processStderrReaderThread.start();
+        postgresExecutorService.submit(new ProcessStderrStreamReadWorker(process.getErrorStream(), JobType.BACKUP));
 
         // we should wait for backup process terminating in separate thread, otherwise
-        // waitFor() deadlocks the thread since process's output is not being read and buffer overflows which leads to blocking
-        new Thread() {
-            public void run() {
-                try {
-                    logger.info("Waiting for PostgreSQL backup process termination...");
-                    int exitVal = process.waitFor();
-                    if (exitVal != 0) {
-                        errorCallback.onError(new RuntimeException("pg_dump process terminated with error"), id);
-                    }
+        // waitFor() deadlocks the thread since process's output is not being read and buffer overflows what leads to blocking
+        postgresExecutorService.submit(() -> {
+            try {
+                InputStream inputStream = process.getInputStream();
 
-                    logger.info("Pg_dump has ended creating backup. Waiting for complete reading of output stream buffer...");
+                logger.info("Waiting for PostgreSQL backup process termination...");
 
-                    InputStream inputStream = process.getInputStream();
-                    try {
-                        while (inputStream.available() != 0) {
-                            Thread.yield();
+                boolean exited;
+                while (true) {
+                    exited = process.waitFor(10, TimeUnit.MINUTES);
+                    if (!exited) {
+                        // check if main thread was interrupted and according stream closed
+                        // if so, then we destroy process immediately
+                        try {
+                            inputStream.available();
+                        } catch (IOException ex) {
+                            if (ex.getMessage().equals("Stream was closed")) {
+                                logger.error("Stream was closed, but PostgreSQL backup process has not exited yet. Destroying process immediately");
+                                process.destroyForcibly();
+                                return;
+                            }
                         }
-                    } catch (IOException ex) {
-                        logger.error("Error checking process's output stream for data to be read. Probably stream was closed");
+                    } else {
+                        break;
                     }
-
-                    process.destroy();
-
-                    logger.info("PostgreSQL backup process destroyed");
-                } catch (InterruptedException ex) {
-                    logger.error("Error terminating PostgreSQL backup process", ex);
                 }
+
+                // method call will return immediately
+                int exitVal = process.waitFor();
+                if (exitVal != 0) {
+                    errorCallbackService.onError(new InternalPostgresToolError(
+                            "PostgreSQL backup process terminated with error. See process's stderr log for details"), id);
+                }
+
+                logger.info("PostgreSQL backup process terminated. Waiting for complete reading of output stream buffer...");
+
+                try {
+                    while (inputStream.available() != 0) {
+                        Thread.yield();
+                    }
+                } catch (IOException ex) {
+                    logger.error("Error checking process's output stream for data to be read. Probably stream was closed");
+                }
+
+                process.destroy();
+
+                logger.info("PostgreSQL backup process destroyed");
+            } catch (InterruptedException ex) {
+                logger.error("Error terminating PostgreSQL backup process", ex);
             }
-        }.start();
+        });
+
+        logger.info("PostgreSQL backup creation started. Database: {}", databaseSettings.getName());
 
         return process.getInputStream();
     }
@@ -165,13 +200,8 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
             throw new RuntimeException("Error starting PostgreSQL database restore process", ex);
         }
 
-        Thread processStderrReaderThread =
-                new Thread(new ProcessStderrStreamReadWorker(process.getErrorStream(), JobType.RESTORE, id));
-        processStderrReaderThread.start();
-
-        Thread processStdoutReaderThread = new Thread(
-                new ProcessStdoutStreamReadWorker(process.getInputStream(), JobType.RESTORE));
-        processStdoutReaderThread.start();
+        postgresExecutorService.submit(new ProcessStderrStreamReadWorker(process.getErrorStream(), JobType.RESTORE));
+        postgresExecutorService.submit(new ProcessStdoutStreamReadWorker(process.getInputStream(), JobType.RESTORE));
 
         try (
                 BufferedReader backupReader = new BufferedReader(new InputStreamReader(backupSource));
@@ -190,16 +220,19 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
 
         try {
             logger.info("Waiting for PostgreSQL restore process termination...");
-            process.waitFor();
+            int exitVal = process.waitFor();
+            if (exitVal != 0) {
+                throw new InternalPostgresToolError(
+                        "PostgreSQL restore process terminated with error. See process's stderr log for details");
+            }
         } catch (InterruptedException ex) {
             logger.error("Error terminating PostgreSQL restore process", ex);
-            throw new RuntimeException(ex);
         }
 
-        logger.info("Destroying PostgreSQL restore process...");
         process.destroy();
+        logger.info("PostgreSQL restore process destroyed");
 
-        logger.info("PostgreSQL database backup successfully restored. Restored to database {}", databaseSettings.getName());
+        logger.info("PostgreSQL database backup successfully restored. Database: {}", databaseSettings.getName());
     }
 
     private enum JobType {
@@ -223,17 +256,10 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
     private class ProcessStderrStreamReadWorker implements Runnable {
         private InputStream in;
 
-        private JobType jobType;
-
         private String STDERR_PRINT_FORMAT;
 
-        private Integer id;
-
-        ProcessStderrStreamReadWorker(InputStream in, JobType jobType, Integer id) {
+        ProcessStderrStreamReadWorker(InputStream in, JobType jobType) {
             this.in = in;
-            this.jobType = jobType;
-            this.id = id;
-
             this.STDERR_PRINT_FORMAT = jobType.getJobPrefix() + " stderr: {}";
         }
 
@@ -243,16 +269,9 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
             try (
                     BufferedReader errorStreamReader = new BufferedReader(new InputStreamReader(in))
             ) {
-                boolean isErrorOccurred = false;
                 String error;
                 while ((error = errorStreamReader.readLine()) != null) {
-                    isErrorOccurred = true;
                     logger.error(STDERR_PRINT_FORMAT, error);
-                }
-                if (isErrorOccurred) {
-                    errorCallback.onError(new InternalPostgresToolError(String.format(
-                            "Error occurred while executing PostgreSQL database job. Job Type: %s. See process's stderr for details",
-                            jobType.toString())), id);
                 }
             } catch (IOException ex) {
                 throw new RuntimeException("Error occurred while reading process standard error stream", ex);
@@ -265,11 +284,8 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
 
         private String STDOUT_PRINT_FORMAT;
 
-        private JobType jobType;
-
         ProcessStdoutStreamReadWorker(InputStream out, JobType jobType) {
             this.out = out;
-            this.jobType = jobType;
             this.STDOUT_PRINT_FORMAT = jobType.getJobPrefix() + " stdout: {}";
         }
 
