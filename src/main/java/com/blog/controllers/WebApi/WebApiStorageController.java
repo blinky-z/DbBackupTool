@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -74,6 +76,7 @@ public class WebApiStorageController {
 
                 storageSettings = StorageSettings.dropboxSettings(dropboxSettings)
                         .withSettingsName(addStorageRequest.getSettingsName())
+                        .withDate(LocalDateTime.now(ZoneOffset.UTC))
                         .build();
                 break;
             }
@@ -86,6 +89,7 @@ public class WebApiStorageController {
 
                 storageSettings = StorageSettings.localFileSystemSettings(localFileSystemSettings)
                         .withSettingsName(addStorageRequest.getSettingsName())
+                        .withDate(LocalDateTime.now(ZoneOffset.UTC))
                         .build();
                 break;
             }

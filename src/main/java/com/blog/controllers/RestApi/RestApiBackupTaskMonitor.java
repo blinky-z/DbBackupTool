@@ -1,13 +1,13 @@
 package com.blog.controllers.RestApi;
 
-import com.blog.entities.backup.BackupTask;
-import com.blog.manager.BackupTaskManager;
+import com.blog.entities.backup.Task;
+import com.blog.manager.TasksManager;
 import com.blog.webUI.renderModels.WebBackupTask;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,31 +20,30 @@ import java.util.List;
  */
 @RestController
 public class RestApiBackupTaskMonitor {
-    private SimpleDateFormat dateFormat;
+    private DateTimeFormatter dateFormatter;
 
-    private BackupTaskManager backupTaskManager;
+    private TasksManager tasksManager;
 
     @Autowired
-    public void setDateFormat(SimpleDateFormat dateFormat) {
-        this.dateFormat = dateFormat;
+    public void setDateFormatter(DateTimeFormatter dateFormatter) {
+        this.dateFormatter = dateFormatter;
     }
 
     @Autowired
-    public void setBackupTaskManager(BackupTaskManager backupTaskManager) {
-        this.backupTaskManager = backupTaskManager;
+    public void setTasksManager(TasksManager tasksManager) {
+        this.tasksManager = tasksManager;
     }
 
     @GetMapping(path = "/api/get-states")
     public List<WebBackupTask> getStates() {
         List<WebBackupTask> webBackupTasks = new ArrayList<>();
 
-        for (BackupTask backupTask : backupTaskManager.findAllByRunType(BackupTask.RunType.USER)) {
+        for (Task task : tasksManager.findAllByRunType(Task.RunType.USER)) {
             WebBackupTask webBackupTask = new WebBackupTask.Builder()
-                    .withId(backupTask.getId())
-                    .withType(backupTask.getType().toString())
-                    .withState(backupTask.getState().toString())
-                    .withTime(dateFormat.format(backupTask.getDate()))
-                    .withIsError(backupTask.isError())
+                    .withId(task.getId())
+                    .withType(task.getType().toString())
+                    .withState(task.getState().toString())
+                    .withTime(dateFormatter.format(task.getDate()))
                     .build();
 
             webBackupTasks.add(webBackupTask);

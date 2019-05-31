@@ -1,7 +1,7 @@
 package com.blog.controllers;
 
 import com.blog.entities.backup.BackupProperties;
-import com.blog.entities.backup.BackupTask;
+import com.blog.entities.backup.Task;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.database.DatabaseType;
 import com.blog.entities.storage.DropboxSettings;
@@ -9,9 +9,9 @@ import com.blog.entities.storage.LocalFileSystemSettings;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.entities.storage.StorageType;
 import com.blog.manager.BackupPropertiesManager;
-import com.blog.manager.BackupTaskManager;
 import com.blog.manager.DatabaseSettingsManager;
 import com.blog.manager.StorageSettingsManager;
+import com.blog.manager.TasksManager;
 import com.blog.webUI.formTransfer.*;
 import com.blog.webUI.renderModels.WebBackupItem;
 import com.blog.webUI.renderModels.WebBackupTask;
@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,7 +32,7 @@ import java.util.List;
 @Controller
 @ControllerAdvice
 public class WebFrontController {
-    private SimpleDateFormat dateFormat;
+    private DateTimeFormatter dateFormatter;
 
     private DatabaseSettingsManager databaseSettingsManager;
 
@@ -40,11 +40,11 @@ public class WebFrontController {
 
     private BackupPropertiesManager backupPropertiesManager;
 
-    private BackupTaskManager backupTaskManager;
+    private TasksManager tasksManager;
 
     @Autowired
-    public void setDateFormat(SimpleDateFormat dateFormat) {
-        this.dateFormat = dateFormat;
+    public void setDateFormatter(DateTimeFormatter dateFormatter) {
+        this.dateFormatter = dateFormatter;
     }
 
     @Autowired
@@ -63,8 +63,8 @@ public class WebFrontController {
     }
 
     @Autowired
-    public void setBackupTaskManager(BackupTaskManager backupTaskManager) {
-        this.backupTaskManager = backupTaskManager;
+    public void setTasksManager(TasksManager tasksManager) {
+        this.tasksManager = tasksManager;
     }
 
     @RequestMapping("/")
@@ -96,7 +96,7 @@ public class WebFrontController {
                         .withType(storageSettings.getType())
                         .withSettingsName(storageSettings.getSettingsName())
                         .withDesc(storageProperties.toString())
-                        .withTime(dateFormat.format(storageSettings.getDate()))
+                        .withTime(dateFormatter.format(storageSettings.getDate()))
                         .build();
 
                 storageList.add(storageItem);
@@ -114,7 +114,7 @@ public class WebFrontController {
                         .withType(storageSettings.getType())
                         .withSettingsName(storageSettings.getSettingsName())
                         .withDesc(storageProperties.toString())
-                        .withTime(dateFormat.format(storageSettings.getDate()))
+                        .withTime(dateFormatter.format(storageSettings.getDate()))
                         .build();
 
                 storageList.add(storageItem);
@@ -138,7 +138,7 @@ public class WebFrontController {
                         .withType(databaseSettings.getType())
                         .withSettingsName(databaseSettings.getSettingsName())
                         .withDesc(databaseProperties.toString())
-                        .withTime(dateFormat.format(databaseSettings.getDate()))
+                        .withTime(dateFormatter.format(databaseSettings.getDate()))
                         .build();
 
                 databaseList.add(databaseItem);
@@ -166,7 +166,7 @@ public class WebFrontController {
                         .withId(currentBackupProperties.getId())
                         .withDesc(backupProperties.toString())
                         .withName(currentBackupProperties.getBackupName())
-                        .withTime(dateFormat.format(currentBackupProperties.getDate()))
+                        .withTime(dateFormatter.format(currentBackupProperties.getDate()))
                         .build();
 
                 backupList.add(webBackupItem);
@@ -179,13 +179,12 @@ public class WebFrontController {
         {
             List<WebBackupTask> backupTaskList = new ArrayList<>();
 
-            for (BackupTask backupTask : backupTaskManager.findAllByRunType(BackupTask.RunType.USER)) {
+            for (Task task : tasksManager.findAllByRunType(Task.RunType.USER)) {
                 WebBackupTask webBackupTask = new WebBackupTask.Builder()
-                        .withId(backupTask.getId())
-                        .withType(backupTask.getType().toString())
-                        .withState(backupTask.getState().toString())
-                        .withIsError(backupTask.isError())
-                        .withTime(dateFormat.format(backupTask.getDate()))
+                        .withId(task.getId())
+                        .withType(task.getType().toString())
+                        .withState(task.getState().toString())
+                        .withTime(dateFormatter.format(task.getDate()))
                         .build();
 
                 backupTaskList.add(webBackupTask);

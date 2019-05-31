@@ -1,6 +1,5 @@
 package com.blog.controllers.WebApi.Validator;
 
-import com.blog.entities.backup.PlannedBackupTask;
 import com.blog.webUI.formTransfer.WebAddPlannedTaskRequest;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -9,7 +8,6 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Validates planned task creation request.
@@ -22,18 +20,7 @@ public class WebAddPlannedTaskRequestValidator {
         Objects.requireNonNull(target);
         Objects.requireNonNull(errors);
 
-        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "taskType", "error.addPlannedTaskRequest.taskType.empty",
-                "Please specify task type");
-
         WebAddPlannedTaskRequest webAddPlannedTaskRequest = (WebAddPlannedTaskRequest) target;
-
-        if (!errors.hasFieldErrors("taskType")) {
-            Optional<PlannedBackupTask.Type> optionalType = PlannedBackupTask.Type.of(webAddPlannedTaskRequest.getTaskType());
-            if (!optionalType.isPresent()) {
-                errors.rejectValue("taskType", "error.addPlannedTaskRequest.taskType.malformed",
-                        "Invalid task type");
-            }
-        }
 
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "databaseSettingsName",
                 "error.addPlannedTaskRequest.databaseSettingsName.empty",

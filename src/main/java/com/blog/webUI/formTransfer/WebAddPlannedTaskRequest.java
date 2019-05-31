@@ -9,8 +9,6 @@ import java.util.List;
  * Passed to router "/add-planned-task" on POST request.
  */
 public class WebAddPlannedTaskRequest {
-    private String taskType;
-
     private String databaseSettingsName;
 
     private List<String> storageSettingsNameList = new ArrayList<>();
@@ -18,14 +16,6 @@ public class WebAddPlannedTaskRequest {
     private List<String> processors = new ArrayList<>();
 
     private String interval;
-
-    public String getTaskType() {
-        return taskType;
-    }
-
-    public void setTaskType(String taskType) {
-        this.taskType = taskType;
-    }
 
     public String getDatabaseSettingsName() {
         return databaseSettingsName;
@@ -57,5 +47,15 @@ public class WebAddPlannedTaskRequest {
 
     public void setInterval(String interval) {
         this.interval = interval;
+    }
+
+    @Override
+    public String toString() {
+        return "WebAddPlannedTaskRequest{" +
+                "databaseSettingsName='" + databaseSettingsName + '\'' +
+                ", storageSettingsNameList=" + storageSettingsNameList +
+                ", processors=" + processors +
+                ", interval='" + interval + '\'' +
+                '}';
     }
 }

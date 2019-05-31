@@ -5,12 +5,12 @@ import com.blog.controllers.WebApi.Validator.WebAddPlannedTaskRequestValidator;
 import com.blog.controllers.WebApi.Validator.WebCreateBackupRequestValidator;
 import com.blog.controllers.WebApi.Validator.WebRestoreBackupRequestValidator;
 import com.blog.entities.backup.BackupProperties;
-import com.blog.entities.backup.BackupTask;
-import com.blog.entities.backup.BackupTaskType;
-import com.blog.entities.backup.PlannedBackupTask;
+import com.blog.entities.backup.PlannedTask;
+import com.blog.entities.backup.Task;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.manager.*;
+import com.blog.service.TasksStarterService;
 import com.blog.webUI.formTransfer.WebAddPlannedTaskRequest;
 import com.blog.webUI.formTransfer.WebCreateBackupRequest;
 import com.blog.webUI.formTransfer.WebDeleteBackupRequest;
@@ -24,13 +24,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 
-import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 
 /**
@@ -40,13 +35,9 @@ import java.util.concurrent.Future;
 public class WebApiBackupController {
     private static final Logger logger = LoggerFactory.getLogger(WebApiBackupController.class);
 
-    private DatabaseBackupManager databaseBackupManager;
-
     private DatabaseSettingsManager databaseSettingsManager;
 
     private StorageSettingsManager storageSettingsManager;
-
-    private BackupLoadManager backupLoadManager;
 
     private BackupProcessorManager backupProcessorManager;
 
@@ -56,18 +47,13 @@ public class WebApiBackupController {
 
     private WebAddPlannedTaskRequestValidator webAddPlannedTaskRequestValidator;
 
-    private ExecutorService executorService = Executors.newFixedThreadPool(10);
+    private TasksManager tasksManager;
 
-    private BackupTaskManager backupTaskManager;
-
-    private PlannedBackupTasksManager plannedBackupTasksManager;
+    private PlannedTasksManager plannedTasksManager;
 
     private BackupPropertiesManager backupPropertiesManager;
 
-    @Autowired
-    public void setDatabaseBackupManager(DatabaseBackupManager databaseBackupManager) {
-        this.databaseBackupManager = databaseBackupManager;
-    }
+    private TasksStarterService tasksStarterService;
 
     @Autowired
     public void setDatabaseSettingsManager(DatabaseSettingsManager databaseSettingsManager) {
@@ -77,11 +63,6 @@ public class WebApiBackupController {
     @Autowired
     public void setStorageSettingsManager(StorageSettingsManager storageSettingsManager) {
         this.storageSettingsManager = storageSettingsManager;
-    }
-
-    @Autowired
-    public void setBackupLoadManager(BackupLoadManager backupLoadManager) {
-        this.backupLoadManager = backupLoadManager;
     }
 
     @Autowired
@@ -105,18 +86,23 @@ public class WebApiBackupController {
     }
 
     @Autowired
-    public void setBackupTaskManager(BackupTaskManager backupTaskManager) {
-        this.backupTaskManager = backupTaskManager;
+    public void setTasksManager(TasksManager tasksManager) {
+        this.tasksManager = tasksManager;
     }
 
     @Autowired
-    public void setPlannedBackupTasksManager(PlannedBackupTasksManager plannedBackupTasksManager) {
-        this.plannedBackupTasksManager = plannedBackupTasksManager;
+    public void setPlannedTasksManager(PlannedTasksManager plannedTasksManager) {
+        this.plannedTasksManager = plannedTasksManager;
     }
 
     @Autowired
     public void setBackupPropertiesManager(BackupPropertiesManager backupPropertiesManager) {
         this.backupPropertiesManager = backupPropertiesManager;
+    }
+
+    @Autowired
+    public void setTasksStarterService(TasksStarterService tasksStarterService) {
+        this.tasksStarterService = tasksStarterService;
     }
 
     @PostMapping(path = "/create-backup")
@@ -155,44 +141,11 @@ public class WebApiBackupController {
 
             WebCreateBackupRequest.BackupCreationProperties backupCreationProperties = entry.getValue();
 
-            List<String> processorList = backupCreationProperties.getProcessors();
             BackupProperties backupProperties =
-                    backupLoadManager.initNewBackupProperties(storageSettings, processorList, databaseName);
+                    backupPropertiesManager.initNewBackupProperties(storageSettings, backupCreationProperties.getProcessors(), databaseName);
 
-            Integer taskId = backupTaskManager.initNewTask(BackupTaskType.CREATE_BACKUP, BackupTask.RunType.USER, backupProperties);
-            Future task = executorService.submit(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                backupTaskManager.updateTaskState(taskId, BackupTask.State.CREATING);
-
-                                logger.info("createBackup(): Creating backup...");
-                                InputStream backupStream = databaseBackupManager.createBackup(databaseSettings, taskId);
-
-                                backupTaskManager.updateTaskState(taskId, BackupTask.State.APPLYING_PROCESSORS);
-
-                                logger.info("createBackup(): Applying processors on created backup. Processors: {}", processorList);
-                                InputStream processedBackupStream = backupProcessorManager.process(backupStream, processorList);
-
-                                logger.info("createBackup(): Uploading backup...");
-
-                                backupTaskManager.updateTaskState(taskId, BackupTask.State.UPLOADING);
-
-                                backupLoadManager.uploadBackup(processedBackupStream, backupProperties, taskId);
-
-                                backupTaskManager.updateTaskState(taskId, BackupTask.State.COMPLETED);
-
-                                logger.info("createBackup(): Creating backup completed. Backup properties: {}", backupProperties);
-                            } catch (RuntimeException ex) {
-                                logger.info("createBackup(): Error occurred while creating backup. Backup properties: {}",
-                                        backupProperties, ex);
-                                backupTaskManager.setError(taskId);
-                            }
-                        }
-                    }
-            );
-            backupTaskManager.addTaskFuture(taskId, task);
+            Integer taskId = tasksManager.initNewTask(Task.Type.CREATE_BACKUP, Task.RunType.USER, backupProperties);
+            tasksStarterService.startBackupTask(taskId, backupProperties, databaseSettings, logger);
 
             currentStorage++;
         }
@@ -225,39 +178,8 @@ public class WebApiBackupController {
         logger.info("restoreBackup(): Backup properties: {}", backupProperties);
         logger.info("restoreBackup(): Database settings: {}", databaseSettings);
 
-        Integer taskId = backupTaskManager.initNewTask(BackupTaskType.RESTORE_BACKUP, BackupTask.RunType.USER, backupProperties);
-        Future task = executorService.submit(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            backupTaskManager.updateTaskState(taskId, BackupTask.State.DOWNLOADING);
-
-                            logger.info("restoreBackup(): Downloading backup...");
-                            InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, taskId);
-
-                            backupTaskManager.updateTaskState(taskId, BackupTask.State.APPLYING_DEPROCESSORS);
-
-                            logger.info("restoreBackup(): Deprocessing backup...");
-                            InputStream deprocessedBackup = backupProcessorManager.deprocess(downloadedBackup, backupProperties.getProcessors());
-
-                            backupTaskManager.updateTaskState(taskId, BackupTask.State.RESTORING);
-
-                            logger.info("restoreBackup(): Restoring backup...");
-                            databaseBackupManager.restoreBackup(deprocessedBackup, databaseSettings, taskId);
-
-                            backupTaskManager.updateTaskState(taskId, BackupTask.State.COMPLETED);
-
-                            logger.info("createBackup(): Restoring backup completed. Backup properties: {}", backupProperties);
-                        } catch (RuntimeException ex) {
-                            logger.info("restoreBackup(): Error occurred while restoring backup. Backup properties: {}",
-                                    backupProperties, ex);
-                            backupTaskManager.setError(taskId);
-                        }
-                    }
-                }
-        );
-        backupTaskManager.addTaskFuture(taskId, task);
+        Integer taskId = tasksManager.initNewTask(Task.Type.RESTORE_BACKUP, Task.RunType.USER, backupProperties);
+        tasksStarterService.startRestoreTask(taskId, backupProperties, databaseSettings, logger);
 
         return "redirect:/dashboard";
     }
@@ -294,32 +216,10 @@ public class WebApiBackupController {
                 new RuntimeException(String.format(
                         "Can't retrieve backup properties. Error: no backup properties with ID %d", backupId)));
 
-        Integer taskId = backupTaskManager.initNewTask(BackupTaskType.DELETE_BACKUP, BackupTask.RunType.USER, backupProperties);
+        Integer taskId = tasksManager.initNewTask(Task.Type.DELETE_BACKUP, Task.RunType.USER, backupProperties);
 
         backupPropertiesManager.deleteById(backupId);
-        Future task = executorService.submit(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            logger.info("deleteBackup(): Deleting backup started. Backup properties: {}", backupProperties);
-
-                            backupTaskManager.updateTaskState(taskId, BackupTask.State.DELETING);
-
-                            backupLoadManager.deleteBackup(backupProperties, taskId);
-
-                            backupTaskManager.updateTaskState(taskId, BackupTask.State.COMPLETED);
-
-                            logger.info("deleteBackup(): Deleting backup completed. Backup properties: {}", backupProperties);
-                        } catch (RuntimeException ex) {
-                            logger.info("deleteBackup(): Error occurred while deleting backup. Backup properties: {}",
-                                    backupProperties, ex);
-                            backupTaskManager.setError(taskId);
-                        }
-                    }
-
-                });
-        backupTaskManager.addTaskFuture(taskId, task);
+        tasksStarterService.startDeleteTask(taskId, backupProperties, logger);
 
         return "redirect:/dashboard";
     }
@@ -333,11 +233,6 @@ public class WebApiBackupController {
             logger.info("Invalid planned task creation request. Error: {}", bindingResult.getAllErrors());
 
             return "dashboard";
-        }
-
-        Optional<PlannedBackupTask.Type> optionalType = PlannedBackupTask.Type.of(webAddPlannedTaskRequest.getTaskType());
-        if (!optionalType.isPresent()) {
-            throw new ValidationError("Can't create planned task: Invalid task type");
         }
 
         String databaseSettingsName = webAddPlannedTaskRequest.getDatabaseSettingsName();
@@ -362,12 +257,12 @@ public class WebApiBackupController {
             }
         }
 
-        PlannedBackupTask savedPlannedBackupTask = plannedBackupTasksManager.addNewTask(optionalType.get(),
+        PlannedTask savedPlannedTask = plannedTasksManager.addNewTask(
                 webAddPlannedTaskRequest.getDatabaseSettingsName(),
                 webAddPlannedTaskRequest.getStorageSettingsNameList(), webAddPlannedTaskRequest.getProcessors(),
                 Long.valueOf(webAddPlannedTaskRequest.getInterval()));
 
-        logger.info("Planned backup task saved into database. Saved task: {}", savedPlannedBackupTask);
+        logger.info("Planned backup task saved into database. Saved task: {}", savedPlannedTask);
 
         return "redirect:/dashboard";
     }

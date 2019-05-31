@@ -17,15 +17,12 @@ public class WebBackupTask {
 
     private final String time;
 
-    private final Boolean isError;
-
     private WebBackupTask(@NotNull Integer id, @NotNull String type, @NotNull String state,
-                          @NotNull String time, @NotNull Boolean isError) {
+                          @NotNull String time) {
         this.id = id;
         this.type = type;
         this.state = state;
         this.time = time;
-        this.isError = isError;
     }
 
     public Integer getId() {
@@ -44,10 +41,6 @@ public class WebBackupTask {
         return time;
     }
 
-    public Boolean getError() {
-        return isError;
-    }
-
     @Override
     public String toString() {
         return "WebBackupTask{" +
@@ -55,7 +48,6 @@ public class WebBackupTask {
                 ", type='" + type + '\'' +
                 ", state='" + state + '\'' +
                 ", time='" + time + '\'' +
-                ", isError=" + isError +
                 '}';
     }
 
@@ -65,7 +57,6 @@ public class WebBackupTask {
         private String type;
         private String state;
         private String time;
-        private Boolean isError;
 
         public Builder() {
         }
@@ -90,13 +81,8 @@ public class WebBackupTask {
             return this;
         }
 
-        public Builder withIsError(Boolean isError) {
-            this.isError = isError;
-            return this;
-        }
-
         public WebBackupTask build() {
-            return new WebBackupTask(id, type, state, time, isError);
+            return new WebBackupTask(id, type, state, time);
         }
     }
 }
