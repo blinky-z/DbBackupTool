@@ -4,7 +4,7 @@ import javax.persistence.AttributeConverter;
 import java.util.Arrays;
 import java.util.List;
 
-class ListFieldConverter implements AttributeConverter<List<String>, String> {
+class StringListToStringFieldConverter implements AttributeConverter<List<String>, String> {
     private static final String DELIMITER = ",";
 
     @Override
