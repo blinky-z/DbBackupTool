@@ -31,8 +31,9 @@ public class DatabaseBackupManager {
      *
      * @param databaseSettings database settings of database to dump
      * @param id               create backup task ID
-     * @return input stream, from which created plain text backup can be read.
+     * @return input stream or {@code null} if thread was interrupted
      */
+    @NotNull
     public InputStream createBackup(@NotNull DatabaseSettings databaseSettings, @NotNull Integer id) {
         Objects.requireNonNull(databaseSettings);
         Objects.requireNonNull(id);
@@ -52,7 +53,7 @@ public class DatabaseBackupManager {
             }
         }
 
-        logger.info("Backup successfully created. Database name: {}", databaseSettings.getName());
+        logger.info("Backup creation started. Database name: {}", databaseSettings.getName());
 
         return backupStream;
     }

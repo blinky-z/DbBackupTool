@@ -5,7 +5,6 @@ import com.blog.entities.storage.StorageSettings;
 import com.blog.entities.storage.StorageType;
 import com.blog.service.storage.DropboxStorage;
 import com.blog.service.storage.FileSystemStorage;
-import com.blog.service.storage.StorageConstants;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,8 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
-import java.util.Date;
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -26,8 +23,6 @@ public class BackupLoadManager {
 
     private StorageSettingsManager storageSettingsManager;
 
-    private BackupPropertiesManager backupPropertiesManager;
-
     private DropboxStorage dropboxStorage;
 
     private FileSystemStorage fileSystemStorage;
@@ -38,11 +33,6 @@ public class BackupLoadManager {
     }
 
     @Autowired
-    public void setBackupPropertiesManager(BackupPropertiesManager backupPropertiesManager) {
-        this.backupPropertiesManager = backupPropertiesManager;
-    }
-
-    @Autowired
     public void setDropboxStorage(DropboxStorage dropboxStorage) {
         this.dropboxStorage = dropboxStorage;
     }
@@ -50,25 +40,6 @@ public class BackupLoadManager {
     @Autowired
     public void setFileSystemStorage(FileSystemStorage fileSystemStorage) {
         this.fileSystemStorage = fileSystemStorage;
-    }
-
-    /**
-     * Use this method to build new {@link BackupProperties} before uploading backup to storage.
-     *
-     * @param storageSettings storage settings where backup will be uploaded to
-     * @param processors      processors that applies on backup
-     * @param databaseName    database name of database of which backup was created
-     * @return new BackupProperties with required fields set
-     */
-    public BackupProperties initNewBackupProperties(@NotNull StorageSettings storageSettings, @NotNull List<String> processors,
-                                                    @NotNull String databaseName) {
-        Date creationTime = new Date();
-        String backupName = String.format(
-                StorageConstants.BACKUP_NAME_TEMPLATE, databaseName, StorageConstants.dateFormatter.format(creationTime));
-
-        BackupProperties backupProperties =
-                new BackupProperties(backupName, processors, creationTime, storageSettings.getSettingsName());
-        return backupPropertiesManager.save(backupProperties);
     }
 
     /**
@@ -117,6 +88,7 @@ public class BackupLoadManager {
      * @param id               backup restoration task ID
      * @return InputStream from which downloaded backup can be read
      */
+    @NotNull
     public InputStream downloadBackup(@NotNull BackupProperties backupProperties, @NotNull Integer id) {
         Objects.requireNonNull(backupProperties);
 

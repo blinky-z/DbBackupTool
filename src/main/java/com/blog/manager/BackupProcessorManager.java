@@ -1,6 +1,7 @@
 package com.blog.manager;
 
 import com.blog.service.processor.Processor;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,7 @@ public class BackupProcessorManager {
      * @param processorList processor names to apply
      * @return a processed backup
      */
+    @NotNull
     public InputStream process(InputStream in, List<String> processorList) {
         logger.info("Processing backup... Processors: {}", processorList);
         int processorsAmount = processorList.size();
@@ -47,12 +49,13 @@ public class BackupProcessorManager {
     }
 
     /**
-     * Applies deprocessors on backup..
+     * Applies deprocessors on backup.
      *
      * @param in              InputStream from which backup can be read.
      * @param deprocessorList deprocessor names to apply
      * @return a deprocessed backup
      */
+    @NotNull
     public InputStream deprocess(InputStream in, List<String> deprocessorList) {
         logger.info("Deprocessing backup... Processors: {}", deprocessorList);
         int processorsAmount = deprocessorList.size();
