@@ -15,10 +15,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -42,7 +42,6 @@ class PlannedBackupTasksWatcher {
     private StorageSettingsManager storageSettingsManager;
     private BackupPropertiesManager backupPropertiesManager;
     private TasksStarterService tasksStarterService;
-    private DataSource dataSource;
 
     @Autowired
     public void setTasksManager(TasksManager tasksManager) {
@@ -79,11 +78,6 @@ class PlannedBackupTasksWatcher {
         this.tasksStarterService = tasksStarterService;
     }
 
-    @Autowired
-    public void setDataSource(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
     /**
      * This function reverts planned task turning all related tasks into error state.
      *
@@ -97,7 +91,7 @@ class PlannedBackupTasksWatcher {
         for (Integer executingTaskId : executingTasks) {
             Optional<Task> optionalBackupTask = tasksManager.findById(executingTaskId);
             if (!optionalBackupTask.isPresent()) {
-                logger.error("No such task with ID {} that relates to planned task with ID {}. Skip reverting of this task",
+                logger.error("No such handler task that relates to planned task. Handler task ID: {}. Planned task ID: {}. Skip reverting of this task",
                         executingTaskId, plannedTaskId);
                 continue;
             }
@@ -136,15 +130,10 @@ class PlannedBackupTasksWatcher {
      * watcher when the one will be started next time.</li>
      * </ol>
      * <p>
-     *
-     * @throws SQLException if error occurs when working with connection
      */
     @Scheduled(fixedDelay = 30 * 1000)
-    void watchExecutingPlannedTasks() throws SQLException {
-        Connection connection = dataSource.getConnection();
-        connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-        connection.setAutoCommit(false);
-
+    @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
+    void watchExecutingPlannedTasks() {
         for (PlannedTask plannedTask : plannedTasksManager.findAllByState(page, PlannedTask.State.EXECUTING)) {
             if (plannedTask.getState() != PlannedTask.State.EXECUTING) {
                 continue;
@@ -158,7 +147,7 @@ class PlannedBackupTasksWatcher {
             for (Integer executingTaskId : executingTasks) {
                 Optional<Task> optionalBackupTask = tasksManager.findById(executingTaskId);
                 if (!optionalBackupTask.isPresent()) {
-                    logger.error("No such task with ID {} that relates to planned task with ID {}. Skip checking of this task",
+                    logger.error("No such handler task that relates to planned task. Handler task ID: {}. Planned task ID: {}. Skip checking of this task",
                             executingTaskId, plannedBackupTaskId);
                     continue;
                 }
@@ -185,9 +174,6 @@ class PlannedBackupTasksWatcher {
                 plannedTasksManager.updateState(plannedBackupTaskId, PlannedTask.State.WAITING);
             }
         }
-
-        connection.commit();
-        connection.close();
     }
 
     /**
@@ -208,7 +194,6 @@ class PlannedBackupTasksWatcher {
      * Considering this, we are able to watch progress of every executing planned task: if any error occurred or all tasks
      * completed successfully.
      *
-     * @throws SQLException if error occurs when working with connection
      * @implNote Only tasks in state {@link PlannedTask.State#WAITING} are handled. Once task is started it turns in state
      * {@link PlannedTask.State#EXECUTING} to prevent being handled again.
      * <p>
@@ -219,11 +204,8 @@ class PlannedBackupTasksWatcher {
      * @see #watchExecutingPlannedTasks()
      */
     @Scheduled(fixedDelay = 60 * 1000)
-    void watchPlannedTasks() throws SQLException {
-        Connection connection = dataSource.getConnection();
-        connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-        connection.setAutoCommit(false);
-
+    @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
+    void watchPlannedTasks() {
         for (PlannedTask plannedTask : plannedTasksManager.findAllByState(page, PlannedTask.State.WAITING)) {
             LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
             LocalDateTime nextTaskTimeFireTime = plannedTask.getLastStartedTime().plus(plannedTask.getInterval());
@@ -264,8 +246,5 @@ class PlannedBackupTasksWatcher {
 
             logger.info("Planned backup task started. Task ID: {}", plannedBackupTaskId);
         }
-
-        connection.commit();
-        connection.close();
     }
 }

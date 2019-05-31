@@ -11,10 +11,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Optional;
 
 /**
@@ -30,8 +30,6 @@ class ErrorTasksWatcher {
 
     private ErrorTasksManager errorTasksManager;
 
-    private DataSource dataSource;
-
     @Autowired
     public void setTasksManager(TasksManager tasksManager) {
         this.tasksManager = tasksManager;
@@ -40,11 +38,6 @@ class ErrorTasksWatcher {
     @Autowired
     public void setErrorTasksManager(ErrorTasksManager errorTasksManager) {
         this.errorTasksManager = errorTasksManager;
-    }
-
-    @Autowired
-    public void setDataSource(DataSource dataSource) {
-        this.dataSource = dataSource;
     }
 
     /**
@@ -62,11 +55,8 @@ class ErrorTasksWatcher {
      * {@link TasksManager#revertTask(Task)} method.
      */
     @Scheduled(fixedDelay = 60 * 1000)
-    void watchErrorTasks() throws SQLException {
-        Connection connection = dataSource.getConnection();
-        connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-        connection.setAutoCommit(false);
-
+    @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
+    void watchErrorTasks() {
         for (ErrorTask errorTask : errorTasksManager.findAll(page)) {
             if (!errorTask.isErrorHandled()) {
                 Integer backupTaskId = errorTask.getTaskId();
@@ -82,8 +72,5 @@ class ErrorTasksWatcher {
                 errorTasksManager.setErrorHandled(backupTaskId);
             }
         }
-
-        connection.commit();
-        connection.close();
     }
 }
