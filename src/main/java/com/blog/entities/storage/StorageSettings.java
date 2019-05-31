@@ -3,7 +3,7 @@ package com.blog.entities.storage;
 import org.jetbrains.annotations.NotNull;
 
 import javax.persistence.*;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -50,8 +50,8 @@ public class StorageSettings {
     /**
      * Settings creation time.
      */
-    @Column(insertable = false, updatable = false)
-    private Date date;
+    @Column(updatable = false)
+    private LocalDateTime date;
 
     /**
      * This field contains storage specific fields depending on storage type.
@@ -70,10 +70,11 @@ public class StorageSettings {
     StorageSettings() {
     }
 
-    private StorageSettings(@NotNull StorageType type, @NotNull String settingsName,
+    private StorageSettings(@NotNull StorageType type, @NotNull String settingsName, @NotNull LocalDateTime date,
                             @NotNull AdditionalStorageSettings additionalStorageSettings) {
         this.type = Objects.requireNonNull(type);
-        this.settingsName = settingsName;
+        this.settingsName = Objects.requireNonNull(settingsName);
+        this.date = Objects.requireNonNull(date);
         this.additionalStorageSettings = Objects.requireNonNull(additionalStorageSettings);
     }
 
@@ -119,11 +120,11 @@ public class StorageSettings {
         return type;
     }
 
-    public Date getDate() {
+    public LocalDateTime getDate() {
         return date;
     }
 
-    void setDate(Date date) {
+    void setDate(LocalDateTime date) {
         this.date = date;
     }
 
@@ -155,6 +156,8 @@ public class StorageSettings {
 
         private String settingsName;
 
+        private LocalDateTime date;
+
         private LocalFileSystemSettings localFileSystemSettings;
 
         private DropboxSettings dropboxSettings;
@@ -165,11 +168,16 @@ public class StorageSettings {
         public StorageSettings build() {
             AdditionalStorageSettings additionalStorageSettings = new AdditionalStorageSettings(
                     type, localFileSystemSettings, dropboxSettings);
-            return new StorageSettings(type, settingsName, additionalStorageSettings);
+            return new StorageSettings(type, settingsName, date, additionalStorageSettings);
         }
 
         public Builder withSettingsName(@NotNull String settingsName) {
             this.settingsName = settingsName;
+            return this;
+        }
+
+        public Builder withDate(@NotNull LocalDateTime date) {
+            this.date = date;
             return this;
         }
     }

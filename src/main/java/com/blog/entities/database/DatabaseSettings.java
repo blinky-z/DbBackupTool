@@ -3,7 +3,7 @@ package com.blog.entities.database;
 import org.jetbrains.annotations.NotNull;
 
 import javax.persistence.*;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -83,8 +83,8 @@ public class DatabaseSettings {
     /**
      * Settings creation time.
      */
-    @Column(insertable = false, updatable = false)
-    private Date date;
+    @Column(updatable = false)
+    private LocalDateTime date;
 
     /**
      * This field contains database specific fields depending on database type.
@@ -103,11 +103,13 @@ public class DatabaseSettings {
     DatabaseSettings() {
     }
 
-    private DatabaseSettings(@NotNull DatabaseType type, @NotNull String settingsName, @NotNull String host, int port,
+    private DatabaseSettings(@NotNull DatabaseType type, @NotNull String settingsName, @NotNull LocalDateTime date,
+                             @NotNull String host, int port,
                              @NotNull String name, @NotNull String login, @NotNull String password,
                              @NotNull AdditionalDatabaseSettings additionalDatabaseSettings) {
         this.type = Objects.requireNonNull(type);
         this.settingsName = Objects.requireNonNull(settingsName);
+        this.date = Objects.requireNonNull(date);
         this.host = Objects.requireNonNull(host);
         this.port = port;
         this.name = Objects.requireNonNull(name);
@@ -181,11 +183,11 @@ public class DatabaseSettings {
         this.password = password;
     }
 
-    public Date getDate() {
+    public LocalDateTime getDate() {
         return date;
     }
 
-    void setDate(Date date) {
+    void setDate(LocalDateTime date) {
         this.date = date;
     }
 
@@ -220,6 +222,7 @@ public class DatabaseSettings {
     public static final class Builder {
         private DatabaseType type;
         private String settingsName;
+        private LocalDateTime date;
         private String host;
         private int port;
         private String databaseName;
@@ -260,9 +263,14 @@ public class DatabaseSettings {
             return this;
         }
 
+        public Builder withDate(@NotNull LocalDateTime date) {
+            this.date = date;
+            return this;
+        }
+
         public DatabaseSettings build() {
             AdditionalDatabaseSettings additionalDatabaseSettings = new AdditionalDatabaseSettings(type, postgresSettings);
-            return new DatabaseSettings(type, settingsName, host, port, databaseName, login, password, additionalDatabaseSettings);
+            return new DatabaseSettings(type, settingsName, date, host, port, databaseName, login, password, additionalDatabaseSettings);
         }
     }
 }
