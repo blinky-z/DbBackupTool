@@ -501,16 +501,6 @@
                     <form action="#" id="addPlannedTaskForm" th:action="@{/add-planned-task}" th:method="post"
                           th:object="${webAddPlannedTaskRequest}">
                         <div class="form-group">
-                            <label for="addPlannedTask-selectType">Run task</label>
-                            <select class="form-control" id="addPlannedTask-selectType"
-                                    th:errorclass="is-invalid" th:field="*{taskType}">
-                                <option selected value="">Select Type</option>
-                                <option th:value="once">Once</option>
-                                <option th:value="periodic">Periodically</option>
-                            </select>
-                            <div class="invalid-feedback" th:errors="*{taskType}" th:if="${#fields.hasErrors('taskType')}"></div>
-                        </div>
-                        <div class="form-group">
                             <label for="addPlannedTask-selectDatabase">Select database to backup</label>
                             <select class="form-control" id="addPlannedTask-selectDatabase"
                                     th:errorclass="is-invalid" th:field="*{databaseSettingsName}">
