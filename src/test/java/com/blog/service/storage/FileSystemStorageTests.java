@@ -4,6 +4,7 @@ import com.blog.ApplicationTests;
 import com.blog.TestUtils;
 import com.blog.entities.storage.StorageSettings;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,7 +14,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -45,9 +46,8 @@ class FileSystemStorageTests extends ApplicationTests {
     }
 
     @Test
-    void whenUploadSmallBackupAndDownload_contentIsEqual() throws IOException {
-        String backupName = "whenUploadSmallBackupAndDownload_contentIsEqual";
-        backupName = backupName + "_" + StorageConstants.dateFormatter.format(new Date());
+    void whenUploadSmallBackupAndDownload_contentIsEqual(TestInfo testInfo) throws IOException {
+        String backupName = testInfo.getDisplayName() + "_" + StorageConstants.dateFormatter.format(LocalDateTime.now());
         byte[] source = testUtils.getRandomBytes(1000);
 
         try (
@@ -64,9 +64,8 @@ class FileSystemStorageTests extends ApplicationTests {
     }
 
     @Test
-    void whenUploadBigBackupAndDownload_contentIsEqual() throws IOException {
-        String backupName = "whenUploadBigBackupAndDownload_contentIsEqual";
-        backupName = backupName + "_" + StorageConstants.dateFormatter.format(new Date());
+    void whenUploadBigBackupAndDownload_contentIsEqual(TestInfo testInfo) throws IOException {
+        String backupName = testInfo.getDisplayName() + "_" + StorageConstants.dateFormatter.format(LocalDateTime.now());
         byte[] source = testUtils.getRandomBytes(1000000);
 
         try (
@@ -83,9 +82,8 @@ class FileSystemStorageTests extends ApplicationTests {
     }
 
     @Test
-    void whenUploadBackupAndDelete_backupIsDeletedOnStorage() throws IOException {
-        String backupName = "whenUploadBackupAndDelete_backupIsDeletedOnStorage";
-        backupName = backupName + "_" + StorageConstants.dateFormatter.format(new Date());
+    void whenUploadBackupAndDelete_backupIsDeletedOnStorage(TestInfo testInfo) throws IOException {
+        String backupName = testInfo.getDisplayName() + "_" + StorageConstants.dateFormatter.format(LocalDateTime.now());
         byte[] source = testUtils.getRandomBytes(1000000);
 
         try (

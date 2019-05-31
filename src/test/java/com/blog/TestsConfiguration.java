@@ -28,6 +28,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Objects;
 
@@ -98,6 +100,7 @@ public class TestsConfiguration {
                         .withLogin("postgres")
                         .withPassword("postgres")
                         .withSettingsName(settingsName)
+                        .withDate(LocalDateTime.now(ZoneOffset.UTC))
                         .build();
                 break;
             }
@@ -144,6 +147,7 @@ public class TestsConfiguration {
         return Objects.requireNonNull(storageSettingsManager.save(
                 StorageSettings.dropboxSettings(dropboxSettings)
                         .withSettingsName(dropboxStorageSettingsName)
+                        .withDate(LocalDateTime.now(ZoneOffset.UTC))
                         .build()));
     }
 
@@ -173,6 +177,7 @@ public class TestsConfiguration {
         return Objects.requireNonNull(storageSettingsManager.save(
                 StorageSettings.localFileSystemSettings(localFileSystemSettings)
                         .withSettingsName(localFileSystemStorageSettingsName)
+                        .withDate(LocalDateTime.now(ZoneOffset.UTC))
                         .build()));
     }
 }

@@ -9,6 +9,7 @@ import com.dropbox.core.DbxRequestConfig;
 import com.dropbox.core.v2.DbxClientV2;
 import com.dropbox.core.v2.files.GetMetadataErrorException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,7 +18,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -48,9 +49,8 @@ class DropboxStorageTests extends ApplicationTests {
     }
 
     @Test
-    void whenUploadSmallBackupAndDownload_contentIsEqual() throws IOException {
-        String backupName = "dropboxStorage_whenUploadSmallBackupAndDownload_contentIsEqual";
-        backupName = backupName + "_" + StorageConstants.dateFormatter.format(new Date());
+    void whenUploadSmallBackupAndDownload_contentIsEqual(TestInfo testInfo) throws IOException {
+        String backupName = testInfo.getDisplayName() + "_" + StorageConstants.dateFormatter.format(LocalDateTime.now());
         byte[] source = testUtils.getRandomBytes(1000);
 
         try (
@@ -66,9 +66,8 @@ class DropboxStorageTests extends ApplicationTests {
     }
 
     @Test
-    void whenUploadBigBackupAndDownload_contentIsEqual() throws IOException {
-        String backupName = "dropboxStorage_whenUploadBigBackupAndDownload_contentIsEqual";
-        backupName = backupName + "_" + StorageConstants.dateFormatter.format(new Date());
+    void whenUploadBigBackupAndDownload_contentIsEqual(TestInfo testInfo) throws IOException {
+        String backupName = testInfo.getDisplayName() + "_" + StorageConstants.dateFormatter.format(LocalDateTime.now());
         byte[] source = testUtils.getRandomBytes(1000000);
 
         try (
@@ -84,9 +83,8 @@ class DropboxStorageTests extends ApplicationTests {
     }
 
     @Test
-    void whenUploadBackupAndDelete_backupIsDeletedOnStorage() throws IOException, DbxException {
-        String backupName = "whenUploadBackupAndDelete_backupIsDeletedOnStorage";
-        backupName = backupName + "_" + StorageConstants.dateFormatter.format(new Date());
+    void whenUploadBackupAndDelete_backupIsDeletedOnStorage(TestInfo testInfo) throws IOException, DbxException {
+        String backupName = testInfo.getDisplayName() + "_" + StorageConstants.dateFormatter.format(LocalDateTime.now());
         byte[] source = testUtils.getRandomBytes(1000000);
 
         try (

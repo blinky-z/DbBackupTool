@@ -1,11 +1,12 @@
 package com.blog.controllers.WebApi;
 
-import com.blog.entities.backup.BackupTask;
+import com.blog.entities.backup.Task;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.database.DatabaseType;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.entities.storage.StorageType;
-import com.blog.manager.BackupTaskManager;
+import com.blog.manager.TasksManager;
+import com.blog.service.processor.Processor;
 import com.blog.settings.UserSettings;
 import com.blog.webUI.formTransfer.*;
 import com.blog.webUI.formTransfer.database.WebPostgresSettings;
@@ -20,7 +21,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @SpringBootTest
@@ -40,7 +43,7 @@ class ControllersHttpClient {
     private UserSettings userSettings;
 
     @Autowired
-    private BackupTaskManager backupTaskManager;
+    private TasksManager tasksManager;
 
     private String jsessionId = null;
 
@@ -70,11 +73,11 @@ class ControllersHttpClient {
     }
 
     void waitForLastOperationComplete() throws InterruptedException {
-        Iterable<BackupTask> backupTaskCollection = backupTaskManager.findAllByOrderByDateDesc();
-        BackupTask backupTask = backupTaskCollection.iterator().next();
-        Integer id = backupTask.getId();
+        Iterable<Task> backupTaskCollection = tasksManager.findAllByOrderByDateDesc();
+        Task task = backupTaskCollection.iterator().next();
+        Integer id = task.getId();
 
-        while (backupTaskManager.findById(id).orElseThrow(RuntimeException::new).getState() != BackupTask.State.COMPLETED) {
+        while (tasksManager.findById(id).orElseThrow(RuntimeException::new).getState() != Task.State.COMPLETED) {
             Thread.sleep(300);
         }
     }
@@ -140,6 +143,19 @@ class ControllersHttpClient {
         return request;
     }
 
+    WebAddPlannedTaskRequest buildAddPlannedTaskRequest(String databaseSettingsName, Collection<String> storageSettingsNameList,
+                                                        @Nullable List<Processor> processors, Duration interval) {
+        WebAddPlannedTaskRequest webAddPlannedTaskRequest = new WebAddPlannedTaskRequest();
+        webAddPlannedTaskRequest.setDatabaseSettingsName(databaseSettingsName);
+        webAddPlannedTaskRequest.setStorageSettingsNameList(new ArrayList<>(storageSettingsNameList));
+        if (processors != null) {
+            webAddPlannedTaskRequest.setProcessors(processors.stream().map(Processor::getName).collect(Collectors.toList()));
+        }
+        webAddPlannedTaskRequest.setInterval(String.valueOf(interval.getSeconds()));
+
+        return webAddPlannedTaskRequest;
+    }
+
     WebAddDatabaseRequest buildDefaultAddDatabaseRequest(DatabaseType type, String settingsName) {
         WebAddDatabaseRequest request = new WebAddDatabaseRequest();
         request.setSettingsName(settingsName);
@@ -164,6 +180,20 @@ class ControllersHttpClient {
         }
 
         return request;
+    }
+
+    private String convertListToString(List<String> list) {
+        Iterator<String> iterator = list.iterator();
+
+        StringBuilder listAsString = new StringBuilder();
+        while (iterator.hasNext()) {
+            listAsString.append(iterator.next());
+            if (iterator.hasNext()) {
+                listAsString.append(",");
+            }
+        }
+
+        return listAsString.toString();
     }
 
     ResponseEntity<String> addDatabase(WebAddDatabaseRequest request) {
@@ -265,17 +295,9 @@ class ControllersHttpClient {
 
             body.add("backupCreationPropertiesMap[" + storageSettingsName + "].selected", "true");
 
-            if (!backupCreationProperties.getProcessors().isEmpty()) {
-                StringBuilder processors = new StringBuilder();
-                Iterator<String> iterator = backupCreationProperties.getProcessors().iterator();
-                while (iterator.hasNext()) {
-                    processors.append(iterator.next());
-                    if (iterator.hasNext()) {
-                        processors.append(",");
-                    }
-                }
-
-                body.add("backupCreationPropertiesMap[" + storageSettingsName + "].processors", processors.toString());
+            List<String> processors = backupCreationProperties.getProcessors();
+            if (!processors.isEmpty()) {
+                body.add("backupCreationPropertiesMap[" + storageSettingsName + "].processors", convertListToString(processors));
             }
         }
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(body, httpHeaders);
@@ -308,5 +330,21 @@ class ControllersHttpClient {
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(body, httpHeaders);
 
         return restTemplate.exchange("/restore-backup", HttpMethod.POST, entity, String.class);
+    }
+
+    ResponseEntity<String> addPlannedTask(WebAddPlannedTaskRequest request) {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        httpHeaders.add("Cookie", jsessionId);
+
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("databaseSettingsName", request.getDatabaseSettingsName());
+        body.add("storageSettingsNameList", convertListToString(request.getStorageSettingsNameList()));
+        body.add("processors", convertListToString(request.getProcessors()));
+        body.add("interval", request.getInterval());
+
+        HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(body, httpHeaders);
+
+        return restTemplate.exchange("/add-planned-task", HttpMethod.POST, entity, String.class);
     }
 }
