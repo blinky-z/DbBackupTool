@@ -1,10 +1,12 @@
 package com.blog.entities.backup;
 
 import com.blog.entities.storage.StorageSettings;
+import org.jetbrains.annotations.NotNull;
 
 import javax.persistence.*;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * This entity represents created backup properties.
@@ -14,9 +16,9 @@ import java.util.List;
  * <p>
  * The logic is following:
  * {@link StorageSettings} can be retrieved using *storageSettingsName* and backup can be uploaded/downloaded/deleted
- * passing *backupName* to storage service.
+ * passing *backupName* and *storage settings* to storage service.
  *
- * @see com.blog.manager.BackupLoadManager#initNewBackupProperties(StorageSettings, List, String)
+ * @see com.blog.manager.BackupPropertiesManager#initNewBackupProperties(StorageSettings, List, String)
  */
 @Entity
 @Table(name = "backup_properties")
@@ -33,7 +35,7 @@ public class BackupProperties {
      * Backup creation time.
      */
     @Column(updatable = false)
-    private Date date;
+    private LocalDateTime date;
 
     /**
      * Backup name. Backup name is an identifier how backup can be accessed using storage service.
@@ -43,10 +45,10 @@ public class BackupProperties {
     /**
      * Applied processors on backup.
      * <p>
-     * This field automatically converted into single string and back to List by {@link ListFieldConverter} class.
+     * This field is automatically converted into single string and back to List by {@link StringListToStringFieldConverter} class.
      */
     @Column(updatable = false)
-    @Convert(converter = ListFieldConverter.class)
+    @Convert(converter = StringListToStringFieldConverter.class)
     private List<String> processors;
 
     /**
@@ -58,11 +60,12 @@ public class BackupProperties {
 
     }
 
-    public BackupProperties(String backupName, List<String> processors, Date date, String storageSettingsName) {
-        this.backupName = backupName;
-        this.processors = processors;
-        this.date = date;
-        this.storageSettingsName = storageSettingsName;
+    public BackupProperties(@NotNull String backupName, @NotNull List<String> processors, @NotNull LocalDateTime date,
+                            @NotNull String storageSettingsName) {
+        this.backupName = Objects.requireNonNull(backupName);
+        this.processors = Objects.requireNonNull(processors);
+        this.date = Objects.requireNonNull(date);
+        this.storageSettingsName = Objects.requireNonNull(storageSettingsName);
     }
 
     public Integer getId() {
@@ -73,11 +76,11 @@ public class BackupProperties {
         this.id = id;
     }
 
-    public Date getDate() {
+    public LocalDateTime getDate() {
         return date;
     }
 
-    public void setDate(Date date) {
+    public void setDate(LocalDateTime date) {
         this.date = date;
     }
 
