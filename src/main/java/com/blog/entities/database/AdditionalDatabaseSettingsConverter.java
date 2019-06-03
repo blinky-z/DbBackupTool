@@ -20,9 +20,9 @@ class AdditionalDatabaseSettingsConverter implements AttributeConverter<Addition
     @Override
     public String convertToDatabaseColumn(AdditionalDatabaseSettings attribute) {
         try {
-            logger.debug("Serializing entity to JSON. From: {} - {}, To: {}", ENTITY_TYPE, attribute, DB_FIELD_TYPE);
+            logger.trace("Serializing entity to JSON. From: {} - {}, To: {}", ENTITY_TYPE, attribute, DB_FIELD_TYPE);
             String attributeAsJson = objectMapper.writeValueAsString(attribute);
-            logger.debug("Serialized entity: {}", attributeAsJson);
+            logger.trace("Serialized entity: {}", attributeAsJson);
             return attributeAsJson;
         } catch (JsonProcessingException ex) {
             throw new RuntimeException(String.format("Error occurred while serializing entity. From: %s, To: %s",
@@ -33,9 +33,9 @@ class AdditionalDatabaseSettingsConverter implements AttributeConverter<Addition
     @Override
     public AdditionalDatabaseSettings convertToEntityAttribute(String dbData) {
         try {
-            logger.debug("Deserializing JSON to entity. From: {} - {}, To: {}", DB_FIELD_TYPE, dbData, ENTITY_TYPE);
+            logger.trace("Deserializing JSON to entity. From: {} - {}, To: {}", DB_FIELD_TYPE, dbData, ENTITY_TYPE);
             AdditionalDatabaseSettings attribute = objectMapper.readValue(dbData, AdditionalDatabaseSettings.class);
-            logger.debug("Deserialized entity: {}", attribute);
+            logger.trace("Deserialized entity: {}", attribute);
             return attribute;
         } catch (IOException ex) {
             throw new RuntimeException(String.format("Error occurred while deserializing database field. From: %s, To: %s",
