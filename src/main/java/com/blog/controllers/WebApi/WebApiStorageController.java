@@ -54,14 +54,14 @@ public class WebApiStorageController {
 
         webAddStorageRequestValidator.validate(addStorageRequest, bindingResult);
         if (bindingResult.hasErrors()) {
-            logger.info("createStorage(): Invalid storage settings creation request. Errors: {}", bindingResult.getAllErrors());
+            logger.error("createStorage(): Invalid storage settings creation request. Errors: {}", bindingResult.getAllErrors());
 
             return "dashboard";
         }
 
         Optional<StorageType> storageType = StorageType.of(addStorageRequest.getStorageType());
         if (!storageType.isPresent()) {
-            throw new RuntimeException("Can't save storage settings: Invalid storage type");
+            throw new IllegalStateException("Can't save storage settings: Invalid storage type");
         }
 
         StorageSettings storageSettings;
@@ -94,7 +94,7 @@ public class WebApiStorageController {
                 break;
             }
             default: {
-                throw new RuntimeException("Can't save storage settings: Unknown storage type " + type);
+                throw new IllegalStateException("Can't save storage settings: Unknown storage type " + type);
             }
         }
 

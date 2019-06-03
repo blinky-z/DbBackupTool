@@ -1,7 +1,6 @@
 package com.blog.controllers;
 
 import com.blog.controllers.Errors.ValidationError;
-import com.blog.service.databaseBackup.PostgresDatabaseBackup.Errors.InternalPostgresToolError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -34,14 +33,14 @@ public class WebApplicationExceptionsHandler {
         return mav;
     }
 
-    @ExceptionHandler(value = {RuntimeException.class, InternalPostgresToolError.class})
+    @ExceptionHandler(value = {IllegalStateException.class})
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
-    public ModelAndView handleRuntimeException(HttpServletRequest request, RuntimeException ex) {
-        logger.error("Runtime Exception at request {}", request.getRequestURL(), ex);
+    public ModelAndView handleIllegalStateException(HttpServletRequest request, RuntimeException ex) {
+        logger.error("Illegal State Exception at request {}", request.getRequestURL(), ex);
 
         ModelAndView mav = new ModelAndView();
         mav.addObject(ERROR_PAGE_CODE_FIELD, HttpStatus.INTERNAL_SERVER_ERROR.value());
-        mav.addObject(ERROR_PAGE_MESSAGE_FIELD, HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
+        mav.addObject(ERROR_PAGE_MESSAGE_FIELD, ex.getMessage());
         mav.setViewName(ERROR_VIEW);
         return mav;
     }

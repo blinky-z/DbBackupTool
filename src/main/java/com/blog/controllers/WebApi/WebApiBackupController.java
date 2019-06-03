@@ -5,10 +5,10 @@ import com.blog.controllers.WebApi.Validator.WebAddPlannedTaskRequestValidator;
 import com.blog.controllers.WebApi.Validator.WebCreateBackupRequestValidator;
 import com.blog.controllers.WebApi.Validator.WebRestoreBackupRequestValidator;
 import com.blog.entities.backup.BackupProperties;
-import com.blog.entities.backup.PlannedTask;
-import com.blog.entities.backup.Task;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.storage.StorageSettings;
+import com.blog.entities.task.PlannedTask;
+import com.blog.entities.task.Task;
 import com.blog.manager.*;
 import com.blog.service.TasksStarterService;
 import com.blog.webUI.formTransfer.WebAddPlannedTaskRequest;
@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 
 /**
@@ -112,15 +113,14 @@ public class WebApiBackupController {
 
         webCreateBackupRequestValidator.validate(webCreateBackupRequest, bindingResult);
         if (bindingResult.hasErrors()) {
-            logger.info("Invalid backup creation request. Errors: {}", bindingResult.getAllErrors());
+            logger.error("Invalid backup creation request. Errors: {}", bindingResult.getAllErrors());
 
             return "dashboard";
         }
 
         String databaseSettingsName = webCreateBackupRequest.getDatabaseSettingsName();
         DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseSettingsName).orElseThrow(() ->
-                new RuntimeException(String.format("Can't retrieve database settings. Error: no database settings with name %s",
-                        databaseSettingsName)));
+                new IllegalStateException("Can't retrieve database settings. Error: no database settings with name " + databaseSettingsName));
         String databaseName = databaseSettings.getName();
 
         logger.info("createBackup(): Database settings: {}", databaseSettings);
@@ -132,10 +132,14 @@ public class WebApiBackupController {
         for (Map.Entry<String, WebCreateBackupRequest.BackupCreationProperties> entry :
                 webCreateBackupRequest.getBackupCreationPropertiesMap().entrySet()) {
             String storageSettingsName = entry.getKey();
-            StorageSettings storageSettings = storageSettingsManager.getById(storageSettingsName).orElseThrow(() ->
-                    new RuntimeException(String.format(
-                            "createBackup(): Can't retrieve storage settings. Error: no storage settings with name %s",
-                            storageSettingsName)));
+
+            Optional<StorageSettings> optionalStorageSettings = storageSettingsManager.getById(storageSettingsName);
+            if (!optionalStorageSettings.isPresent()) {
+                logger.error("createBackup(): No storage settings with name {}. Skipping this storage", storageSettingsName);
+                continue;
+            }
+
+            StorageSettings storageSettings = optionalStorageSettings.get();
 
             logger.info("createBackup(): Current storage - [{}/{}]. Storage settings: {}", currentStorage, storagesCount, storageSettings);
 
@@ -159,24 +163,21 @@ public class WebApiBackupController {
 
         webRestoreBackupRequestValidator.validate(webRestoreBackupRequest, bindingResult);
         if (bindingResult.hasErrors()) {
-            logger.info("Invalid backup restoration request. Errors: {}", bindingResult.getAllErrors());
+            logger.error("Invalid backup restoration request. Errors: {}", bindingResult.getAllErrors());
 
             return "dashboard";
         }
 
         Integer backupId = Integer.valueOf(webRestoreBackupRequest.getBackupId());
         BackupProperties backupProperties = backupPropertiesManager.findById(backupId).orElseThrow(() ->
-                new RuntimeException(String.format(
-                        "Can't retrieve backup properties. Error: no backup properties with ID %d", backupId)));
+                new IllegalStateException("Can't restore backup: no such backup properties with ID " + backupId));
 
         String databaseSettingsName = webRestoreBackupRequest.getDatabaseSettingsName();
         DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseSettingsName).orElseThrow(() ->
-                new RuntimeException(
-                        String.format("Can't retrieve database settings. Error: no database settings with name %d",
-                                databaseSettingsName)));
+                new IllegalStateException("Can't restore backup: no such database settings with name " + databaseSettingsName));
 
-        logger.info("restoreBackup(): Backup properties: {}", backupProperties);
-        logger.info("restoreBackup(): Database settings: {}", databaseSettings);
+        logger.info("restoreBackup(): Starting backup restoration... Backup properties: {}. Database settings: {}",
+                backupProperties, databaseSettings);
 
         Integer taskId = tasksManager.initNewTask(Task.Type.RESTORE_BACKUP, Task.RunType.USER, backupProperties);
         tasksStarterService.startRestoreTask(taskId, backupProperties, databaseSettings, logger);
@@ -206,15 +207,14 @@ public class WebApiBackupController {
 
         String error = validateDeleteBackupRequest(webDeleteBackupRequest);
         if (error != null) {
-            logger.info("Invalid backup deletion request. Error: {}", error);
+            logger.error("Invalid backup deletion request. Error: {}", error);
 
             throw new ValidationError(error);
         }
 
         Integer backupId = Integer.valueOf(webDeleteBackupRequest.getBackupId());
         BackupProperties backupProperties = backupPropertiesManager.findById(backupId).orElseThrow(() ->
-                new RuntimeException(String.format(
-                        "Can't retrieve backup properties. Error: no backup properties with ID %d", backupId)));
+                new IllegalStateException("Can't delete backup: no such backup properties with ID " + backupId));
 
         Integer taskId = tasksManager.initNewTask(Task.Type.DELETE_BACKUP, Task.RunType.USER, backupProperties);
 
@@ -230,7 +230,7 @@ public class WebApiBackupController {
 
         webAddPlannedTaskRequestValidator.validate(webAddPlannedTaskRequest, bindingResult);
         if (bindingResult.hasErrors()) {
-            logger.info("Invalid planned task creation request. Error: {}", bindingResult.getAllErrors());
+            logger.error("Invalid planned task creation request. Error: {}", bindingResult.getAllErrors());
 
             return "dashboard";
         }

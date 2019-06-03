@@ -50,14 +50,14 @@ public class WebApiDatabaseController {
 
         webAddDatabaseRequestValidator.validate(addDatabaseRequest, bindingResult);
         if (bindingResult.hasErrors()) {
-            logger.info("Invalid database settings creation request. Errors: {}", bindingResult.getAllErrors());
+            logger.error("Invalid database settings creation request. Errors: {}", bindingResult.getAllErrors());
 
             return "dashboard";
         }
 
         Optional<DatabaseType> databaseType = DatabaseType.of(addDatabaseRequest.getDatabaseType());
         if (!databaseType.isPresent()) {
-            throw new RuntimeException("Can't create database settings: Invalid database type");
+            throw new IllegalStateException("Can't create database settings: Invalid database type");
         }
 
         DatabaseSettings databaseSettings;
@@ -78,7 +78,7 @@ public class WebApiDatabaseController {
                 break;
             }
             default: {
-                throw new RuntimeException("Can't create database settings: Unknown database type" + databaseType.get());
+                throw new IllegalStateException("Can't create database settings: Unknown database type" + databaseType.get());
             }
         }
 
@@ -104,16 +104,16 @@ public class WebApiDatabaseController {
 
         String error = validateDeleteDatabaseRequest(optionalSettingsName.orElse(null));
         if (error != null) {
-            logger.info("Invalid database settings deletion request. Error: {}", error);
+            logger.error("Invalid database settings deletion request. Error: {}", error);
 
             throw new ValidationError(error);
         }
 
         String settingsName = optionalSettingsName.get();
 
-        logger.info("deleteDatabase(): Deleting settings with name: {}", settingsName);
-
         databaseSettingsManager.deleteById(settingsName);
+
+        logger.info("deleteDatabase(): Database settings with name deleted: {}", settingsName);
 
         return "redirect:/dashboard";
     }
