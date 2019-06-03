@@ -1,13 +1,13 @@
 package com.blog.controllers;
 
 import com.blog.entities.backup.BackupProperties;
-import com.blog.entities.backup.Task;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.database.DatabaseType;
 import com.blog.entities.storage.DropboxSettings;
 import com.blog.entities.storage.LocalFileSystemSettings;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.entities.storage.StorageType;
+import com.blog.entities.task.Task;
 import com.blog.manager.BackupPropertiesManager;
 import com.blog.manager.DatabaseSettingsManager;
 import com.blog.manager.StorageSettingsManager;

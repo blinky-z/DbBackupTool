@@ -1,36 +1,25 @@
 package com.blog.repositories;
 
-import com.blog.entities.backup.PlannedTask;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.Lock;
-import org.springframework.data.jpa.repository.QueryHints;
+import com.blog.entities.task.PlannedTask;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
-import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.repository.query.Param;
 
-import javax.persistence.LockModeType;
-import javax.persistence.QueryHint;
 import java.util.ArrayList;
 
-public interface PlannedTasksRepository extends CrudRepository<PlannedTask, Integer>,
-        PagingAndSortingRepository<PlannedTask, Integer> {
+public interface PlannedTasksRepository extends CrudRepository<PlannedTask, Integer> {
     ArrayList<PlannedTask> findAllByOrderByIdDesc();
 
     /**
-     * Returns first page that is not locked. Also sets pessimistic lock on retrieved page in case of method is called in transaction block.
+     * Returns first N rows that are not locked. Also sets pessimistic lock on retrieved rows in case of method is called in transaction block.
      * <p>
      * This method uses {@code select for update} statement alongside with {@code skip locked}.
      * <p>
-     * If you want to acquire a pessimistic lock on retrieved page, use this method inside transaction block, otherwise lock will not be
-     * attempted.
-     * <p>
+     * Use this method only inside manually started transaction otherwise lock will not be attempted.
      *
-     * @param page {@literal Pageable} instance describing page and limit.
-     * @return page of entities
+     * @param size how many rows to retrieve
+     * @return first N entities
      */
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @QueryHints({@QueryHint(name = "javax.persistence.lock.timeout", value = "-2")})
-    @NotNull
-    Page<PlannedTask> findAllByState(@NotNull Pageable page, @NotNull PlannedTask.State state);
+    @Query(value = "select * from planned_backup_tasks where state = :#{#state.name()} limit :#{#size} FOR UPDATE skip locked", nativeQuery = true)
+    Iterable<PlannedTask> findFirstNByState(@Param(value = "size") Integer size, @Param(value = "state") PlannedTask.State state);
 }

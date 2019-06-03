@@ -1,11 +1,10 @@
 package com.blog.manager;
 
-import com.blog.entities.backup.ErrorTask;
+import com.blog.entities.task.ErrorTask;
+import com.blog.entities.task.Task;
 import com.blog.repositories.ErrorTasksRepository;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
@@ -25,17 +24,17 @@ public class ErrorTasksManager {
     }
 
     /**
-     * Returns page of tasks.
+     * Returns first N rows and sets pessimistic lock on them. Skips already locked rows.
      *
-     * @param page {@literal Pageable} instance describing page and limit.
-     * @return page of tasks.
+     * @param size how many rows to retrieve
+     * @return first N entities
      */
-    public Page<ErrorTask> findAll(Pageable page) {
-        return errorTasksRepository.findAll(page);
+    public Iterable<ErrorTask> findFirstN(@NotNull Integer size) {
+        return errorTasksRepository.findFirstN(size);
     }
 
     /**
-     * Mark currently executing {@link com.blog.entities.backup.Task} as erroneous.
+     * Mark currently executing {@link Task} as erroneous.
      *
      * @param taskId task ID
      */
@@ -48,7 +47,7 @@ public class ErrorTasksManager {
     }
 
     /**
-     * Checks whether {@link com.blog.entities.backup.Task} have error or not.
+     * Checks whether {@link Task} have error or not.
      *
      * @param taskId task ID
      * @return {@literal true} if task have error and {@literal false} otherwise

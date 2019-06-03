@@ -1,6 +1,6 @@
 package com.blog.controllers.RestApi;
 
-import com.blog.entities.backup.Task;
+import com.blog.entities.task.Task;
 import com.blog.manager.TasksManager;
 import com.blog.webUI.renderModels.WebBackupTask;
 import org.springframework.beans.factory.annotation.Autowired;

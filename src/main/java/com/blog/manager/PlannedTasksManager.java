@@ -1,10 +1,9 @@
 package com.blog.manager;
 
-import com.blog.entities.backup.PlannedTask;
+import com.blog.entities.task.PlannedTask;
 import com.blog.repositories.PlannedTasksRepository;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
@@ -35,8 +34,15 @@ public class PlannedTasksManager {
         return plannedTasksRepository.findById(id);
     }
 
-    public Iterable<PlannedTask> findAllByState(Pageable page, PlannedTask.State state) {
-        return plannedTasksRepository.findAllByState(page, state);
+    /**
+     * Returns first N rows and sets pessimistic lock on them. Skips already locked rows.
+     *
+     * @param size  how many rows to retrieve
+     * @param state entity state
+     * @return first N entities
+     */
+    public Iterable<PlannedTask> findFirstNByState(@NotNull Integer size, @NotNull PlannedTask.State state) {
+        return plannedTasksRepository.findFirstNByState(size, state);
     }
 
     /**

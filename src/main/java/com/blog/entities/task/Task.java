@@ -1,5 +1,6 @@
-package com.blog.entities.backup;
+package com.blog.entities.task;
 
+import com.blog.entities.backup.BackupProperties;
 import org.jetbrains.annotations.NotNull;
 
 import javax.persistence.*;
@@ -32,7 +33,7 @@ public class Task {
     private Type type;
 
     /**
-     * Who initiated the task: user or server (e.g. deletion of uncompleted backup by watcher).
+     * Who initiated a task: user or server.
      * <p>
      * We need to know it to show on front only these tasks that was started by user.
      *
@@ -139,8 +140,8 @@ public class Task {
     }
 
     public enum RunType {
-        INTERNAL,
-        USER
+        USER,
+        INTERNAL
     }
 
     public enum State {
@@ -185,10 +186,6 @@ public class Task {
         private LocalDateTime date;
 
         public Builder() {
-        }
-
-        public static Builder aTask() {
-            return new Builder();
         }
 
         public Builder withType(Type type) {

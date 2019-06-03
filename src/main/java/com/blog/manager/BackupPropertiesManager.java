@@ -27,7 +27,7 @@ public class BackupPropertiesManager {
     }
 
     /**
-     * Use this method to build new {@link BackupProperties} before uploading backup to storage.
+     * Creates a new {@link BackupProperties} instance.
      *
      * @param storageSettings storage settings where backup will be uploaded to
      * @param processors      processors that applies on backup

@@ -1,5 +1,7 @@
-package com.blog.entities.backup;
+package com.blog.entities.task;
 
+import com.blog.entities.IntegerListToStringFieldConverter;
+import com.blog.entities.StringListToStringFieldConverter;
 import org.jetbrains.annotations.NotNull;
 
 import javax.persistence.*;
@@ -156,13 +158,15 @@ public class PlannedTask {
 
     @Override
     public String toString() {
-        return "PlannedBackupTask{" +
+        return "PlannedTask{" +
                 "id=" + id +
+                ", state=" + state +
                 ", storageSettingsNameList=" + storageSettingsNameList +
                 ", databaseSettingsName='" + databaseSettingsName + '\'' +
                 ", processors=" + processors +
                 ", lastStartedTime=" + lastStartedTime +
-                ", interval=" + interval.toString() +
+                ", interval=" + interval +
+                ", executingTasks=" + executingTasks +
                 '}';
     }
 

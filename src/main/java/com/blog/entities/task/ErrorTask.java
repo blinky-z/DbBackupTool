@@ -1,4 +1,4 @@
-package com.blog.entities.backup;
+package com.blog.entities.task;
 
 import javax.persistence.*;
 
@@ -16,6 +16,9 @@ public class ErrorTask {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    /**
+     * Identifier of corresponding erroneous task.
+     */
     @Column(updatable = false)
     private Integer taskId;
 

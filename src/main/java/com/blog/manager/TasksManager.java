@@ -1,8 +1,8 @@
 package com.blog.manager;
 
 import com.blog.entities.backup.BackupProperties;
-import com.blog.entities.backup.Task;
 import com.blog.entities.storage.StorageSettings;
+import com.blog.entities.task.Task;
 import com.blog.repositories.TasksRepository;
 import com.blog.service.TasksStarterService;
 import org.jetbrains.annotations.NotNull;
@@ -52,7 +52,7 @@ public class TasksManager {
     }
 
     /**
-     * Use this method to create a new instance of the {@link Task}.
+     * Creates a new {@link Task} instance.
      *
      * @param taskType         backup task type
      * @param backupProperties backup properties of created or being created backup
@@ -68,7 +68,9 @@ public class TasksManager {
                 .withDate(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
 
-        return tasksRepository.save(task).getId();
+        task = tasksRepository.save(task);
+
+        return task.getId();
     }
 
     /**
@@ -146,28 +148,28 @@ public class TasksManager {
     }
 
     /**
-     * Retrieves an entity by its id.
+     * Retrieves an {@literal Task} by its id.
      *
-     * @param id must not be {@literal null}.
+     * @param id entity ID
      * @return the entity with the given id or {@literal Optional#empty()} if none found
      * @throws IllegalArgumentException if {@code id} is {@literal null}.
      */
-    public Optional<Task> findById(Integer id) {
+    public Optional<Task> findById(@NotNull Integer id) {
         return tasksRepository.findById(id);
     }
 
     /**
-     * Returns all tasks of specified {@link com.blog.entities.backup.Task.RunType}.
+     * Returns all {@literal Task} entities of specified {@link Task.RunType}.
      *
      * @param runType run type
-     * @return tasks as {@literal Iterable<Task>}.
+     * @return entities as {@literal Iterable<Task>}.
      */
     public Iterable<Task> findAllByRunType(Task.RunType runType) {
         return tasksRepository.findAllByRunType(runType);
     }
 
     /**
-     * Returns all tasks sorted by {@literal Task#date} field in descending order.
+     * Returns all tasks sorted by date in descending order.
      *
      * @return tasks as {@literal Iterable<Task>}.
      */
