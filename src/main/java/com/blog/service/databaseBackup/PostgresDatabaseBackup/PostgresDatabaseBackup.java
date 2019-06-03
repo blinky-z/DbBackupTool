@@ -135,9 +135,12 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
                         // check if main thread was interrupted and according stream closed
                         // if so, then we destroy process immediately
                         try {
+                            // the input stream is the instance of BufferedInputStream on Windows and the instance of ProcessPipeInputStream
+                            // which extends BufferedInputStream on Linux
+                            // both implementations throw IOException with message "Stream closed" when calling available() on closed stream
                             inputStream.available();
                         } catch (IOException ex) {
-                            if (ex.getMessage().equals("Stream was closed")) {
+                            if (ex.getMessage().equals("Stream closed")) {
                                 logger.error("Stream was closed, but PostgreSQL backup process has not exited yet. Destroying process immediately");
                                 process.destroyForcibly();
                                 return;

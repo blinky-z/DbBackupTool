@@ -1,18 +1,16 @@
 package com.blog.watchers;
 
 import com.blog.entities.backup.BackupProperties;
-import com.blog.entities.backup.PlannedTask;
-import com.blog.entities.backup.Task;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.storage.StorageSettings;
+import com.blog.entities.task.PlannedTask;
+import com.blog.entities.task.Task;
 import com.blog.manager.*;
 import com.blog.service.TasksStarterService;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Isolation;
@@ -34,7 +32,7 @@ import java.util.Optional;
 @Component
 class PlannedBackupTasksWatcher {
     private static final Logger logger = LoggerFactory.getLogger(PlannedBackupTasksWatcher.class);
-    private static final Pageable page = PageRequest.of(0, 10);
+    private static final Integer nRows = 10;
     private TasksManager tasksManager;
     private ErrorTasksManager errorTasksManager;
     private PlannedTasksManager plannedTasksManager;
@@ -96,50 +94,44 @@ class PlannedBackupTasksWatcher {
                 continue;
             }
 
-            // TODO: сделать остановку всех Future
-            // проблема в том, что треды могут находиться в разных серверах, и я не могу из этого треда прервать тред, работающий
-            // в другом сервере
-
-            Task task = optionalBackupTask.get();
-
-            errorTasksManager.setError(task.getId());
+            errorTasksManager.setError(optionalBackupTask.get().getId());
         }
     }
 
     /**
-     * This watcher wakes up everytime 30 seconds passed from last completion, checks currently executing planned tasks and watches their
+     * This watcher wakes up every time 30 seconds passed from the last completion, checks currently executing planned tasks and watches their
      * progress.
      * <p>
-     * The watcher handles at most 10 tasks as described by the {@link #page} instance of {@literal Pageable}.
+     * The watcher handles at most N tasks as described by {@link #nRows} constant and skips already locked tasks.
      * <p>
      * When retrieving planned tasks from database pessimistic lock is set. It allows safely run more than one copy of program, as no other
      * watcher can handle already being handled planned tasks.
      * <p>
-     * If the server shutdown while rows was locked, transaction will be rolled back and lock released, so these entities can be picked
+     * If the server shutdowns while rows was locked, transaction will be rolled back and lock released, so these entities can be picked
      * up by the other running server.
      * <p>
      * This watcher does not correlate with {@link #watchPlannedTasks()} watcher and thread can't be blocked when updating entity,
-     * because the watchers locks rows of different types.
+     * because the watchers locks tasks of different types.
      *
      * <ol>
      * <li> If all tasks related to current planned task completed successfully, then timer resets and planned task turns into
      * {@link PlannedTask.State#WAITING} state, so the planned task will be waiting for next timer firing.
      * firing.</li>
-     * <li> If at least one task relates to current planned task is erroneous, then watcher cancels and reverts all related tasks,
+     * <li> If at least one task relates to current planned task is erroneous, then watcher marks all handler tasks as erroneous and
      * the planned task turns into {@link PlannedTask.State#WAITING} state causing it to be picked up by {@link #watchPlannedTasks()}
-     * watcher when the one will be started next time.</li>
+     * watcher.</li>
      * </ol>
      * <p>
      */
     @Scheduled(fixedDelay = 30 * 1000)
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
     void watchExecutingPlannedTasks() {
-        for (PlannedTask plannedTask : plannedTasksManager.findAllByState(page, PlannedTask.State.EXECUTING)) {
+        for (PlannedTask plannedTask : plannedTasksManager.findFirstNByState(nRows, PlannedTask.State.EXECUTING)) {
             if (plannedTask.getState() != PlannedTask.State.EXECUTING) {
                 continue;
             }
 
-            Integer plannedBackupTaskId = plannedTask.getId();
+            Integer plannedTaskId = plannedTask.getId();
             List<Integer> executingTasks = plannedTask.getExecutingTasks();
 
             boolean plannedTaskCompletedSuccessfully = true;
@@ -147,8 +139,8 @@ class PlannedBackupTasksWatcher {
             for (Integer executingTaskId : executingTasks) {
                 Optional<Task> optionalBackupTask = tasksManager.findById(executingTaskId);
                 if (!optionalBackupTask.isPresent()) {
-                    logger.error("No such handler task that relates to planned task. Handler task ID: {}. Planned task ID: {}. Skip checking of this task",
-                            executingTaskId, plannedBackupTaskId);
+                    logger.error("No such handler task that relates to planned task. Handler task ID: {}. Skip checking of this task. Planned task info: {}",
+                            executingTaskId, plannedTask);
                     continue;
                 }
 
@@ -165,30 +157,29 @@ class PlannedBackupTasksWatcher {
             }
 
             if (errorOccurred) {
-                // revert planned task and turn into waiting state to be handled by planned tasks watcher further
                 revertPlannedBackupTask(plannedTask);
-                plannedTasksManager.updateState(plannedBackupTaskId, PlannedTask.State.WAITING);
+                plannedTasksManager.updateState(plannedTaskId, PlannedTask.State.WAITING);
             } else if (plannedTaskCompletedSuccessfully) {
                 // reset timer
-                plannedTasksManager.updateLastStartedTimeWithNow(plannedBackupTaskId);
-                plannedTasksManager.updateState(plannedBackupTaskId, PlannedTask.State.WAITING);
+                plannedTasksManager.updateLastStartedTimeWithNow(plannedTaskId);
+                plannedTasksManager.updateState(plannedTaskId, PlannedTask.State.WAITING);
             }
         }
     }
 
     /**
-     * This watcher wakes up everytime 1 minute passed from last completion, checks waiting planned tasks and starts them if timer is fired.
+     * This watcher wakes up every time 1 minute passed from the last completion, checks waiting planned tasks and starts them if timer is fired.
      * <p>
-     * The watcher handles at most 10 tasks as described by the {@link #page} instance of {@literal Pageable}.
+     * The watcher handles at most N tasks as described by {@link #nRows} constant. It skips locked tasks.
      * <p>
      * When retrieving planned tasks from database pessimistic lock is set. It allows safely run more than one copy of program, as no other
      * watcher can handle already being handled planned tasks.
      * <p>
-     * If the server shutdown while rows was locked, transaction will be rolled back and lock released, so these entities can be picked
+     * If the server shutdowns while rows was locked, transaction will be rolled back and lock released, so these entities can be picked
      * up by the other running server.
      * <p>
      * This watcher does not correlate with {@link #watchExecutingPlannedTasks()} watcher and thread can't be blocked when updating entity,
-     * because the watchers locks rows of different types.
+     * because the watchers locks tasks of different types.
      * <p>
      * When handling planned task, handler tasks started and list of IDs of these tasks is saved into the same {@link PlannedTask} entity.
      * Considering this, we are able to watch progress of every executing planned task: if any error occurred or all tasks
@@ -196,17 +187,12 @@ class PlannedBackupTasksWatcher {
      *
      * @implNote Only tasks in state {@link PlannedTask.State#WAITING} are handled. Once task is started it turns in state
      * {@link PlannedTask.State#EXECUTING} to prevent being handled again.
-     * <p>
-     * Watcher starts retrieving erroneous tasks from page 0 with limit of 10 as described by the {@link Pageable} instance -
-     * {@link #page}.
-     * If the first 10 tasks are locked (i.e. acquired by the other watcher) these tasks will be skipped and next page will be retrieved
-     * and so on.
      * @see #watchExecutingPlannedTasks()
      */
     @Scheduled(fixedDelay = 60 * 1000)
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
     void watchPlannedTasks() {
-        for (PlannedTask plannedTask : plannedTasksManager.findAllByState(page, PlannedTask.State.WAITING)) {
+        for (PlannedTask plannedTask : plannedTasksManager.findFirstNByState(nRows, PlannedTask.State.WAITING)) {
             LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
             LocalDateTime nextTaskTimeFireTime = plannedTask.getLastStartedTime().plus(plannedTask.getInterval());
 
@@ -221,17 +207,25 @@ class PlannedBackupTasksWatcher {
             plannedTasksManager.updateState(plannedBackupTaskId, PlannedTask.State.EXECUTING);
 
             String databaseSettingsName = plannedTask.getDatabaseSettingsName();
-            DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseSettingsName).orElseThrow(() ->
-                    new RuntimeException(String.format("Can't handle planned task: no database settings with name %s",
-                            databaseSettingsName)));
+            Optional<DatabaseSettings> optionalDatabaseSettings = databaseSettingsManager.getById(databaseSettingsName);
+            if (!optionalDatabaseSettings.isPresent()) {
+                logger.error("Can't handle planned task: no database settings with name {}. Planned task info: {}",
+                        databaseSettingsName, plannedTask);
+                continue;
+            }
+
+            DatabaseSettings databaseSettings = optionalDatabaseSettings.get();
             String databaseName = databaseSettings.getName();
 
             List<Integer> startedTasks = new ArrayList<>();
             for (String storageSettingsName : plannedTask.getStorageSettingsNameList()) {
-                StorageSettings storageSettings = storageSettingsManager.getById(storageSettingsName).orElseThrow(() ->
-                        new RuntimeException(String.format("Can't handle planned task: no storage settings with name %s",
-                                storageSettingsName)));
-
+                Optional<StorageSettings> optionalStorageSettings = storageSettingsManager.getById(storageSettingsName);
+                if (!optionalStorageSettings.isPresent()) {
+                    logger.error("Error handling planned task: no storage settings with name {}. Skipping this storage. Planned task info: {}",
+                            storageSettingsName, plannedTask);
+                    continue;
+                }
+                StorageSettings storageSettings = optionalStorageSettings.get();
 
                 BackupProperties backupProperties = backupPropertiesManager.initNewBackupProperties(
                         storageSettings, plannedTask.getProcessors(), databaseName);
