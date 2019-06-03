@@ -13,8 +13,8 @@ import java.util.concurrent.Future;
 /**
  * This class allows services to notify about exceptions from additional threads.
  * <p>
- * Many services run additional threads for different work that can produce exceptions, so this is a way to catch these exceptions and
- * mark current task as erroneous to prevent further executing.
+ * Services can run additional threads for different work that can produce exceptions, so this service is a way to report about exceptions
+ * in tasks and prevent further executing.
  */
 @Component
 public class ErrorCallbackService {
@@ -35,28 +35,32 @@ public class ErrorCallbackService {
     }
 
     /**
-     * Thread should manually call this method on exception.
+     * Thread should manually call this method when exception occurs.
      * <p>
-     * This method will not interrupt calling thread, but will interrupt main thread.
+     * There is no point of calling this method in the main thread, since any exception in the main thread will be caught and the task will
+     * be immediately completed with marking task as erroneous.
+     * <p>
+     * This method will not interrupt the calling thread, but will interrupt the main thread.
      *
-     * @param t      exception
+     * @param t      an exception
      * @param taskId task id
+     * @see TasksStarterService
      */
     public void onError(@NotNull Throwable t, @NotNull Integer taskId) {
-        logger.error("Error caught: ", t);
+        logger.error("Exception caught: ", t);
 
         Optional<Future> optionalFuture = tasksStarterService.getFuture(taskId);
         if (!optionalFuture.isPresent()) {
-            logger.error("Can't cancel Future of task with ID {}: no such Future instance", taskId);
-            return;
+            logger.error("Can't cancel the Future of task with ID {}: no such Future instance", taskId);
+        } else {
+            boolean canceled = optionalFuture.get().cancel(true);
+            if (!canceled) {
+                logger.error("Error canceling the Future of task with ID {}", taskId);
+                return;
+            } else {
+                logger.info("Task canceled. Task ID: {}", taskId);
+            }
         }
-
-        boolean canceled = optionalFuture.get().cancel(true);
-        if (!canceled) {
-            logger.error("Error canceling Future of task with ID {}", taskId);
-            return;
-        }
-        logger.error("Task canceled. Task ID: {}", taskId);
 
         errorTasksManager.setError(taskId);
     }
