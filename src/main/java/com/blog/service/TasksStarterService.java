@@ -1,10 +1,13 @@
 package com.blog.service;
 
 import com.blog.entities.backup.BackupProperties;
-import com.blog.entities.backup.Task;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.storage.StorageSettings;
+import com.blog.entities.task.Task;
 import com.blog.manager.*;
+import net.javacrumbs.shedlock.core.LockConfiguration;
+import net.javacrumbs.shedlock.core.SimpleLock;
+import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +15,8 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -24,13 +29,17 @@ import java.util.concurrent.Future;
  */
 @Component
 public class TasksStarterService {
-    private static final ConcurrentHashMap<Integer, Future> futures = new ConcurrentHashMap<>();
+    private static final Duration lockTimeout = Duration.ofHours(24);
+    private static final String taskLockPrefix = "taskLock";
+    private final ConcurrentHashMap<Integer, Future> futures = new ConcurrentHashMap<>();
+
     private ExecutorService tasksStarterExecutorService;
     private TasksManager tasksManager;
     private DatabaseBackupManager databaseBackupManager;
     private BackupProcessorManager backupProcessorManager;
     private BackupLoadManager backupLoadManager;
     private ErrorTasksManager errorTasksManager;
+    private JdbcTemplateLockProvider jdbcTemplateLockProvider;
 
     @Autowired
     public void setTasksStarterExecutorService(ExecutorService tasksStarterExecutorService) {
@@ -62,6 +71,15 @@ public class TasksStarterService {
         this.errorTasksManager = errorTasksManager;
     }
 
+    @Autowired
+    public void setJdbcTemplateLockProvider(JdbcTemplateLockProvider jdbcTemplateLockProvider) {
+        this.jdbcTemplateLockProvider = jdbcTemplateLockProvider;
+    }
+
+    private LockConfiguration getNewLockConfiguration(Integer taskId) {
+        return new LockConfiguration(taskLockPrefix + taskId, Instant.now().plus(lockTimeout));
+    }
+
     /**
      * Returns the {@literal Future} related to specified {@link Task}.
      * <p>
@@ -76,6 +94,9 @@ public class TasksStarterService {
 
     /**
      * Starts database backup creation task.
+     * <p>
+     * Also sets lock on task. When task is interrupted or completed lock will be released.
+     * If server shutdown while lock was hold, lock will be released automatically in time described by {@link #lockTimeout} constant.
      *
      * @param taskId           pre-created {@link Task} entity's ID
      * @param backupProperties pre-created backup properties
@@ -93,13 +114,18 @@ public class TasksStarterService {
         Objects.requireNonNull(logger);
 
         Future future = tasksStarterExecutorService.submit(() -> {
+            logger.debug("Acquiring a lock... Task ID: {}", taskId);
+            SimpleLock lock = jdbcTemplateLockProvider.lock(getNewLockConfiguration(taskId))
+                    .orElseThrow(() -> new IllegalStateException("Lock can't be acquired"));
+            logger.debug("Lock acquired. Task ID: {}", taskId);
+
             tasksManager.updateTaskState(taskId, Task.State.CREATING);
             logger.info("Creating backup...");
 
             try (InputStream backupStream = databaseBackupManager.createBackup(databaseSettings, taskId)) {
-                if (Thread.currentThread().isInterrupted()) {
+                if (Thread.interrupted()) {
                     tasksManager.updateTaskState(taskId, Task.State.INTERRUPTED);
-                    return;
+                    throw new InterruptedException();
                 }
 
                 tasksManager.updateTaskState(taskId, Task.State.APPLYING_PROCESSORS);
@@ -107,18 +133,18 @@ public class TasksStarterService {
                 logger.info("Applying processors on created backup. Processors: {}", processors);
 
                 InputStream processedBackupStream = backupProcessorManager.process(backupStream, processors);
-                if (Thread.currentThread().isInterrupted()) {
+                if (Thread.interrupted()) {
                     tasksManager.updateTaskState(taskId, Task.State.INTERRUPTED);
-                    return;
+                    throw new InterruptedException();
                 }
 
                 tasksManager.updateTaskState(taskId, Task.State.UPLOADING);
                 logger.info("Uploading backup...");
 
                 backupLoadManager.uploadBackup(processedBackupStream, backupProperties, taskId);
-                if (Thread.currentThread().isInterrupted()) {
+                if (Thread.interrupted()) {
                     tasksManager.updateTaskState(taskId, Task.State.INTERRUPTED);
-                    return;
+                    throw new InterruptedException();
                 }
 
                 tasksManager.updateTaskState(taskId, Task.State.COMPLETED);
@@ -128,14 +154,25 @@ public class TasksStarterService {
             } catch (RuntimeException ex) {
                 logger.error("Error occurred while creating backup. Backup properties: {}", backupProperties, ex);
                 errorTasksManager.setError(taskId);
+            } catch (InterruptedException ex) {
+                logger.error("Task was interrupted. Task ID: {}", taskId);
+            } finally {
+                logger.debug("Unlocking a lock... Task ID: {}", taskId);
+                lock.unlock();
+                futures.remove(taskId);
             }
         });
+
         futures.put(taskId, future);
         return future;
     }
 
     /**
      * Starts backup restoration task.
+     * <p>
+     * Also sets lock on task. When task is interrupted or completed the lock will be released.
+     * If server shutdowns while the lock was held, lock will be released automatically in time described by {@link #lockTimeout}
+     * constant.
      *
      * @param taskId           pre-created {@link Task} entity's ID
      * @param backupProperties backup properties of backup saved on storage
@@ -151,31 +188,36 @@ public class TasksStarterService {
         Objects.requireNonNull(logger);
 
         Future future = tasksStarterExecutorService.submit(() -> {
+            logger.debug("Acquiring a lock...");
+            SimpleLock lock = jdbcTemplateLockProvider.lock(getNewLockConfiguration(taskId))
+                    .orElseThrow(() -> new IllegalStateException("Lock can't be acquired"));
+            logger.debug("Lock acquired...");
+
             tasksManager.updateTaskState(taskId, Task.State.DOWNLOADING);
             logger.info("Downloading backup...");
 
             try (InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, taskId)) {
-                if (Thread.currentThread().isInterrupted()) {
+                if (Thread.interrupted()) {
                     tasksManager.updateTaskState(taskId, Task.State.INTERRUPTED);
-                    return;
+                    throw new InterruptedException();
                 }
 
                 tasksManager.updateTaskState(taskId, Task.State.APPLYING_DEPROCESSORS);
                 logger.info("Deprocessing backup...");
 
                 InputStream deprocessedBackup = backupProcessorManager.deprocess(downloadedBackup, backupProperties.getProcessors());
-                if (Thread.currentThread().isInterrupted()) {
+                if (Thread.interrupted()) {
                     tasksManager.updateTaskState(taskId, Task.State.INTERRUPTED);
-                    return;
+                    throw new InterruptedException();
                 }
 
                 tasksManager.updateTaskState(taskId, Task.State.RESTORING);
                 logger.info("Restoring backup...");
 
                 databaseBackupManager.restoreBackup(deprocessedBackup, databaseSettings, taskId);
-                if (Thread.currentThread().isInterrupted()) {
+                if (Thread.interrupted()) {
                     tasksManager.updateTaskState(taskId, Task.State.INTERRUPTED);
-                    return;
+                    throw new InterruptedException();
                 }
 
                 tasksManager.updateTaskState(taskId, Task.State.COMPLETED);
@@ -183,17 +225,26 @@ public class TasksStarterService {
             } catch (IOException ex) {
                 logger.error("Error occurred while closing input stream of downloaded backup", ex);
             } catch (RuntimeException ex) {
-                logger.info("Error occurred while restoring backup. Backup properties: {}",
-                        backupProperties, ex);
+                logger.info("Error occurred while restoring backup. Backup properties: {}", backupProperties, ex);
                 errorTasksManager.setError(taskId);
+            } catch (InterruptedException ex) {
+                logger.error("Task was interrupted. Task ID: {}", taskId);
+            } finally {
+                lock.unlock();
+                futures.remove(taskId);
             }
         });
+
         futures.put(taskId, future);
         return future;
     }
 
     /**
      * Starts backup deletion task.
+     * <p>
+     * Also sets lock on task. When task is interrupted or completed the lock will be released.
+     * If server shutdowns while the lock was held, lock will be released automatically in time described by {@link #lockTimeout}
+     * constant.
      *
      * @param taskId           pre-created {@link Task} entity's ID
      * @param backupProperties backup properties of backup saved on storage
@@ -206,14 +257,19 @@ public class TasksStarterService {
         Objects.requireNonNull(logger);
 
         Future future = tasksStarterExecutorService.submit(() -> {
+            logger.debug("Acquiring a lock...");
+            SimpleLock lock = jdbcTemplateLockProvider.lock(getNewLockConfiguration(taskId))
+                    .orElseThrow(() -> new IllegalStateException("Lock can't be acquired"));
+            logger.debug("Lock acquired...");
+
             try {
                 logger.info("Deleting backup started. Backup properties: {}", backupProperties);
                 tasksManager.updateTaskState(taskId, Task.State.DELETING);
 
                 backupLoadManager.deleteBackup(backupProperties, taskId);
-                if (Thread.currentThread().isInterrupted()) {
+                if (Thread.interrupted()) {
                     tasksManager.updateTaskState(taskId, Task.State.INTERRUPTED);
-                    return;
+                    throw new InterruptedException();
                 }
 
                 tasksManager.updateTaskState(taskId, Task.State.COMPLETED);
@@ -222,8 +278,14 @@ public class TasksStarterService {
                 logger.info("Error occurred while deleting backup. Backup properties: {}",
                         backupProperties, ex);
                 errorTasksManager.setError(taskId);
+            } catch (InterruptedException ex) {
+                logger.error("Task was interrupted. Task ID: {}", taskId);
+            } finally {
+                lock.unlock();
+                futures.remove(taskId);
             }
         });
+
         futures.put(taskId, future);
         return future;
     }

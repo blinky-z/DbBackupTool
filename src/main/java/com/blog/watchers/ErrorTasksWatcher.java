@@ -1,20 +1,22 @@
 package com.blog.watchers;
 
-import com.blog.entities.backup.ErrorTask;
-import com.blog.entities.backup.Task;
+import com.blog.entities.task.ErrorTask;
+import com.blog.entities.task.Task;
 import com.blog.manager.ErrorTasksManager;
 import com.blog.manager.TasksManager;
+import net.javacrumbs.shedlock.core.LockConfiguration;
+import net.javacrumbs.shedlock.core.SimpleLock;
+import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -24,11 +26,13 @@ import java.util.Optional;
 class ErrorTasksWatcher {
     private static final Logger logger = LoggerFactory.getLogger(ErrorTasksWatcher.class);
 
-    private static final Pageable page = PageRequest.of(0, 10);
+    private static final Integer nRows = 10;
 
     private TasksManager tasksManager;
 
     private ErrorTasksManager errorTasksManager;
+
+    private JdbcTemplateLockProvider jdbcTemplateLockProvider;
 
     @Autowired
     public void setTasksManager(TasksManager tasksManager) {
@@ -40,34 +44,48 @@ class ErrorTasksWatcher {
         this.errorTasksManager = errorTasksManager;
     }
 
+    @Autowired
+    public void setJdbcTemplateLockProvider(JdbcTemplateLockProvider jdbcTemplateLockProvider) {
+        this.jdbcTemplateLockProvider = jdbcTemplateLockProvider;
+    }
+
     /**
-     * This watcher wakes up everytime 1 minute passed from last completion, checks backup states periodically and handles erroneous tasks
+     * This watcher wakes up every time 1 minute passed from the last completion, checks backup states periodically and handles erroneous tasks
      * if such exists.
      * <p>
-     * The watcher handles at most 10 tasks as described by the {@link #page} instance of {@literal Pageable}.
+     * The watcher handles at most N tasks as described by {@link #nRows} constant and skips already locked tasks.
+     * <p>
      * When retrieving error tasks from database pessimistic lock is set. It allows safely run more than one copy of program, as no other
-     * watcher can handle already being handled error tasks again.
+     * watcher can pick up already being handled error tasks.
      * <p>
-     * If the server shutdown while rows was locked, transaction will be rolled back and lock released, so these entities can be picked
+     * If the server shutdowns while rows was locked, transaction will be rolled back and lock released, so these entities can be picked
      * up by the other running server.
-     * <p>
-     * When handling erroneous task, corresponding {@literal Future} is canceled and then task is reverted using
-     * {@link TasksManager#revertTask(Task)} method.
      */
     @Scheduled(fixedDelay = 60 * 1000)
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
     void watchErrorTasks() {
-        for (ErrorTask errorTask : errorTasksManager.findAll(page)) {
+        for (ErrorTask errorTask : errorTasksManager.findFirstN(nRows)) {
             if (!errorTask.isErrorHandled()) {
                 Integer backupTaskId = errorTask.getTaskId();
 
-                Optional<Task> optionalBackupTask = tasksManager.findById(backupTaskId);
-                if (!optionalBackupTask.isPresent()) {
+                Optional<Task> optionalTask = tasksManager.findById(backupTaskId);
+                if (!optionalTask.isPresent()) {
                     logger.info("Can't handle erroneous task: no corresponding backup task entity. Backup task ID: {}", backupTaskId);
                     continue;
                 }
 
-                tasksManager.revertTask(optionalBackupTask.get());
+                Task task = optionalTask.get();
+
+                // we can't revert task if the one is still executing
+                // so we check the corresponding lock of the current task trying to acquire it
+                // lock will be released immediately if it has been acquired successfully
+                Optional<SimpleLock> lock = jdbcTemplateLockProvider.lock(
+                        new LockConfiguration("taskLock" + task.getId(), Instant.now()));
+                if (!lock.isPresent()) {
+                    continue;
+                }
+
+                tasksManager.revertTask(task);
 
                 errorTasksManager.setErrorHandled(backupTaskId);
             }
