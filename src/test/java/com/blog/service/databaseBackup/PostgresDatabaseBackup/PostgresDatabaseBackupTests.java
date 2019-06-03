@@ -8,11 +8,8 @@ import com.blog.entities.storage.StorageSettings;
 import com.blog.manager.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -21,8 +18,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest
 class PostgresDatabaseBackupTests extends ApplicationTests {
     private static final List<String> tableNames = new ArrayList<>(Arrays.asList("comments"));
     private static final Integer testTaskID = 0;

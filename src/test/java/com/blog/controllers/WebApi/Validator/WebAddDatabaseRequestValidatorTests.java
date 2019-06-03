@@ -3,18 +3,13 @@ package com.blog.controllers.WebApi.Validator;
 import com.blog.ApplicationTests;
 import com.blog.webUI.formTransfer.WebAddDatabaseRequest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest
 class WebAddDatabaseRequestValidatorTests extends ApplicationTests {
     @Autowired
     WebAddDatabaseRequestValidator webAddDatabaseRequestValidator;

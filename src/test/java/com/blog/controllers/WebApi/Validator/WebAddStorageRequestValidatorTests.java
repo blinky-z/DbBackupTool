@@ -5,18 +5,14 @@ import com.blog.webUI.formTransfer.WebAddStorageRequest;
 import com.blog.webUI.formTransfer.storage.WebDropboxSettings;
 import com.blog.webUI.formTransfer.storage.WebLocalFileSystemSettings;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest
+
 class WebAddStorageRequestValidatorTests extends ApplicationTests {
     @Autowired
     private WebAddStorageRequestValidator webAddStorageRequestValidator;

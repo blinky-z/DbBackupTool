@@ -12,16 +12,14 @@ import com.blog.manager.DatabaseSettingsManager;
 import com.blog.manager.StorageSettingsManager;
 import com.blog.webUI.formTransfer.WebCreateBackupRequest;
 import com.blog.webUI.formTransfer.WebDeleteBackupRequest;
+import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -30,8 +28,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class WebApiDeleteBackupControllerTests extends ApplicationTests {
     @Autowired
     private TestRestTemplate restTemplate;
@@ -50,6 +46,9 @@ class WebApiDeleteBackupControllerTests extends ApplicationTests {
 
     @Autowired
     private JdbcTemplate jdbcPostgresMasterTemplate;
+
+    @Autowired
+    private JdbcTemplateLockProvider jdbcTemplateLockProvider;
 
     @Autowired
     private BackupPropertiesManager backupPropertiesManager;
@@ -72,6 +71,7 @@ class WebApiDeleteBackupControllerTests extends ApplicationTests {
         storageSettingsManager.saveAll(allStorageSettings);
         controllersHttpClient.setRestTemplate(restTemplate);
         controllersHttpClient.login();
+        jdbcTemplateLockProvider.clearCache();
     }
 
     @BeforeEach

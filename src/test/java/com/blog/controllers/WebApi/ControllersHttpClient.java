@@ -1,10 +1,11 @@
 package com.blog.controllers.WebApi;
 
-import com.blog.entities.backup.Task;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.database.DatabaseType;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.entities.storage.StorageType;
+import com.blog.entities.task.Task;
+import com.blog.manager.ErrorTasksManager;
 import com.blog.manager.TasksManager;
 import com.blog.service.processor.Processor;
 import com.blog.settings.UserSettings;
@@ -14,7 +15,6 @@ import com.blog.webUI.formTransfer.storage.WebDropboxSettings;
 import com.blog.webUI.formTransfer.storage.WebLocalFileSystemSettings;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
@@ -26,7 +26,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
-@SpringBootTest
 class ControllersHttpClient {
     private TestRestTemplate restTemplate;
 
@@ -44,6 +43,9 @@ class ControllersHttpClient {
 
     @Autowired
     private TasksManager tasksManager;
+
+    @Autowired
+    private ErrorTasksManager errorTasksManager;
 
     private String jsessionId = null;
 
@@ -77,9 +79,14 @@ class ControllersHttpClient {
         Task task = backupTaskCollection.iterator().next();
         Integer id = task.getId();
 
-        while (tasksManager.findById(id).orElseThrow(RuntimeException::new).getState() != Task.State.COMPLETED) {
-            Thread.sleep(300);
+        System.out.println("waiting...");
+        while (tasksManager.findById(id).get().getState() != Task.State.COMPLETED) {
+            if (errorTasksManager.isError(id)) {
+                throw new RuntimeException("Error occurred while executing task");
+            }
+            Thread.yield();
         }
+        System.out.println("completed");
     }
 
     WebDeleteBackupRequest buildDeleteBackupRequest(Integer backupId) {

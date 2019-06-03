@@ -12,22 +12,18 @@ import com.blog.manager.DatabaseSettingsManager;
 import com.blog.manager.StorageSettingsManager;
 import com.blog.webUI.formTransfer.WebCreateBackupRequest;
 import com.blog.webUI.formTransfer.WebRestoreBackupRequest;
+import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class WebApiRestoreBackupControllerTests extends ApplicationTests {
     private static final java.util.List<String> tableNames = new ArrayList<>(Arrays.asList("comments"));
 
@@ -39,6 +35,8 @@ class WebApiRestoreBackupControllerTests extends ApplicationTests {
     private JdbcTemplate jdbcPostgresMasterTemplate;
     @Autowired
     private JdbcTemplate jdbcPostgresCopyTemplate;
+    @Autowired
+    private JdbcTemplateLockProvider jdbcTemplateLockProvider;
     @Autowired
     private BackupPropertiesManager backupPropertiesManager;
     @Autowired
@@ -88,6 +86,7 @@ class WebApiRestoreBackupControllerTests extends ApplicationTests {
         storageSettingsManager.saveAll(allStorageSettings);
         controllersHttpClient.setRestTemplate(restTemplate);
         controllersHttpClient.login();
+        jdbcTemplateLockProvider.clearCache();
     }
 
     @BeforeEach
