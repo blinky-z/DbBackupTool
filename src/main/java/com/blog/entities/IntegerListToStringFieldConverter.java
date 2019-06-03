@@ -1,4 +1,4 @@
-package com.blog.entities.backup;
+package com.blog.entities;
 
 import org.jetbrains.annotations.NotNull;
 

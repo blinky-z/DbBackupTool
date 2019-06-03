@@ -1,10 +1,10 @@
-package com.blog.entities.backup;
+package com.blog.entities;
 
 import javax.persistence.AttributeConverter;
 import java.util.Arrays;
 import java.util.List;
 
-class StringListToStringFieldConverter implements AttributeConverter<List<String>, String> {
+public class StringListToStringFieldConverter implements AttributeConverter<List<String>, String> {
     private static final String DELIMITER = ",";
 
     @Override
