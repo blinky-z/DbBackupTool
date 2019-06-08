@@ -9,10 +9,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @Configuration
-@PropertySource("classpath:postgres.properties")
+@PropertySource("classpath:application-postgres.properties")
 @ConfigurationProperties(prefix = "postgres")
-class PostgresDatabaseBackupConfiguration {
+public class PostgresDatabaseBackupConfiguration {
+    /**
+     * Pg_dump binary file path
+     */
     private String pgDumpToolPath;
+
+    /**
+     * Psql binary file path
+     */
     private String psqlToolPath;
 
     public void setPgDumpToolPath(String pgDumpToolPath) {
@@ -21,6 +28,14 @@ class PostgresDatabaseBackupConfiguration {
 
     public void setPsqlToolPath(String psqlToolPath) {
         this.psqlToolPath = psqlToolPath;
+    }
+
+    public String getPgDumpToolPath() {
+        return pgDumpToolPath;
+    }
+
+    public String getPsqlToolPath() {
+        return psqlToolPath;
     }
 
     @Bean(destroyMethod = "shutdown")
