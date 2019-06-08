@@ -21,12 +21,9 @@ public class WebCreateBackupRequestValidator {
         Objects.requireNonNull(errors);
 
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "databaseSettingsName",
-                "error.databaseSettingsName.empty", "Please select database to backup");
+                "error.createBackupRequest.databaseSettingsName.empty");
 
-        WebCreateBackupRequest webCreateBackupRequest = (WebCreateBackupRequest) target;
-        if (webCreateBackupRequest.getBackupCreationPropertiesMap().size() == 0) {
-            errors.rejectValue("backupCreationPropertiesMap", "error.backupCreationPropertiesMap.empty",
-                    "Please select at least one storage to upload backup to");
-        }
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "storageSettingsNameList",
+                "error.createBackupRequest.storageSettingsNameList.empty");
     }
 }

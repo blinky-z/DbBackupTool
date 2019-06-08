@@ -23,23 +23,18 @@ public class WebAddPlannedTaskRequestValidator {
         WebAddPlannedTaskRequest webAddPlannedTaskRequest = (WebAddPlannedTaskRequest) target;
 
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "databaseSettingsName",
-                "error.addPlannedTaskRequest.databaseSettingsName.empty",
-                "Please select database");
+                "error.addPlannedTaskRequest.databaseSettingsName.empty");
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "storageSettingsNameList",
-                "error.addPlannedTaskRequest.storageSettingsNameList.empty",
-                "Please select at least one storage");
+                "error.addPlannedTaskRequest.storageSettingsNameList.empty");
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "interval",
-                "error.addPlannedTaskRequest.interval.empty",
-                "Please set interval");
-
+                "error.addPlannedTaskRequest.interval.empty");
 
         if (!errors.hasFieldErrors("interval")) {
             try {
                 String interval = webAddPlannedTaskRequest.getInterval();
                 Integer.valueOf(interval);
             } catch (NumberFormatException ex) {
-                errors.rejectValue("interval", "error.addPlannedTaskRequest.interval.malformed",
-                        "Invalid interval");
+                errors.rejectValue("interval", "error.addPlannedTaskRequest.interval.malformed");
             }
         }
     }

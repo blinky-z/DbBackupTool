@@ -1,6 +1,6 @@
 package com.blog.controllers.WebApi.Validator;
 
-import com.blog.controllers.Errors.ValidationError;
+import com.blog.controllers.Errors.ValidationException;
 import com.blog.entities.storage.StorageType;
 import com.blog.webUI.formTransfer.WebAddStorageRequest;
 import org.jetbrains.annotations.NotNull;
@@ -19,25 +19,22 @@ import java.util.Optional;
  */
 @Component
 public class WebAddStorageRequestValidator {
-    public void validate(@NotNull Object target, @NotNull Errors errors) {
+    public void validate(@NotNull Object target, @NotNull Errors errors) throws ValidationException {
         Objects.requireNonNull(target);
         Objects.requireNonNull(errors);
 
-        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "storageType",
-                "error.addStorageRequest.storageType.empty", "Please specify storage type");
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "storageType", "error.addStorageRequest.storageType.empty");
 
         WebAddStorageRequest addStorageRequest = (WebAddStorageRequest) target;
 
         // validate common fields
-        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "settingsName",
-                "error.addStorageRequest.settingsName.empty", "Settings name must not be empty");
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "settingsName", "error.addStorageRequest.settingsName.empty");
 
         // validate storage specific fields
         if (!errors.hasFieldErrors("storageType")) {
             Optional<StorageType> optionalStorageType = StorageType.of(addStorageRequest.getStorageType());
             if (!optionalStorageType.isPresent()) {
-                errors.rejectValue("storageType", "error.addStorageRequest.storageType.malformed",
-                        "Invalid storage type");
+                errors.rejectValue("storageType", "error.addStorageRequest.storageType.malformed");
                 return;
             }
 
@@ -45,18 +42,16 @@ public class WebAddStorageRequestValidator {
             switch (storageType) {
                 case DROPBOX: {
                     ValidationUtils.rejectIfEmptyOrWhitespace(errors, "dropboxSettings.accessToken",
-                            "error.addStorageRequest.dropboxSettings.accessToken.empty",
-                            "Access token must not be empty");
+                            "error.addStorageRequest.dropboxSettings.accessToken.empty");
                     break;
                 }
                 case LOCAL_FILE_SYSTEM: {
                     ValidationUtils.rejectIfEmptyOrWhitespace(errors, "localFileSystemSettings.backupPath",
-                            "error.addStorageRequest.localFileSystemSettings.backupPath.empty",
-                            "Backup path must not be empty");
+                            "error.addStorageRequest.localFileSystemSettings.backupPath.empty");
                     break;
                 }
                 default: {
-                    throw new ValidationError("Can't validate storage settings. Unknown storage type: " + storageType);
+                    throw new ValidationException("Can't validate storage settings. Unknown storage type: " + storageType);
                 }
             }
         }

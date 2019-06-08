@@ -21,19 +21,19 @@ public class WebRestoreBackupRequestValidator {
         Objects.requireNonNull(target);
         Objects.requireNonNull(errors);
 
-        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "backupId", "error.createBackupRequest.backupId.empty",
-                "Please provide backup to restore");
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "backupId",
+                "error.restoreBackupRequest.backupId.empty");
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "databaseSettingsName",
-                "error.createBackupRequest.databaseSettingsName.empty",
-                "Please provide database to restore backup to");
+                "error.restoreBackupRequest.databaseSettingsName.empty");
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "storageSettingsName",
+                "error.restoreBackupRequest.storageSettingsName.empty");
 
         if (!errors.hasFieldErrors("backupId")) {
             try {
                 WebRestoreBackupRequest webRestoreBackupRequest = (WebRestoreBackupRequest) target;
                 Integer.valueOf(webRestoreBackupRequest.getBackupId());
             } catch (NumberFormatException ex) {
-                errors.rejectValue("backupId", "error.createBackupRequest.backupId.malformed",
-                        "Invalid backup ID");
+                errors.rejectValue("backupId", "error.restoreBackupRequest.backupId.malformed");
             }
         }
     }
