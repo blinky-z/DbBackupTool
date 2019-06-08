@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang=en xmlns="http://www.w3.org/1999/html" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta content="text/html; charset=UTF-8" http-equiv="content-type">
     <meta charset="utf-8">
@@ -29,42 +29,42 @@
                     <li class="nav-item">
                         <a aria-controls="dashboard" aria-selected="true" class="nav-link active" data-toggle="tab" href="#dashboard"
                            id="dashboard-tab" role="tab">
-                            <img alt="" height="20px" src="images/home-tab-icon.png" width="20px">
+                            <img alt="" height="20px" src="/images/home-tab-icon.png" width="20px">
                             Home <span class="sr-only">(current)</span>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a aria-controls="storage" aria-selected="false" class="nav-link" data-toggle="tab" href="#storage"
                            id="storage-tab" role="tab">
-                            <img alt="" height="20px" src="images/storage-tab-icon.png" width="20px">
+                            <img alt="" height="20px" src="/images/storage-tab-icon.png" width="20px">
                             Manage storages
                         </a>
                     </li>
                     <li class="nav-item">
                         <a aria-controls="database" aria-selected="false" class="nav-link" data-toggle="tab" href="#database"
                            id="database-tab" role="tab">
-                            <img alt="" height="20px" src="images/database-tab-icon.png" width="20px">
+                            <img alt="" height="20px" src="/images/database-tab-icon.png" width="20px">
                             Manage databases
                         </a>
                     </li>
                     <li class="nav-item">
                         <a aria-controls="backups" aria-selected="false" class="nav-link" data-toggle="tab" href="#backups"
                            id="backupts-tab" role="tab">
-                            <img alt="" height="20px" src="images/manage-backups-icon.png" width="20px">
+                            <img alt="" height="20px" src="/images/manage-backups-icon.png" width="20px">
                             Manage backups
                         </a>
                     </li>
                     <li class="nav-item">
                         <a aria-controls="create-backup" aria-selected="false" class="nav-link" data-toggle="tab" href="#create-backup"
                            id="create-backup-tab" role="tab">
-                            <img alt="" height="20px" src="images/createBackup-tab-icon.png" width="20px">
+                            <img alt="" height="20px" src="/images/createBackup-tab-icon.png" width="20px">
                             Create Backup
                         </a>
                     </li>
                     <li class="nav-item">
                         <a aria-controls="restore-backup" aria-selected="false" class="nav-link" data-toggle="tab" href="#restore-backup"
                            id="restore-backup-tab" role="tab">
-                            <img alt="" height="20px" src="images/restoreBackup-tab-icon.png" width="20px">
+                            <img alt="" height="20px" src="/images/restoreBackup-tab-icon.png" width="20px">
                             Restore Backup
                         </a>
                     </li>
@@ -72,7 +72,7 @@
                         <a aria-controls="add-planned-task" aria-selected="false" class="nav-link" data-toggle="tab"
                            href="#add-planned-task"
                            id="add-planned-task-tab" role="tab">
-                            <img alt="" height="20px" src="images/add-planned-task-tab-icon.png" width="20px">
+                            <img alt="" height="20px" src="/images/add-planned-task-tab-icon.png" width="20px">
                             Add planned task
                         </a>
                     </li>
@@ -99,8 +99,8 @@
                             </thead>
                             <tbody id="backupTasksTableBody">
                             <tr th:each="backupTask: ${backupTasks}" th:object="${backupTask}">
-                                <th scope="row" th:text="*{type.toString()}"></th>
-                                <td th:text="*{state.toString()}"></td>
+                                <th scope="row" th:text="*{type}"></th>
+                                <td th:text="*{state}"></td>
                                 <td th:text="*{time}"></td>
                             </tr>
                             </tbody>
@@ -140,9 +140,9 @@
                                     </thead>
                                     <tbody>
                                     <tr th:each="storage: ${storageList}" th:object="${storage}">
-                                        <th scope="row" th:text="*{type}"></th>
-                                        <td th:text="*{desc}"></td>
-                                        <td th:text="*{time}"></td>
+                                        <th scope="row" th:text="*{type}">Type</th>
+                                        <td th:text="*{desc}">Desc</td>
+                                        <td th:text="*{time}">Time</td>
                                         <td>
                                             <div class="d-flex flex-row-reverse bd-highlight">
                                                 <form th:action="@{/storage}" th:method="delete">
@@ -167,8 +167,14 @@
                                     <select class="form-control" id="configureStorage.selectStorage" th:errorclass="is-invalid"
                                             th:field="*{storageType}">
                                         <option selected value="">Select Storage</option>
-                                        <option id="localFileSystemStorageSelect" value="localFileSystem">Local File System</option>
-                                        <option id="dropboxStorageSelect" value="dropbox">Dropbox</option>
+                                        <option id="localFileSystemStorageSelect"
+                                                th:value="${T(com.blog.entities.storage.StorageType).LOCAL_FILE_SYSTEM.storageAsString}">
+                                            Local File System
+                                        </option>
+                                        <option id="dropboxStorageSelect"
+                                                th:value="${T(com.blog.entities.storage.StorageType).DROPBOX.storageAsString}">
+                                            Dropbox
+                                        </option>
                                     </select>
                                     <div class="invalid-feedback" th:errors="*{storageType}"
                                          th:if="${#fields.hasErrors('storageType')}"></div>
@@ -258,9 +264,9 @@
                                     </thead>
                                     <tbody>
                                     <tr th:each="database: ${databaseList}" th:object="${database}">
-                                        <th scope="row" th:text="*{type}"></th>
-                                        <td th:text="*{desc}"></td>
-                                        <td th:text="*{time}"></td>
+                                        <th scope="row" th:text="*{type}">Type</th>
+                                        <td th:text="*{desc}">Desc</td>
+                                        <td th:text="*{time}">Time</td>
                                         <td>
                                             <div class="d-flex flex-row-reverse bd-highlight">
                                                 <form th:action="@{/database}" th:method="delete">
@@ -285,7 +291,9 @@
                                     <select class="form-control" id="configureDatabase-selectDatabase" th:errorclass="is-invalid"
                                             th:field="*{databaseType}">
                                         <option selected value="">Select Database</option>
-                                        <option id="postgresDatabaseSelect" value="postgres">Postgres</option>
+                                        <option id="postgresDatabaseSelect"
+                                                th:value="${T(com.blog.entities.database.DatabaseType).POSTGRES.databaseAsString}">Postgres
+                                        </option>
                                     </select>
                                     <div class="invalid-feedback" th:errors="*{databaseType}"
                                          th:if="${#fields.hasErrors('databaseType')}"></div>
@@ -369,16 +377,18 @@
                             <thead class="thead-dark">
                             <tr>
                                 <th class="col-md-2" scope="col">Name</th>
-                                <th class="col-md-6" scope="col">Properties</th>
+                                <th class="col-md-5" scope="col">Properties</th>
+                                <th class="col-md-3" scope="col">Storage List</th>
                                 <th class="col-md-3" scope="col">Creation time</th>
                                 <th scope="col"></th>
                             </tr>
                             </thead>
                             <tbody>
                             <tr th:each="backup: ${backupList}" th:object="${backup}">
-                                <th scope="row" th:text="*{name}"></th>
-                                <td th:text="*{desc}"></td>
-                                <td th:text="*{time}"></td>
+                                <th scope="row" th:text="*{name}">Name</th>
+                                <td th:text="*{desc}">Desc</td>
+                                <td th:text="*{storageSettingsNames}">Storage List</td>
+                                <td th:text="*{time}">Time</td>
                                 <td>
                                     <div class="d-flex flex-row-reverse bd-highlight">
                                         <form th:action="@{/delete-backup}" th:method="delete">
@@ -406,7 +416,7 @@
                             <select class="form-control" id="createBackup-selectDatabase"
                                     th:errorclass="is-invalid" th:field="*{databaseSettingsName}">
                                 <option selected value="">Select Database</option>
-                                <option th:each="database: ${databaseList}" th:text="${'Database: ' + database.type +
+                                <option th:each="database : ${databaseList}" th:text="${'Database: ' + database.type.toString() +
                                         ' | Details: ' + database.desc +
                                         ' | Creation time: ' + database.time}"
                                         th:value="${database.settingsName}">
@@ -417,40 +427,40 @@
                         </div>
 
                         <label for="createBackup-selectStorage">Select storage</label>
-                        <div class="invalid-feedback d-inline" th:errors="*{backupCreationProperties}"
-                             th:if="${#fields.hasErrors('backupCreationPropertiesMap')}"></div>
+                        <div class="invalid-feedback d-inline" th:errors="*{storageSettingsNameList}"
+                             th:if="${#fields.hasErrors('storageSettingsNameList')}"></div>
                         <table class="table table-hover table-bordered" id="createBackup-selectStorage">
                             <thead class="thead-dark">
                             <tr>
-                                <th scope="col"></th>
+                                <th class="col-md-1" scope="col"></th>
                                 <th class="col-md-2" scope="col">Storage</th>
                                 <th class="col-md-5" scope="col">Description</th>
                                 <th class="col-md-3" scope="col">Creation time</th>
-                                <th class="col-md-1" scope="col">Compress</th>
                             </tr>
                             </thead>
                             <tbody>
-                            <tr th:each="storage, iterStat: ${storageList}">
+                            <tr th:each="storage: ${storageList}">
                                 <td>
-                                    <div class="input-group">
-                                        <input th:name="|backupCreationPropertiesMap[__${storage.settingsName}__].selected|"
-                                               th:value="true"
-                                               type="checkbox">
+                                    <div class="custom-checkbox custom-control mb-3">
+                                        <input class="custom-control-input" th:field="*{storageSettingsNameList}"
+                                               th:id="'select'+${storage.settingsName}" th:value="${storage.settingsName}" type="checkbox">
+                                        <label class="custom-control-label" th:for="'select'+${storage.settingsName}"></label>
                                     </div>
                                 </td>
                                 <th scope="row" th:text="${storage.type}"></th>
                                 <td th:text="${storage.desc}"></td>
                                 <td th:text="${storage.time}"></td>
-                                <td>
-                                    <div class="form-check form-group">
-                                        <input class="form-check-input"
-                                               th:name="|backupCreationPropertiesMap[__${storage.settingsName}__].processors|"
-                                               th:value="'Compressor'"
-                                               type="checkbox">
-                                    </div>
                             </tr>
                             </tbody>
                         </table>
+
+                        <p>Apply Processors:</p>
+                        <div class="form-group form-check custom-checkbox custom-control mb-3" id="createBackup-selectProcessors">
+                            <input class="custom-control-input" id="createBackup-selectProcessors-compressor" th:field="*{processors}"
+                                   th:value="Compressor" type="checkbox">
+                            <label class="custom-control-label" for="createBackup-selectProcessors-compressor">Compressor</label>
+                        </div>
+
                         <button class="btn btn-primary" type="submit">Backup</button>
                     </form>
                 </div>
@@ -461,20 +471,52 @@
 
                     <form action="#" id="restoreBackupForm" th:action="@{/restore-backup}" th:method="post"
                           th:object="${webRestoreBackupRequest}">
-                        <div class="form-group">
-                            <label for="restoreBackup-selectBackup">Select backup to restore from</label>
-                            <select class="form-control" id="restoreBackup-selectBackup" th:errorclass="is-invalid"
-                                    th:field="*{backupId}">
-                                <option selected value="">Select Backup</option>
-                                <option th:each="backup: ${backupList}"
-                                        th:text="${'Backup name: ' + backup.name + ' | Details: ' + backup.desc +
-                                        ' | Creation time: ' + backup.time}"
-                                        th:value="${backup.id}">
-                                </option>
-                            </select>
-                            <div class="invalid-feedback" th:errors="*{backupId}"
-                                 th:if="${#fields.hasErrors('backupId')}"></div>
-                        </div>
+
+                        <label for="restoreBackup-selectBackup">Select backup and storage to restore from</label>
+                        <div class="invalid-feedback" th:errors="*{backupId}"
+                             th:if="${#fields.hasErrors('backupId')}"></div>
+                        <div class="invalid-feedback d-inline" th:errors="*{storageSettingsName}"
+                             th:if="${#fields.hasErrors('storageSettingsName')}"></div>
+                        <table class="table table-hover table-bordered" id="restoreBackup-selectBackup">
+                            <thead class="thead-dark">
+                            <tr>
+                                <th class="col-md-1" scope="col"></th>
+                                <th class="col-md-2" scope="col">Name</th>
+                                <th class="col-md-4" scope="col">Description</th>
+                                <th class="col-md-3" scope="col">Storages</th>
+                                <th class="col-md-4" scope="col">Creation time</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="backup: ${backupList}">
+                                <td>
+                                    <div class="custom-control custom-radio">
+                                        <input class="custom-control-input" th:field="*{backupId}"
+                                               th:id="'restoreBackup-selectBackupId-'+${backup.id}" th:value="${backup.id}" type="radio">
+                                        <label class="custom-control-label" th:for="'restoreBackup-selectBackupId-'+${backup.id}"></label>
+                                    </div>
+                                </td>
+                                <th scope="row" th:text="${backup.name}"></th>
+                                <td th:text="${backup.desc}"></td>
+                                <td>
+                                    <ul>
+                                        <li th:each="storageName : ${backup.storageSettingsNames}">
+                                            <div class="custom-control custom-radio">
+                                                <input class="custom-control-input" th:field="*{storageSettingsName}"
+                                                       th:id="'restoreBackup-selectBackupId-'+${backup.id}+'-selectStorage-'+${storageName}"
+                                                       th:value="${storageName}"
+                                                       type="radio">
+                                                <label class="custom-control-label"
+                                                       th:for="'restoreBackup-selectBackupId-'+${backup.id}+'-selectStorage-'+${storageName}"
+                                                       th:text="${storageName}"></label>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </td>
+                                <td th:text="${backup.time}"></td>
+                            </tr>
+                            </tbody>
+                        </table>
 
                         <div class="form-group">
                             <label for="restoreBackup-selectDatabase">Select database to restore to</label>
@@ -528,7 +570,7 @@
                             </tr>
                             </thead>
                             <tbody>
-                            <tr th:each="storage, iterStat: ${storageList}">
+                            <tr th:each="storage: ${storageList}">
                                 <td>
                                     <div class="input-group">
                                         <input th:field="*{storageSettingsNameList}" th:value="${storage.settingsName}" type="checkbox">
@@ -550,6 +592,8 @@
 
                         <div class="form-group">
                             <label for="addPlannedTask-inputInterval">Period</label>
+                            <div class="invalid-feedback d-inline" th:errors="*{interval}"
+                                 th:if="${#fields.hasErrors('interval')}"></div>
                             <input aria-describedby="addPlannedTask-inputInterval-help" class="form-control"
                                    id="addPlannedTask-inputInterval"
                                    placeholder="Enter interval" th:field="*{interval}"
@@ -564,9 +608,9 @@
         </main>
     </div>
 </div>
-<script src="js/jquery-3.3.1.min.js"></script>
-<script src="js/bootstrap.js"></script>
-<script src="js/selectContentShow.js"></script>
-<script src="js/dashboard.js"></script>
+<script src="/js/jquery-3.3.1.min.js"></script>
+<script src="/js/bootstrap.js"></script>
+<script src="/js/selectContentShow.js"></script>
+<script src="/js/dashboard.js"></script>
 </body>
 </html>
