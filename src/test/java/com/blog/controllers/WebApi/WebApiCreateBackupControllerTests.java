@@ -69,7 +69,7 @@ class WebApiCreateBackupControllerTests extends ApplicationTests {
     private BackupLoadManager backupLoadManager;
 
     @Autowired
-    private ControllersHttpClient controllersHttpClient;
+    private WebApiClient webApiClient;
 
     @Autowired
     private List<DatabaseSettings> allDatabaseSettings;
@@ -81,8 +81,8 @@ class WebApiCreateBackupControllerTests extends ApplicationTests {
     void setup() {
         databaseSettingsManager.saveAll(allDatabaseSettings);
         storageSettingsManager.saveAll(allStorageSettings);
-        controllersHttpClient.setRestTemplate(restTemplate);
-        controllersHttpClient.login();
+        webApiClient.setRestTemplate(restTemplate);
+        webApiClient.login();
         jdbcTemplateLockProvider.clearCache();
     }
 
@@ -95,21 +95,23 @@ class WebApiCreateBackupControllerTests extends ApplicationTests {
     @Test
     void givenProperRequestWithLocalFileSystemStorageAndPostgresDatabase_createBackup_shouldCreateBackup_whenSendRequest()
             throws IOException, InterruptedException {
-        WebCreateBackupRequest request = controllersHttpClient.buildCreateBackupRequest(
-                databaseSettingsNameMap.get(DatabaseType.POSTGRES), storageSettingsNameMap.get(StorageType.LOCAL_FILE_SYSTEM));
+        String storageSettingsName = storageSettingsNameMap.get(StorageType.LOCAL_FILE_SYSTEM);
+        WebCreateBackupRequest request = webApiClient.buildCreateBackupRequest(
+                databaseSettingsNameMap.get(DatabaseType.POSTGRES), storageSettingsName);
 
-        ResponseEntity<String> resp = controllersHttpClient.createBackup(request);
+        ResponseEntity<String> resp = webApiClient.createBackup(request);
 
         assertEquals(HttpStatus.FOUND, resp.getStatusCode());
 
-        controllersHttpClient.waitForLastOperationComplete();
+        webApiClient.waitForLastOperationComplete();
 
         Collection<BackupProperties> backupPropertiesCollection = backupPropertiesManager.findAllByOrderByIdDesc();
         BackupProperties backupProperties = backupPropertiesCollection.iterator().next();
 
         try (
                 InputStream in = databaseBackupManager.createBackup(masterPostgresDatabaseSettings, testTaskID);
-                InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID)
+                InputStream downloadedBackup = backupLoadManager.downloadBackup(
+                        backupProperties.getBackupName(), storageSettingsName, testTaskID)
         ) {
             assertTrue(testUtils.streamsContentEquals(in, downloadedBackup));
         }
@@ -118,20 +120,22 @@ class WebApiCreateBackupControllerTests extends ApplicationTests {
     @Test
     void givenProperRequestWithDropboxStorageAndPostgresDatabase_createBackup_shouldCreateBackupSuccessfully_whenSendRequest()
             throws IOException, InterruptedException {
-        WebCreateBackupRequest request = controllersHttpClient.buildCreateBackupRequest(
-                databaseSettingsNameMap.get(DatabaseType.POSTGRES), storageSettingsNameMap.get(StorageType.DROPBOX));
-        ResponseEntity<String> resp = controllersHttpClient.createBackup(request);
+        String storageSettingsName = storageSettingsNameMap.get(StorageType.DROPBOX);
+        WebCreateBackupRequest request = webApiClient.buildCreateBackupRequest(
+                databaseSettingsNameMap.get(DatabaseType.POSTGRES), storageSettingsName);
+        ResponseEntity<String> resp = webApiClient.createBackup(request);
 
         assertEquals(HttpStatus.FOUND, resp.getStatusCode());
 
-        controllersHttpClient.waitForLastOperationComplete();
+        webApiClient.waitForLastOperationComplete();
 
         Collection<BackupProperties> backupPropertiesCollection = backupPropertiesManager.findAllByOrderByIdDesc();
         BackupProperties backupProperties = backupPropertiesCollection.iterator().next();
 
         try (
                 InputStream in = databaseBackupManager.createBackup(masterPostgresDatabaseSettings, testTaskID);
-                InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID)
+                InputStream downloadedBackup = backupLoadManager.downloadBackup(
+                        backupProperties.getBackupName(), storageSettingsName, testTaskID)
         ) {
             assertTrue(testUtils.streamsContentEquals(in, downloadedBackup));
         }

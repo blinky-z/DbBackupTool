@@ -36,7 +36,7 @@ class WebApiDeleteBackupControllerTests extends ApplicationTests {
     private TestUtils testUtils;
 
     @Autowired
-    private ControllersHttpClient controllersHttpClient;
+    private WebApiClient webApiClient;
 
     @Autowired
     private HashMap<StorageType, String> storageSettingsNameMap;
@@ -69,8 +69,8 @@ class WebApiDeleteBackupControllerTests extends ApplicationTests {
     void setup() {
         databaseSettingsManager.saveAll(allDatabaseSettings);
         storageSettingsManager.saveAll(allStorageSettings);
-        controllersHttpClient.setRestTemplate(restTemplate);
-        controllersHttpClient.login();
+        webApiClient.setRestTemplate(restTemplate);
+        webApiClient.login();
         jdbcTemplateLockProvider.clearCache();
     }
 
@@ -83,21 +83,21 @@ class WebApiDeleteBackupControllerTests extends ApplicationTests {
     @Test
     void givenBackupSavedOnLocalFileSystem_deleteBackup_shouldDeleteBackup() throws InterruptedException {
         {
-            WebCreateBackupRequest request = controllersHttpClient.buildCreateBackupRequest(
+            WebCreateBackupRequest request = webApiClient.buildCreateBackupRequest(
                     databaseSettingsNameMap.get(DatabaseType.POSTGRES), storageSettingsNameMap.get(StorageType.LOCAL_FILE_SYSTEM));
-            controllersHttpClient.createBackup(request);
+            webApiClient.createBackup(request);
 
-            controllersHttpClient.waitForLastOperationComplete();
+            webApiClient.waitForLastOperationComplete();
         }
 
         {
             Collection<BackupProperties> backupPropertiesCollection = backupPropertiesManager.findAllByOrderByIdDesc();
             BackupProperties backupProperties = backupPropertiesCollection.iterator().next();
 
-            WebDeleteBackupRequest request = controllersHttpClient.buildDeleteBackupRequest(backupProperties.getId());
-            controllersHttpClient.deleteBackup(request);
+            WebDeleteBackupRequest request = webApiClient.buildDeleteBackupRequest(backupProperties.getId());
+            webApiClient.deleteBackup(request);
 
-            controllersHttpClient.waitForLastOperationComplete();
+            webApiClient.waitForLastOperationComplete();
 
             assertFalse(backupPropertiesManager.existsById(backupProperties.getId()));
         }
@@ -106,21 +106,21 @@ class WebApiDeleteBackupControllerTests extends ApplicationTests {
     @Test
     void givenBackupSavedOnDropbox_deleteBackup_shouldDeleteBackup() throws InterruptedException {
         {
-            WebCreateBackupRequest request = controllersHttpClient.buildCreateBackupRequest(
+            WebCreateBackupRequest request = webApiClient.buildCreateBackupRequest(
                     databaseSettingsNameMap.get(DatabaseType.POSTGRES), storageSettingsNameMap.get(StorageType.DROPBOX));
-            controllersHttpClient.createBackup(request);
+            webApiClient.createBackup(request);
 
-            controllersHttpClient.waitForLastOperationComplete();
+            webApiClient.waitForLastOperationComplete();
         }
 
         {
             Collection<BackupProperties> backupPropertiesCollection = backupPropertiesManager.findAllByOrderByIdDesc();
             BackupProperties backupProperties = backupPropertiesCollection.iterator().next();
 
-            WebDeleteBackupRequest request = controllersHttpClient.buildDeleteBackupRequest(backupProperties.getId());
-            controllersHttpClient.deleteBackup(request);
+            WebDeleteBackupRequest request = webApiClient.buildDeleteBackupRequest(backupProperties.getId());
+            webApiClient.deleteBackup(request);
 
-            controllersHttpClient.waitForLastOperationComplete();
+            webApiClient.waitForLastOperationComplete();
 
             assertFalse(backupPropertiesManager.existsById(backupProperties.getId()));
         }

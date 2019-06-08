@@ -5,29 +5,26 @@ import com.blog.TestUtils;
 import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.storage.StorageSettings;
+import com.blog.entities.storage.StorageType;
 import com.blog.manager.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 class PostgresDatabaseBackupTests extends ApplicationTests {
     private static final List<String> tableNames = new ArrayList<>(Arrays.asList("comments"));
     private static final Integer testTaskID = 0;
     private TestUtils testUtils;
     private JdbcTemplate jdbcPostgresMasterTemplate;
-    private JdbcTemplate jdbcPostgresCopyTemplate;
+    private JdbcTemplate jdbcPostgresSlaveTemplate;
     private DatabaseSettings masterPostgresDatabaseSettings;
     private DatabaseSettings slavePostgresDatabaseSettings;
-    private StorageSettings dropboxStorageSettings;
-    private StorageSettings localFileSystemStorageSettings;
+    private HashMap<StorageType, String> storageSettingsNameMap;
     private DatabaseBackupManager databaseBackupManager;
     private BackupProcessorManager backupProcessorManager;
     private BackupLoadManager backupLoadManager;
@@ -60,8 +57,8 @@ class PostgresDatabaseBackupTests extends ApplicationTests {
     }
 
     @Autowired
-    void setJdbcPostgresCopyTemplate(JdbcTemplate jdbcPostgresCopyTemplate) {
-        this.jdbcPostgresCopyTemplate = jdbcPostgresCopyTemplate;
+    void setJdbcPostgresSlaveTemplate(JdbcTemplate jdbcPostgresSlaveTemplate) {
+        this.jdbcPostgresSlaveTemplate = jdbcPostgresSlaveTemplate;
     }
 
     @Autowired
@@ -80,13 +77,8 @@ class PostgresDatabaseBackupTests extends ApplicationTests {
     }
 
     @Autowired
-    void setDropboxStorageSettings(StorageSettings dropboxStorageSettings) {
-        this.dropboxStorageSettings = dropboxStorageSettings;
-    }
-
-    @Autowired
-    void setLocalFileSystemStorageSettings(StorageSettings localFileSystemStorageSettings) {
-        this.localFileSystemStorageSettings = localFileSystemStorageSettings;
+    public void setStorageSettingsNameMap(HashMap<StorageType, String> storageSettingsNameMap) {
+        this.storageSettingsNameMap = storageSettingsNameMap;
     }
 
     @Autowired
@@ -107,7 +99,7 @@ class PostgresDatabaseBackupTests extends ApplicationTests {
     @BeforeEach
     void init() {
         testUtils.clearDatabase(jdbcPostgresMasterTemplate);
-        testUtils.clearDatabase(jdbcPostgresCopyTemplate);
+        testUtils.clearDatabase(jdbcPostgresSlaveTemplate);
         storageSettingsManager.saveAll(allStorageSettings);
         databaseSettingsManager.saveAll(allDatabaseSettings);
         addTables(jdbcPostgresMasterTemplate);
@@ -133,225 +125,93 @@ class PostgresDatabaseBackupTests extends ApplicationTests {
     @Test
     void whenCreatePostgresBackupAndUploadToLocalFileSystemAndRestore_databasesIsEqual() throws IOException {
         List<String> processors = new ArrayList<>();
+        String storageSettingsName = storageSettingsNameMap.get(StorageType.LOCAL_FILE_SYSTEM);
 
         try (
                 InputStream backupStream = databaseBackupManager.createBackup(masterPostgresDatabaseSettings, testTaskID)
         ) {
             BackupProperties backupProperties = backupPropertiesManager.initNewBackupProperties(
-                    localFileSystemStorageSettings, processors, masterPostgresDatabaseSettings.getName());
+                    Collections.singletonList(storageSettingsName), processors, masterPostgresDatabaseSettings.getName());
             backupLoadManager.uploadBackup(backupStream, backupProperties, testTaskID);
             try (
-                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID)
+                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties.getBackupName(),
+                            storageSettingsName, testTaskID)
             ) {
-                databaseBackupManager.restoreBackup(downloadedBackup, slavePostgresDatabaseSettings, testTaskID);
+                databaseBackupManager.restoreBackup(Objects.requireNonNull(downloadedBackup), slavePostgresDatabaseSettings, testTaskID);
             }
         }
 
-        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
+        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresSlaveTemplate);
     }
 
     @Test
     void whenCreatePostgresBackupAndUploadToDropboxAndRestore_databasesIsEqual() throws IOException {
         List<String> processors = new ArrayList<>();
+        String storageSettingsName = storageSettingsNameMap.get(StorageType.DROPBOX);
 
         try (
                 InputStream backupStream = databaseBackupManager.createBackup(masterPostgresDatabaseSettings, testTaskID)
         ) {
             BackupProperties backupProperties = backupPropertiesManager.initNewBackupProperties(
-                    dropboxStorageSettings, processors, masterPostgresDatabaseSettings.getName());
+                    Collections.singletonList(storageSettingsName), processors, masterPostgresDatabaseSettings.getName());
             backupLoadManager.uploadBackup(backupStream, backupProperties, testTaskID);
             try (
-                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID)
+                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties.getBackupName(), storageSettingsName,
+                            testTaskID)
             ) {
-                databaseBackupManager.restoreBackup(downloadedBackup, slavePostgresDatabaseSettings, testTaskID);
+                databaseBackupManager.restoreBackup(Objects.requireNonNull(downloadedBackup), slavePostgresDatabaseSettings, testTaskID);
             }
         }
 
-        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
+        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresSlaveTemplate);
     }
 
     @Test
     void whenCreatePostgresBackupAndCompressAndUploadToLocalFileSystemAndDecompressAndRestore_databasesIsEqual() throws IOException {
         List<String> processors = new ArrayList<>();
         processors.add("Compressor");
+        String storageSettingsName = storageSettingsNameMap.get(StorageType.LOCAL_FILE_SYSTEM);
 
         try (
                 InputStream backupStream = databaseBackupManager.createBackup(masterPostgresDatabaseSettings, testTaskID);
                 InputStream compressedBackup = backupProcessorManager.process(backupStream, processors)
         ) {
             BackupProperties backupProperties = backupPropertiesManager.initNewBackupProperties(
-                    localFileSystemStorageSettings, processors, masterPostgresDatabaseSettings.getName());
+                    Collections.singletonList(storageSettingsName), processors, masterPostgresDatabaseSettings.getName());
             backupLoadManager.uploadBackup(compressedBackup, backupProperties, testTaskID);
             try (
-                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID);
-                    InputStream decompressedBackup = backupProcessorManager.deprocess(downloadedBackup, processors)
+                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties.getBackupName(), storageSettingsName, testTaskID);
+                    InputStream decompressedBackup = backupProcessorManager.deprocess(Objects.requireNonNull(downloadedBackup), processors)
             ) {
                 databaseBackupManager.restoreBackup(decompressedBackup, slavePostgresDatabaseSettings, testTaskID);
             }
         }
 
-        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
+        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresSlaveTemplate);
     }
 
     @Test
     void whenCreatePostgresBackupAndCompressAndUploadToDropboxAndDecompressAndRestore_databasesIsEqual() throws IOException {
         List<String> processors = new ArrayList<>();
         processors.add("Compressor");
+        String storageSettingsName = storageSettingsNameMap.get(StorageType.DROPBOX);
 
         try (
                 InputStream backupStream = databaseBackupManager.createBackup(masterPostgresDatabaseSettings, testTaskID);
                 InputStream compressedBackup = backupProcessorManager.process(backupStream, processors)
         ) {
             BackupProperties backupProperties = backupPropertiesManager.initNewBackupProperties(
-                    dropboxStorageSettings, processors, masterPostgresDatabaseSettings.getName());
+                    Collections.singletonList(storageSettingsName), processors, masterPostgresDatabaseSettings.getName());
             backupLoadManager.uploadBackup(compressedBackup, backupProperties, testTaskID);
 
             try (
-                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID);
-                    InputStream decompressedBackup = backupProcessorManager.deprocess(downloadedBackup, processors)
+                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties.getBackupName(), storageSettingsName, testTaskID);
+                    InputStream decompressedBackup = backupProcessorManager.deprocess(Objects.requireNonNull(downloadedBackup), processors)
             ) {
                 databaseBackupManager.restoreBackup(decompressedBackup, slavePostgresDatabaseSettings, testTaskID);
             }
         }
 
-        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
-    }
-
-    @Test
-    void whenCreateBackupAndUploadToDifferentStoragesAndRestoreEachIntoSeparateDatabases_databasesIsEqual() throws IOException {
-        List<String> processors = new ArrayList<>();
-
-        byte[] createdBackupAsByteArray;
-        try (
-                InputStream createdBackup = databaseBackupManager.createBackup(masterPostgresDatabaseSettings, testTaskID)
-        ) {
-            createdBackupAsByteArray = testUtils.getStreamCopyAsByteArray(createdBackup);
-        }
-
-        // get backup from local file system and restore
-        {
-            try (
-                    InputStream inputStream = new ByteArrayInputStream(createdBackupAsByteArray)
-            ) {
-                BackupProperties backupProperties = backupPropertiesManager.initNewBackupProperties(
-                        localFileSystemStorageSettings, processors, masterPostgresDatabaseSettings.getName());
-                backupLoadManager.uploadBackup(inputStream, backupProperties, testTaskID);
-                try (
-                        InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID)
-                ) {
-                    databaseBackupManager.restoreBackup(downloadedBackup, slavePostgresDatabaseSettings, testTaskID);
-                }
-                testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
-            }
-        }
-
-        testUtils.clearDatabase(jdbcPostgresCopyTemplate);
-
-        // get backup from dropbox and restore
-        {
-            try (
-                    InputStream inputStream = new ByteArrayInputStream(createdBackupAsByteArray)
-            ) {
-                BackupProperties backupProperties = backupPropertiesManager.initNewBackupProperties(
-                        dropboxStorageSettings, processors, masterPostgresDatabaseSettings.getName());
-                backupLoadManager.uploadBackup(inputStream, backupProperties, testTaskID);
-                try (
-                        InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID)
-                ) {
-                    databaseBackupManager.restoreBackup(downloadedBackup, slavePostgresDatabaseSettings, testTaskID);
-                }
-                testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
-            }
-        }
-    }
-
-    @Test
-    void whenCreateBackupAndUploadToDifferentStoragesAndRestoreEachIntoSeparateDatabasesApplyingCompressor_databasesIsEqual() throws IOException {
-        List<String> processors = new ArrayList<>();
-        processors.add("compressor");
-
-        byte[] createdBackupAsByteArray;
-        try (
-                InputStream createdBackup = databaseBackupManager.createBackup(masterPostgresDatabaseSettings, testTaskID);
-                InputStream compressedBackup = backupProcessorManager.process(createdBackup, processors)
-        ) {
-            createdBackupAsByteArray = testUtils.getStreamCopyAsByteArray(compressedBackup);
-        }
-
-        // get backup from local file system and restore
-        {
-            try (
-                    InputStream inputStream = new ByteArrayInputStream(createdBackupAsByteArray)
-            ) {
-                BackupProperties backupProperties = backupPropertiesManager.initNewBackupProperties(
-                        localFileSystemStorageSettings, processors, masterPostgresDatabaseSettings.getName());
-                backupLoadManager.uploadBackup(inputStream, backupProperties, testTaskID);
-                try (
-                        InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID);
-                        InputStream deprocessedBackup = backupProcessorManager.deprocess(downloadedBackup, processors)
-                ) {
-                    databaseBackupManager.restoreBackup(deprocessedBackup, slavePostgresDatabaseSettings, testTaskID);
-                }
-                testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
-            }
-        }
-
-        testUtils.clearDatabase(jdbcPostgresCopyTemplate);
-
-        // get backup from dropbox and restore
-        {
-            try (
-                    InputStream inputStream = new ByteArrayInputStream(createdBackupAsByteArray)
-            ) {
-                BackupProperties backupProperties = backupPropertiesManager.initNewBackupProperties(
-                        dropboxStorageSettings, processors, masterPostgresDatabaseSettings.getName());
-                backupLoadManager.uploadBackup(inputStream, backupProperties, testTaskID);
-                try (
-                        InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID);
-                        InputStream deprocessedBackup = backupProcessorManager.deprocess(downloadedBackup, processors)
-                ) {
-                    databaseBackupManager.restoreBackup(deprocessedBackup, slavePostgresDatabaseSettings, testTaskID);
-                }
-                testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
-            }
-        }
-    }
-
-    @Test
-    void givenAddMultipleTables_whenCreatePostgresBackupAndUploadToLocalFileSystemAndRestore_databasesIsEqual() throws IOException {
-        List<String> processors = new ArrayList<>();
-
-        jdbcPostgresMasterTemplate.execute("CREATE TABLE users" +
-                "(" +
-                "ID        SERIAL PRIMARY KEY," +
-                "NAME    CHARACTER VARYING(36)   not null," +
-                "DATE      TIMESTAMPTZ DEFAULT NOW()," +
-                "INFO   CHARACTER VARYING(16000) not null" +
-                ")");
-
-        final long rowsToInsert = 10000L;
-        jdbcPostgresMasterTemplate.update("insert into users (name, info)" +
-                " select " +
-                "    left(md5(i::text), 36)," +
-                "    left(md5(random()::text), 16000) " +
-                "from generate_series(0, ?) s(i)", rowsToInsert);
-
-        try (
-                InputStream backupStream = databaseBackupManager.createBackup(masterPostgresDatabaseSettings, testTaskID)
-        ) {
-            BackupProperties backupProperties =
-                    backupPropertiesManager.initNewBackupProperties(
-                            localFileSystemStorageSettings, processors, masterPostgresDatabaseSettings.getName());
-            backupLoadManager.uploadBackup(backupStream, backupProperties, testTaskID);
-            try (
-                    InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, testTaskID)
-            ) {
-                databaseBackupManager.restoreBackup(downloadedBackup, slavePostgresDatabaseSettings, testTaskID);
-            }
-        }
-
-        List<String> multipleTableNames = new ArrayList<>(tableNames);
-        multipleTableNames.add("users");
-        testUtils.compareLargeTables(multipleTableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
+        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresSlaveTemplate);
     }
 }

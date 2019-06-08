@@ -64,7 +64,7 @@ class WebApiCreatePlannedTaskControllerTests extends ApplicationTests {
     private BackupLoadManager backupLoadManager;
 
     @Autowired
-    private ControllersHttpClient controllersHttpClient;
+    private WebApiClient webApiClient;
 
     @Autowired
     private List<DatabaseSettings> allDatabaseSettings;
@@ -82,8 +82,8 @@ class WebApiCreatePlannedTaskControllerTests extends ApplicationTests {
     void setup() {
         databaseSettingsManager.saveAll(allDatabaseSettings);
         storageSettingsManager.saveAll(allStorageSettings);
-        controllersHttpClient.setRestTemplate(restTemplate);
-        controllersHttpClient.login();
+        webApiClient.setRestTemplate(restTemplate);
+        webApiClient.login();
     }
 
     @BeforeEach
@@ -96,13 +96,13 @@ class WebApiCreatePlannedTaskControllerTests extends ApplicationTests {
     void givenProperRequestWithAllStoragesAndPostgresDatabase_addPlannedTask_shouldAddPlannedTaskAndExecuteInTime()
             throws InterruptedException {
         Duration interval = Duration.ofSeconds(30);
-        WebAddPlannedTaskRequest webAddPlannedTaskRequest = controllersHttpClient.buildAddPlannedTaskRequest(
+        WebAddPlannedTaskRequest webAddPlannedTaskRequest = webApiClient.buildAddPlannedTaskRequest(
                 databaseSettingsNameMap.get(DatabaseType.POSTGRES),
                 storageSettingsNameMap.values(),
                 null,
                 interval);
 
-        ResponseEntity<String> response = controllersHttpClient.addPlannedTask(webAddPlannedTaskRequest);
+        ResponseEntity<String> response = webApiClient.addPlannedTask(webAddPlannedTaskRequest);
         assertEquals(response.getStatusCode(), HttpStatus.FOUND);
 
         PlannedTask plannedTask = plannedTasksRepository.findAllByOrderByIdDesc().iterator().next();

@@ -31,7 +31,7 @@ class WebApiStorageControllerTests extends ApplicationTests {
     private StorageSettingsRepository storageSettingsRepository;
 
     @Autowired
-    private ControllersHttpClient controllersHttpClient;
+    private WebApiClient webApiClient;
 
     private static Matcher<StorageSettings> isEqualToDto(WebAddStorageRequest dto) {
         return new equalsToDto(dto);
@@ -39,16 +39,16 @@ class WebApiStorageControllerTests extends ApplicationTests {
 
     @BeforeAll
     void setup() {
-        controllersHttpClient.setRestTemplate(restTemplate);
-        controllersHttpClient.login();
+        webApiClient.setRestTemplate(restTemplate);
+        webApiClient.login();
     }
 
     @Test
     void createStorage_ShouldSaveLocalFileSystemStorageSettingsIntoDatabase_WhenGotRequestToSaveProperRequest() {
         String settingsName = "createStorage_ShouldSaveLocalFileSystemStorageSettingsIntoDatabase_WhenGotRequestToSaveProperRequest";
 
-        WebAddStorageRequest request = controllersHttpClient.buildDefaultAddStorageRequest(StorageType.LOCAL_FILE_SYSTEM, settingsName);
-        controllersHttpClient.addStorage(request);
+        WebAddStorageRequest request = webApiClient.buildDefaultAddStorageRequest(StorageType.LOCAL_FILE_SYSTEM, settingsName);
+        webApiClient.addStorage(request);
 
         Optional<StorageSettings> optionalStorageSettings = storageSettingsRepository.findById(settingsName);
         assertTrue(optionalStorageSettings.isPresent());
@@ -59,8 +59,8 @@ class WebApiStorageControllerTests extends ApplicationTests {
     void createStorage_ShouldSaveDropboxStorageSettingsIntoDatabase_WhenGotRequestToSaveProperRequest() {
         String settingsName = "createStorage_ShouldSaveDropboxStorageSettingsIntoDatabase_WhenGotRequestToSaveProperRequest";
 
-        WebAddStorageRequest request = controllersHttpClient.buildDefaultAddStorageRequest(StorageType.DROPBOX, settingsName);
-        controllersHttpClient.addStorage(request);
+        WebAddStorageRequest request = webApiClient.buildDefaultAddStorageRequest(StorageType.DROPBOX, settingsName);
+        webApiClient.addStorage(request);
 
         Optional<StorageSettings> optionalStorageSettings = storageSettingsRepository.findById(settingsName);
         assertTrue(optionalStorageSettings.isPresent());
@@ -74,13 +74,13 @@ class WebApiStorageControllerTests extends ApplicationTests {
 
         // create settings to subsequent delete
         {
-            WebAddStorageRequest request = controllersHttpClient.buildDefaultAddStorageRequest(
+            WebAddStorageRequest request = webApiClient.buildDefaultAddStorageRequest(
                     StorageType.LOCAL_FILE_SYSTEM, settingsName);
 
-            controllersHttpClient.addStorage(request);
+            webApiClient.addStorage(request);
         }
 
-        controllersHttpClient.deleteStorage(settingsName);
+        webApiClient.deleteStorage(settingsName);
 
         assertFalse(storageSettingsRepository.existsById(settingsName));
     }
@@ -91,25 +91,25 @@ class WebApiStorageControllerTests extends ApplicationTests {
 
         // create settings
         {
-            WebAddStorageRequest request = controllersHttpClient.buildDefaultAddStorageRequest(StorageType.LOCAL_FILE_SYSTEM, settingsName);
-            controllersHttpClient.addStorage(request);
+            WebAddStorageRequest request = webApiClient.buildDefaultAddStorageRequest(StorageType.LOCAL_FILE_SYSTEM, settingsName);
+            webApiClient.addStorage(request);
         }
 
         // delete settings
         {
-            controllersHttpClient.deleteStorage(settingsName);
+            webApiClient.deleteStorage(settingsName);
         }
 
         // delete settings again
         {
-            ResponseEntity<String> responseEntity = controllersHttpClient.deleteStorage(settingsName);
+            ResponseEntity<String> responseEntity = webApiClient.deleteStorage(settingsName);
             assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
         }
     }
 
     @Test
     void deleteStorage_ShouldRespondWith400Error_WhenStorageSettingsNameNotProvided() {
-        ResponseEntity<String> responseEntity = controllersHttpClient.deleteStorage(null);
+        ResponseEntity<String> responseEntity = webApiClient.deleteStorage(null);
         assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
     }
 

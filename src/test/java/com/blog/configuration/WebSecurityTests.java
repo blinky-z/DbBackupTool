@@ -59,10 +59,9 @@ class WebSecurityTests extends ApplicationTests {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add("Cookie", jsessionId);
 
-        HttpEntity entity = new HttpEntity(httpHeaders);
+        HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(httpHeaders);
 
-        ResponseEntity<String> resp = restTemplate
-                .exchange("/dashboard", HttpMethod.GET, entity, String.class);
+        ResponseEntity<String> resp = restTemplate.exchange("/dashboard", HttpMethod.GET, entity, String.class);
         assertEquals(HttpStatus.OK, resp.getStatusCode());
     }
 

@@ -30,7 +30,7 @@ class WebApiDatabaseControllerTests extends ApplicationTests {
     private DatabaseSettingsRepository databaseSettingsRepository;
 
     @Autowired
-    private ControllersHttpClient controllersHttpClient;
+    private WebApiClient webApiClient;
 
     private static Matcher<DatabaseSettings> isEqualToDto(WebAddDatabaseRequest dto) {
         return new equalsToDto(dto);
@@ -38,8 +38,8 @@ class WebApiDatabaseControllerTests extends ApplicationTests {
 
     @BeforeAll
     void setup() {
-        controllersHttpClient.setRestTemplate(restTemplate);
-        controllersHttpClient.login();
+        webApiClient.setRestTemplate(restTemplate);
+        webApiClient.login();
     }
 
     @Test
@@ -47,10 +47,10 @@ class WebApiDatabaseControllerTests extends ApplicationTests {
         String settingsName =
                 "createDatabase_ShouldSavePostgresSettingsIntoDatabase_WhenGotRequestToSaveProperPostgresSettings";
 
-        WebAddDatabaseRequest request = controllersHttpClient.buildDefaultAddDatabaseRequest(
+        WebAddDatabaseRequest request = webApiClient.buildDefaultAddDatabaseRequest(
                 DatabaseType.POSTGRES, settingsName);
 
-        controllersHttpClient.addDatabase(request);
+        webApiClient.addDatabase(request);
 
         Optional<DatabaseSettings> optionalDatabaseSettings = databaseSettingsRepository.findById(settingsName);
         assertTrue(optionalDatabaseSettings.isPresent());
@@ -64,20 +64,20 @@ class WebApiDatabaseControllerTests extends ApplicationTests {
 
         // create settings to subsequent delete
         {
-            WebAddDatabaseRequest request = controllersHttpClient.buildDefaultAddDatabaseRequest(
+            WebAddDatabaseRequest request = webApiClient.buildDefaultAddDatabaseRequest(
                     DatabaseType.POSTGRES, settingsName);
 
-            controllersHttpClient.addDatabase(request);
+            webApiClient.addDatabase(request);
         }
 
-        controllersHttpClient.deleteDatabase(settingsName);
+        webApiClient.deleteDatabase(settingsName);
 
         assertFalse(databaseSettingsRepository.existsById(settingsName));
     }
 
     @Test
     void deleteDatabase_ShouldRespondWith400Error_WhenDatabaseSettingsNameNotProvided() {
-        ResponseEntity<String> responseEntity = controllersHttpClient.deleteDatabase(null);
+        ResponseEntity<String> responseEntity = webApiClient.deleteDatabase(null);
         assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
     }
 
@@ -87,21 +87,21 @@ class WebApiDatabaseControllerTests extends ApplicationTests {
 
         // create settings
         {
-            WebAddDatabaseRequest request = controllersHttpClient.buildDefaultAddDatabaseRequest(
+            WebAddDatabaseRequest request = webApiClient.buildDefaultAddDatabaseRequest(
                     DatabaseType.POSTGRES, settingsName);
 
-            controllersHttpClient.addDatabase(request);
+            webApiClient.addDatabase(request);
         }
 
         // delete settings
         {
-            controllersHttpClient.deleteDatabase(settingsName);
+            webApiClient.deleteDatabase(settingsName);
             assertFalse(databaseSettingsRepository.existsById(settingsName));
         }
 
         // delete settings again
         {
-            ResponseEntity<String> responseEntity = controllersHttpClient.deleteDatabase(settingsName);
+            ResponseEntity<String> responseEntity = webApiClient.deleteDatabase(settingsName);
             assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
         }
     }

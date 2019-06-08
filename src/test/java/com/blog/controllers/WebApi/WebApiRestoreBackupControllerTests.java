@@ -34,13 +34,13 @@ class WebApiRestoreBackupControllerTests extends ApplicationTests {
     @Autowired
     private JdbcTemplate jdbcPostgresMasterTemplate;
     @Autowired
-    private JdbcTemplate jdbcPostgresCopyTemplate;
+    private JdbcTemplate jdbcPostgresSlaveTemplate;
     @Autowired
     private JdbcTemplateLockProvider jdbcTemplateLockProvider;
     @Autowired
     private BackupPropertiesManager backupPropertiesManager;
     @Autowired
-    private ControllersHttpClient controllersHttpClient;
+    private WebApiClient webApiClient;
 
     @Autowired
     private HashMap<StorageType, String> storageSettingsNameMap;
@@ -84,65 +84,67 @@ class WebApiRestoreBackupControllerTests extends ApplicationTests {
     void setup() {
         databaseSettingsManager.saveAll(allDatabaseSettings);
         storageSettingsManager.saveAll(allStorageSettings);
-        controllersHttpClient.setRestTemplate(restTemplate);
-        controllersHttpClient.login();
+        webApiClient.setRestTemplate(restTemplate);
+        webApiClient.login();
         jdbcTemplateLockProvider.clearCache();
     }
 
     @BeforeEach
     void init() {
         testUtils.clearDatabase(jdbcPostgresMasterTemplate);
-        testUtils.clearDatabase(jdbcPostgresCopyTemplate);
+        testUtils.clearDatabase(jdbcPostgresSlaveTemplate);
         addTables(jdbcPostgresMasterTemplate);
     }
 
     @Test
     void givenPostgresBackupLocatedOnLocalFileSystem_restoreBackup_shouldRestoreBackupSuccessfully_whenSendRequest() throws InterruptedException {
+        String storageSettingsName = storageSettingsNameMap.get(StorageType.LOCAL_FILE_SYSTEM);
         {
-            WebCreateBackupRequest request = controllersHttpClient.buildCreateBackupRequest(
-                    databaseSettingsNameMap.get(DatabaseType.POSTGRES), storageSettingsNameMap.get(StorageType.LOCAL_FILE_SYSTEM));
-            controllersHttpClient.createBackup(request);
+            WebCreateBackupRequest request = webApiClient.buildCreateBackupRequest(
+                    databaseSettingsNameMap.get(DatabaseType.POSTGRES), storageSettingsName);
+            webApiClient.createBackup(request);
 
-            controllersHttpClient.waitForLastOperationComplete();
+            webApiClient.waitForLastOperationComplete();
         }
 
         {
             Collection<BackupProperties> backupPropertiesCollection = backupPropertiesManager.findAllByOrderByIdDesc();
             BackupProperties backupProperties = Objects.requireNonNull(backupPropertiesCollection.iterator().next());
 
-            WebRestoreBackupRequest request = controllersHttpClient.buildRestoreBackupRequest(
-                    backupProperties.getId(), slaveDatabaseSettingsNameMap.get(DatabaseType.POSTGRES));
-            controllersHttpClient.restoreBackup(request);
+            WebRestoreBackupRequest request = webApiClient.buildRestoreBackupRequest(
+                    backupProperties.getId(), storageSettingsName, slaveDatabaseSettingsNameMap.get(DatabaseType.POSTGRES));
+            webApiClient.restoreBackup(request);
 
-            controllersHttpClient.waitForLastOperationComplete();
+            webApiClient.waitForLastOperationComplete();
         }
 
         // assert successful restoration
-        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
+        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresSlaveTemplate);
     }
 
     @Test
     void givenPostgresBackupLocatedOnDropbox_restoreBackup_shouldRestoreBackupSuccessfully_whenSendRequest() throws InterruptedException {
+        String storageSettingsName = storageSettingsNameMap.get(StorageType.DROPBOX);
         {
-            WebCreateBackupRequest request = controllersHttpClient.buildCreateBackupRequest(
-                    databaseSettingsNameMap.get(DatabaseType.POSTGRES), storageSettingsNameMap.get(StorageType.DROPBOX));
-            controllersHttpClient.createBackup(request);
+            WebCreateBackupRequest request = webApiClient.buildCreateBackupRequest(
+                    databaseSettingsNameMap.get(DatabaseType.POSTGRES), storageSettingsName);
+            webApiClient.createBackup(request);
 
-            controllersHttpClient.waitForLastOperationComplete();
+            webApiClient.waitForLastOperationComplete();
         }
 
         {
             Collection<BackupProperties> backupPropertiesCollection = backupPropertiesManager.findAllByOrderByIdDesc();
             BackupProperties backupProperties = Objects.requireNonNull(backupPropertiesCollection.iterator().next());
 
-            WebRestoreBackupRequest request = controllersHttpClient.buildRestoreBackupRequest(
-                    backupProperties.getId(), slaveDatabaseSettingsNameMap.get(DatabaseType.POSTGRES));
-            controllersHttpClient.restoreBackup(request);
+            WebRestoreBackupRequest request = webApiClient.buildRestoreBackupRequest(
+                    backupProperties.getId(), storageSettingsName, slaveDatabaseSettingsNameMap.get(DatabaseType.POSTGRES));
+            webApiClient.restoreBackup(request);
 
-            controllersHttpClient.waitForLastOperationComplete();
+            webApiClient.waitForLastOperationComplete();
         }
 
         // assert successful restoration
-        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresCopyTemplate);
+        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresSlaveTemplate);
     }
 }

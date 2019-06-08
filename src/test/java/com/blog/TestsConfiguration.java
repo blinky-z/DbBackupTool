@@ -121,7 +121,7 @@ public class TestsConfiguration {
     }
 
     @Bean
-    public JdbcTemplate jdbcPostgresCopyTemplate() {
+    public JdbcTemplate jdbcPostgresSlaveTemplate() {
         return new JdbcTemplate(copyPostgresDataSource);
     }
 
