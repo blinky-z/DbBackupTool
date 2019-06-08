@@ -13,7 +13,7 @@ import java.io.InputStream;
 import java.util.Objects;
 
 /**
- * This manager class provides API to work with database backups.
+ * This class provides API to create and restore backups.
  */
 @Component
 public class DatabaseBackupManager {

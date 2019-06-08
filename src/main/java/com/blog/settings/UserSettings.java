@@ -1,31 +1,37 @@
 package com.blog.settings;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Configuration;
 
 /**
- * This class contains required user config fields from *application.properties*.
+ * This class contains required user config fields from <i>application.properties</i>.
  */
-@Component
+@Configuration
 @ConfigurationProperties(prefix = "user-config")
 public class UserSettings {
-    private String webUILogin;
+    /**
+     * Web UI login
+     */
+    private String web_ui_Login;
 
-    private String webUIPassword;
+    /**
+     * Web UI password
+     */
+    private String web_ui_Password;
 
     public String getWebUILogin() {
-        return webUILogin;
+        return web_ui_Login;
     }
 
-    public void setWebUILogin(String webUILogin) {
-        this.webUILogin = webUILogin;
+    public void setWebUILogin(String web_ui_Login) {
+        this.web_ui_Login = web_ui_Login;
     }
 
     public String getWebUIPassword() {
-        return webUIPassword;
+        return web_ui_Password;
     }
 
-    public void setWebUIPassword(String webUIPassword) {
-        this.webUIPassword = webUIPassword;
+    public void setWebUIPassword(String web_ui_Password) {
+        this.web_ui_Password = web_ui_Password;
     }
 }

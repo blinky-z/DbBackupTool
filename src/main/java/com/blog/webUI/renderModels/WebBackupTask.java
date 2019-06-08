@@ -1,6 +1,8 @@
 package com.blog.webUI.renderModels;
 
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -8,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * Getters are required for thymeleaf expressions evaluating.
  */
+@JsonDeserialize(builder = WebBackupTask.Builder.class)
 public class WebBackupTask {
     private final Integer id;
 
@@ -17,8 +20,7 @@ public class WebBackupTask {
 
     private final String time;
 
-    private WebBackupTask(@NotNull Integer id, @NotNull String type, @NotNull String state,
-                          @NotNull String time) {
+    private WebBackupTask(@NotNull Integer id, @NotNull String type, @NotNull String state, @NotNull String time) {
         this.id = id;
         this.type = type;
         this.state = state;
@@ -51,7 +53,7 @@ public class WebBackupTask {
                 '}';
     }
 
-
+    @JsonPOJOBuilder(buildMethodName = "build", withPrefix = "with")
     public static final class Builder {
         private Integer id;
         private String type;

@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * This class provides API to manage error tasks.
+ *
+ * @see ErrorTask
  */
 @Component
 @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)

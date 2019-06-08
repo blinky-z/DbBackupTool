@@ -9,9 +9,12 @@ import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.Objects;
 
 /**
- * This manager class provides API to work with processors.
+ * This class provides API to work with processors.
+ *
+ * @see Processor
  */
 @Component
 public class BackupProcessorManager {
@@ -32,7 +35,10 @@ public class BackupProcessorManager {
      * @return a processed backup
      */
     @NotNull
-    public InputStream process(InputStream in, List<String> processorList) {
+    public InputStream process(@NotNull InputStream in, @NotNull List<String> processorList) {
+        Objects.requireNonNull(in);
+        Objects.requireNonNull(processorList);
+
         logger.info("Processing backup... Processors: {}", processorList);
         int processorsAmount = processorList.size();
         for (int currentProcessor = 0; currentProcessor < processorsAmount; currentProcessor++) {
@@ -56,7 +62,10 @@ public class BackupProcessorManager {
      * @return a deprocessed backup
      */
     @NotNull
-    public InputStream deprocess(InputStream in, List<String> deprocessorList) {
+    public InputStream deprocess(@NotNull InputStream in, @NotNull List<String> deprocessorList) {
+        Objects.requireNonNull(in);
+        Objects.requireNonNull(deprocessorList);
+
         logger.info("Deprocessing backup... Processors: {}", deprocessorList);
         int processorsAmount = deprocessorList.size();
         for (int currentProcessor = 0; currentProcessor < processorsAmount; currentProcessor++) {
@@ -72,7 +81,9 @@ public class BackupProcessorManager {
         return in;
     }
 
-    public boolean existsByName(String processorName) {
+    public boolean existsByName(@NotNull String processorName) {
+        Objects.requireNonNull(processorName);
+
         for (Processor processor : processors) {
             if (processorName.equals(processor.getName())) {
                 return true;

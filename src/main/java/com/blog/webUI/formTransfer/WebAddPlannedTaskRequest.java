@@ -1,6 +1,5 @@
 package com.blog.webUI.formTransfer;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -11,9 +10,9 @@ import java.util.List;
 public class WebAddPlannedTaskRequest {
     private String databaseSettingsName;
 
-    private List<String> storageSettingsNameList = new ArrayList<>();
+    private List<String> storageSettingsNameList;
 
-    private List<String> processors = new ArrayList<>();
+    private List<String> processors;
 
     private String interval;
 

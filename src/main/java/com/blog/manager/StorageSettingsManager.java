@@ -6,14 +6,20 @@ import com.blog.repositories.StorageSettingsRepository;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
- * This manager class wraps {@link StorageSettingsRepository} and adds extra logic for calls.
+ * This class provides API to manage storage settings.
+ *
+ * @see StorageSettings
  */
 @Component
+@Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
 public class StorageSettingsManager {
     private StorageSettingsRepository storageSettingsRepository;
 
@@ -38,11 +44,11 @@ public class StorageSettingsManager {
         return storageSettingsRepository.existsById(id);
     }
 
-    public Optional<StorageSettings> getById(@NotNull String id) {
+    public Optional<StorageSettings> findById(@NotNull String id) {
         return storageSettingsRepository.findById(id);
     }
 
-    public Iterable<StorageSettings> getAllByType(@NotNull StorageType type) {
+    public Iterable<StorageSettings> findAllByType(@NotNull StorageType type) {
         return storageSettingsRepository.getAllByType(type);
     }
 }

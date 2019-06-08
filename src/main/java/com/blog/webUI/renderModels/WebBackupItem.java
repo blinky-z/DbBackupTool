@@ -1,5 +1,7 @@
 package com.blog.webUI.renderModels;
 
+import java.util.List;
+
 /**
  * This class represents created backup information.
  * <p>
@@ -10,19 +12,26 @@ public class WebBackupItem {
 
     private final String desc;
 
+    private final List<String> storageSettingsNames;
+
     private final String name;
 
     private final String time;
 
-    private WebBackupItem(int id, String desc, String name, String time) {
+    private WebBackupItem(int id, String desc, List<String> storageSettingsNames, String name, String time) {
         this.id = id;
         this.desc = desc;
+        this.storageSettingsNames = storageSettingsNames;
         this.name = name;
         this.time = time;
     }
 
     public int getId() {
         return id;
+    }
+
+    public List<String> getStorageSettingsNames() {
+        return storageSettingsNames;
     }
 
     public String getDesc() {
@@ -42,15 +51,16 @@ public class WebBackupItem {
         return "WebBackupItem{" +
                 "id=" + id +
                 ", desc='" + desc + '\'' +
+                ", storageSettingsNames=" + storageSettingsNames +
                 ", name='" + name + '\'' +
                 ", time='" + time + '\'' +
                 '}';
     }
 
-
     public static final class Builder {
         private int id;
         private String desc;
+        private List<String> storageNames;
         private String name;
         private String time;
 
@@ -67,6 +77,11 @@ public class WebBackupItem {
             return this;
         }
 
+        public Builder withStorageNames(List<String> storageNames) {
+            this.storageNames = storageNames;
+            return this;
+        }
+
         public Builder withName(String name) {
             this.name = name;
             return this;
@@ -78,7 +93,7 @@ public class WebBackupItem {
         }
 
         public WebBackupItem build() {
-            return new WebBackupItem(id, desc, name, time);
+            return new WebBackupItem(id, desc, storageNames, name, time);
         }
     }
 }

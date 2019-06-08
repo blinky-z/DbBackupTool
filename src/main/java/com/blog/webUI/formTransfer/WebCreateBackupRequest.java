@@ -1,17 +1,18 @@
 package com.blog.webUI.formTransfer;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
 
 /**
- * This class represents creating database backup form
+ * This class represents database backup creation form.
  * <p>
  * Passed to router "/create-backup" on POST request
  */
 public class WebCreateBackupRequest {
     private String databaseSettingsName;
 
-    private HashMap<String, BackupCreationProperties> backupCreationPropertiesMap = new HashMap<>();
+    private List<String> processors;
+
+    private List<String> storageSettingsNameList;
 
     public String getDatabaseSettingsName() {
         return databaseSettingsName;
@@ -21,44 +22,19 @@ public class WebCreateBackupRequest {
         this.databaseSettingsName = databaseSettingsName;
     }
 
-    public HashMap<String, BackupCreationProperties> getBackupCreationPropertiesMap() {
-        return backupCreationPropertiesMap;
+    public List<String> getProcessors() {
+        return processors;
     }
 
-    public void setBackupCreationPropertiesMap(HashMap<String, BackupCreationProperties> backupCreationPropertiesMap) {
-        this.backupCreationPropertiesMap = backupCreationPropertiesMap;
+    public void setProcessors(List<String> processors) {
+        this.processors = processors;
     }
 
-    @Override
-    public String toString() {
-        return "WebCreateBackupRequest{" +
-                "databaseSettingsName='" + databaseSettingsName + '\'' +
-                ", backupCreationPropertiesMap=" + backupCreationPropertiesMap +
-                '}';
+    public List<String> getStorageSettingsNameList() {
+        return storageSettingsNameList;
     }
 
-    public static final class BackupCreationProperties {
-        /**
-         * @implNote We need this field just for to be able adding value to map entry from thymeleaf form in case of no other fields in
-         * this inner class was selected.
-         */
-        private boolean selected;
-
-        private ArrayList<String> processors = new ArrayList<>();
-
-        public ArrayList<String> getProcessors() {
-            return processors;
-        }
-
-        public void setProcessors(ArrayList<String> processors) {
-            this.processors = processors;
-        }
-
-        @Override
-        public String toString() {
-            return "BackupCreationProperties{" +
-                    ", processors=" + processors +
-                    '}';
-        }
+    public void setStorageSettingsNameList(List<String> storageSettingsNameList) {
+        this.storageSettingsNameList = storageSettingsNameList;
     }
 }

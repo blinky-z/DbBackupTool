@@ -6,14 +6,20 @@ import com.blog.repositories.DatabaseSettingsRepository;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
- * This manager class wraps {@link DatabaseSettingsRepository} and adds extra logic for calls.
+ * This class provides API to manage database settings.
+ *
+ * @see DatabaseSettings
  */
 @Component
+@Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
 public class DatabaseSettingsManager {
     private DatabaseSettingsRepository databaseSettingsRepository;
 
