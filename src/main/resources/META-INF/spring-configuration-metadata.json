@@ -1,0 +1,41 @@
+{
+  "groups": [
+    {
+      "name": "postgres",
+      "type": "com.blog.service.databaseBackup.PostgresDatabaseBackup.PostgresDatabaseBackupConfiguration",
+      "sourceType": "com.blog.service.databaseBackup.PostgresDatabaseBackup.PostgresDatabaseBackupConfiguration"
+    },
+    {
+      "name": "user-config",
+      "type": "com.blog.settings.UserSettings",
+      "sourceType": "com.blog.settings.UserSettings"
+    }
+  ],
+  "properties": [
+    {
+      "name": "postgres.pg-dump-tool-path",
+      "type": "java.lang.String",
+      "description": "pg_dump binary file path",
+      "sourceType": "com.blog.service.databaseBackup.PostgresDatabaseBackup.PostgresDatabaseBackupConfiguration"
+    },
+    {
+      "name": "postgres.psql-tool-path",
+      "type": "java.lang.String",
+      "description": "Psql binary file path",
+      "sourceType": "com.blog.service.databaseBackup.PostgresDatabaseBackup.PostgresDatabaseBackupConfiguration"
+    },
+    {
+      "name": "user-config.web-ui-login",
+      "type": "java.lang.String",
+      "description": "Web UI login",
+      "sourceType": "com.blog.settings.UserSettings"
+    },
+    {
+      "name": "user-config.web-ui-password",
+      "type": "java.lang.String",
+      "description": "Web UI password",
+      "sourceType": "com.blog.settings.UserSettings"
+    }
+  ],
+  "hints": []
+}

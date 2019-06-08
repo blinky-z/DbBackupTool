@@ -35,7 +35,6 @@ dependencies {
     // https://mvnrepository.com/artifact/io.zonky.test/embedded-database-spring-test
     testCompile group: 'io.zonky.test', name: 'embedded-database-spring-test', version: '1.4.1'
     runtime('org.postgresql:postgresql')
-    annotationProcessor group: 'org.springframework.boot', name: 'spring-boot-configuration-processor'
     testCompile 'org.junit.jupiter:junit-jupiter-api:5.3.2'
     testCompile 'org.junit.jupiter:junit-jupiter-params:5.3.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.2'
