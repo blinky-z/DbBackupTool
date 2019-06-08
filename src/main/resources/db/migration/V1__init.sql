@@ -21,11 +21,11 @@ create table if not exists storage_settings
 
 create table if not exists backup_properties
 (
-    ID                    SERIAL PRIMARY KEY,
-    DATE                  TIMESTAMP     not null,
-    BACKUP_NAME           varchar(1024) not null,
-    STORAGE_SETTINGS_NAME varchar(128)  not null,
-    PROCESSORS            varchar(1024) not null
+    ID                         SERIAL PRIMARY KEY,
+    DATE                       TIMESTAMP     not null,
+    BACKUP_NAME                varchar(1024) not null,
+    STORAGE_SETTINGS_NAME_LIST varchar(2048) not null,
+    PROCESSORS                 varchar(1024) not null
 );
 
 create table if not exists backup_tasks
@@ -47,7 +47,7 @@ create table if not exists planned_backup_tasks
     PROCESSORS                 varchar(1024) not null,
     LAST_STARTED_TIME          timestamp     not null,
     INTERVAL                   BIGINT        not null,
-    EXECUTING_TASKS            VARCHAR(256)
+    HANDLER_TASK_ID            INTEGER
 );
 
 create table if not exists error_tasks

@@ -12,14 +12,13 @@ import java.util.Objects;
 /**
  * This entity represents created backup properties.
  * <p>
- * This entity contains all required fields that need to access saved backup on storage:
- * {@link #backupName} and {@link #storageSettingsName}.
+ * This entity contains required fields to get access to saved backup on storage: {@link #backupName} and {@link #storageSettingsNameList}.
  * <p>
  * The logic is following:
- * {@link StorageSettings} can be retrieved using *storageSettingsName* and backup can be uploaded/downloaded/deleted
- * passing *backupName* and *storage settings* to storage service.
+ * {@link StorageSettings} can be retrieved using <i>storageSettingsName</i> and backup can be uploaded/downloaded/deleted
+ * passing <i>backupName</i> and <i>storage settings</i> to storage service.
  *
- * @see com.blog.manager.BackupPropertiesManager#initNewBackupProperties(StorageSettings, List, String)
+ * @see com.blog.manager.BackupPropertiesManager#initNewBackupProperties(List, List, String)
  */
 @Entity
 @Table(name = "backup_properties")
@@ -41,6 +40,7 @@ public class BackupProperties {
     /**
      * Backup name. Backup name is an identifier how backup can be accessed using storage service.
      */
+    @Column(updatable = false)
     private String backupName;
 
     /**
@@ -53,20 +53,21 @@ public class BackupProperties {
     private List<String> processors;
 
     /**
-     * Identifier of storage where backup is saved.
+     * List of storage identifiers where backup is saved.
      */
-    private String storageSettingsName;
+    @Convert(converter = StringListToStringFieldConverter.class)
+    private List<String> storageSettingsNameList;
 
     BackupProperties() {
 
     }
 
     public BackupProperties(@NotNull String backupName, @NotNull List<String> processors, @NotNull LocalDateTime date,
-                            @NotNull String storageSettingsName) {
+                            @NotNull List<String> storageSettingsNameList) {
         this.backupName = Objects.requireNonNull(backupName);
         this.processors = Objects.requireNonNull(processors);
         this.date = Objects.requireNonNull(date);
-        this.storageSettingsName = Objects.requireNonNull(storageSettingsName);
+        this.storageSettingsNameList = Objects.requireNonNull(storageSettingsNameList);
     }
 
     public Integer getId() {
@@ -101,12 +102,12 @@ public class BackupProperties {
         this.processors = processors;
     }
 
-    public String getStorageSettingsName() {
-        return storageSettingsName;
+    public List<String> getStorageSettingsNameList() {
+        return storageSettingsNameList;
     }
 
-    public void setStorageSettingsName(String storageSettingsName) {
-        this.storageSettingsName = storageSettingsName;
+    public void setStorageSettingsNameList(List<String> storageSettingsNameList) {
+        this.storageSettingsNameList = storageSettingsNameList;
     }
 
     @Override
@@ -116,7 +117,7 @@ public class BackupProperties {
                 ", date=" + date +
                 ", backupName='" + backupName + '\'' +
                 ", processors=" + processors +
-                ", storageSettingsName=" + storageSettingsName +
+                ", storageSettingsNameList=" + storageSettingsNameList +
                 '}';
     }
 }

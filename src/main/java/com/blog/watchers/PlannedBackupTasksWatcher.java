@@ -2,7 +2,6 @@ package com.blog.watchers;
 
 import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.database.DatabaseSettings;
-import com.blog.entities.storage.StorageSettings;
 import com.blog.entities.task.PlannedTask;
 import com.blog.entities.task.Task;
 import com.blog.manager.*;
@@ -19,8 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -77,7 +74,7 @@ class PlannedBackupTasksWatcher {
     }
 
     /**
-     * This function reverts planned task turning all related tasks into error state.
+     * This function reverts planned task turning related handler task into error state.
      *
      * @param plannedTask planned task entity
      */
@@ -85,17 +82,15 @@ class PlannedBackupTasksWatcher {
         Objects.requireNonNull(plannedTask);
 
         Integer plannedTaskId = plannedTask.getId();
-        List<Integer> executingTasks = plannedTask.getExecutingTasks();
-        for (Integer executingTaskId : executingTasks) {
-            Optional<Task> optionalBackupTask = tasksManager.findById(executingTaskId);
-            if (!optionalBackupTask.isPresent()) {
-                logger.error("No such handler task that relates to planned task. Handler task ID: {}. Planned task ID: {}. Skip reverting of this task",
-                        executingTaskId, plannedTaskId);
-                continue;
-            }
+        Integer handlerTaskId = plannedTask.getHandlerTaskId();
 
-            errorTasksManager.setError(optionalBackupTask.get().getId());
+        Optional<Task> optionalHandlerTask = tasksManager.findById(handlerTaskId);
+        if (!optionalHandlerTask.isPresent()) {
+            logger.error("Can't revert planned task: no such handler task with ID {}. Planned task info: {}", handlerTaskId, plannedTaskId);
+            return;
         }
+
+        errorTasksManager.setError(handlerTaskId);
     }
 
     /**
@@ -132,35 +127,33 @@ class PlannedBackupTasksWatcher {
             }
 
             Integer plannedTaskId = plannedTask.getId();
-            List<Integer> executingTasks = plannedTask.getExecutingTasks();
 
-            boolean plannedTaskCompletedSuccessfully = true;
-            boolean errorOccurred = false;
-            for (Integer executingTaskId : executingTasks) {
-                Optional<Task> optionalBackupTask = tasksManager.findById(executingTaskId);
-                if (!optionalBackupTask.isPresent()) {
-                    logger.error("No such handler task that relates to planned task. Handler task ID: {}. Skip checking of this task. Planned task info: {}",
-                            executingTaskId, plannedTask);
-                    continue;
-                }
-
-                Task task = optionalBackupTask.get();
-                if (errorTasksManager.isError(task.getId())) {
-                    errorOccurred = true;
-                    break;
-                }
-
-                if (task.getState() != Task.State.COMPLETED) {
-                    plannedTaskCompletedSuccessfully = false;
-                    break;
-                }
+            Integer handlerTaskId = plannedTask.getHandlerTaskId();
+            if (handlerTaskId == null) {
+                logger.error("ILLEGAL STATE: planned task fired, but no handler task. Planned task info: {}. Starting the planned task again...",
+                        plannedTask);
+                plannedTasksManager.updateState(plannedTaskId, PlannedTask.State.WAITING);
+                continue;
             }
 
-            if (errorOccurred) {
-                revertPlannedBackupTask(plannedTask);
+            Optional<Task> optionalHandlerTask = tasksManager.findById(handlerTaskId);
+            if (!optionalHandlerTask.isPresent()) {
+                logger.error("No such handler task with ID {}. Planned task info: {}. Starting the planned task again...",
+                        handlerTaskId, plannedTask);
                 plannedTasksManager.updateState(plannedTaskId, PlannedTask.State.WAITING);
-            } else if (plannedTaskCompletedSuccessfully) {
+                continue;
+            }
+
+            if (errorTasksManager.isError(handlerTaskId)) {
+                revertPlannedBackupTask(plannedTask);
+                plannedTask.setHandlerTaskId(null);
+                plannedTasksManager.updateState(plannedTaskId, PlannedTask.State.WAITING);
+                continue;
+            }
+
+            if (optionalHandlerTask.get().getState() == Task.State.COMPLETED) {
                 // reset timer
+                plannedTask.setHandlerTaskId(null);
                 plannedTasksManager.updateLastStartedTimeWithNow(plannedTaskId);
                 plannedTasksManager.updateState(plannedTaskId, PlannedTask.State.WAITING);
             }
@@ -215,30 +208,16 @@ class PlannedBackupTasksWatcher {
             }
 
             DatabaseSettings databaseSettings = optionalDatabaseSettings.get();
-            String databaseName = databaseSettings.getName();
 
-            List<Integer> startedTasks = new ArrayList<>();
-            for (String storageSettingsName : plannedTask.getStorageSettingsNameList()) {
-                Optional<StorageSettings> optionalStorageSettings = storageSettingsManager.getById(storageSettingsName);
-                if (!optionalStorageSettings.isPresent()) {
-                    logger.error("Error handling planned task: no storage settings with name {}. Skipping this storage. Planned task info: {}",
-                            storageSettingsName, plannedTask);
-                    continue;
-                }
-                StorageSettings storageSettings = optionalStorageSettings.get();
+            BackupProperties backupProperties = backupPropertiesManager.initNewBackupProperties(
+                    plannedTask.getStorageSettingsNameList(), plannedTask.getProcessors(), databaseSettings.getName());
+            Integer handlerTaskId = tasksManager.initNewTask(Task.Type.CREATE_BACKUP, Task.RunType.INTERNAL, backupProperties.getId());
 
-                BackupProperties backupProperties = backupPropertiesManager.initNewBackupProperties(
-                        storageSettings, plannedTask.getProcessors(), databaseName);
+            tasksStarterService.startBackupTask(handlerTaskId, backupProperties, databaseSettings, logger);
 
-                Integer taskId = tasksManager.initNewTask(Task.Type.CREATE_BACKUP, Task.RunType.INTERNAL,
-                        backupProperties);
-                tasksStarterService.startBackupTask(taskId, backupProperties, databaseSettings, logger);
-                startedTasks.add(taskId);
-            }
+            plannedTask.setHandlerTaskId(handlerTaskId);
 
-            plannedTasksManager.setExecutingTasks(plannedBackupTaskId, startedTasks);
-
-            logger.info("Planned backup task started. Task ID: {}", plannedBackupTaskId);
+            logger.info("Planned backup task started. Planned Task info: {}", plannedTask);
         }
     }
 }

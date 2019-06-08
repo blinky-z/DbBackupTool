@@ -2,7 +2,6 @@ package com.blog.service;
 
 import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.database.DatabaseSettings;
-import com.blog.entities.storage.StorageSettings;
 import com.blog.entities.task.Task;
 import com.blog.manager.*;
 import net.javacrumbs.shedlock.core.LockConfiguration;
@@ -103,7 +102,7 @@ public class TasksStarterService {
      * @param databaseSettings database settings
      * @param logger           the logger
      * @return {@literal Future} of started task
-     * @see BackupPropertiesManager#initNewBackupProperties(StorageSettings, List, String)
+     * @see BackupPropertiesManager#initNewBackupProperties(List, List, String)
      * @see TasksManager#initNewTask(Task.Type, Task.RunType, BackupProperties)
      */
     public Future startBackupTask(@NotNull Integer taskId, @NotNull BackupProperties backupProperties,
@@ -132,30 +131,31 @@ public class TasksStarterService {
                 List<String> processors = backupProperties.getProcessors();
                 logger.info("Applying processors on created backup. Processors: {}", processors);
 
-                InputStream processedBackupStream = backupProcessorManager.process(backupStream, processors);
-                if (Thread.interrupted()) {
-                    tasksManager.updateTaskState(taskId, Task.State.INTERRUPTED);
-                    throw new InterruptedException();
+                try (InputStream processedBackupStream = backupProcessorManager.process(backupStream, processors)) {
+                    if (Thread.interrupted()) {
+                        tasksManager.updateTaskState(taskId, Task.State.INTERRUPTED);
+                        throw new InterruptedException();
+                    }
+
+                    tasksManager.updateTaskState(taskId, Task.State.UPLOADING);
+                    logger.info("Uploading backup...");
+
+                    backupLoadManager.uploadBackup(processedBackupStream, backupProperties, taskId);
+                    if (Thread.interrupted()) {
+                        tasksManager.updateTaskState(taskId, Task.State.INTERRUPTED);
+                        throw new InterruptedException();
+                    }
+
+                    tasksManager.updateTaskState(taskId, Task.State.COMPLETED);
+                    logger.info("Creating backup completed. Backup properties: {}", backupProperties);
                 }
-
-                tasksManager.updateTaskState(taskId, Task.State.UPLOADING);
-                logger.info("Uploading backup...");
-
-                backupLoadManager.uploadBackup(processedBackupStream, backupProperties, taskId);
-                if (Thread.interrupted()) {
-                    tasksManager.updateTaskState(taskId, Task.State.INTERRUPTED);
-                    throw new InterruptedException();
-                }
-
-                tasksManager.updateTaskState(taskId, Task.State.COMPLETED);
-                logger.info("Creating backup completed. Backup properties: {}", backupProperties);
             } catch (IOException ex) {
                 logger.error("Error occurred while closing input stream of created backup", ex);
             } catch (RuntimeException ex) {
                 logger.error("Error occurred while creating backup. Backup properties: {}", backupProperties, ex);
                 errorTasksManager.setError(taskId);
             } catch (InterruptedException ex) {
-                logger.error("Task was interrupted. Task ID: {}", taskId);
+                logger.error("Backup upload task was interrupted. Task ID: {}", taskId);
             } finally {
                 logger.debug("Unlocking a lock... Task ID: {}", taskId);
                 lock.unlock();
@@ -180,10 +180,11 @@ public class TasksStarterService {
      * @param logger           the logger
      * @return {@literal Future} of started task
      */
-    public Future startRestoreTask(@NotNull Integer taskId, @NotNull BackupProperties backupProperties,
+    public Future startRestoreTask(@NotNull Integer taskId, @NotNull BackupProperties backupProperties, @NotNull String storageSettingsName,
                                    @NotNull DatabaseSettings databaseSettings, @NotNull Logger logger) {
         Objects.requireNonNull(taskId);
         Objects.requireNonNull(backupProperties);
+        Objects.requireNonNull(storageSettingsName);
         Objects.requireNonNull(databaseSettings);
         Objects.requireNonNull(logger);
 
@@ -196,7 +197,12 @@ public class TasksStarterService {
             tasksManager.updateTaskState(taskId, Task.State.DOWNLOADING);
             logger.info("Downloading backup...");
 
-            try (InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties, taskId)) {
+            try (InputStream downloadedBackup =
+                         backupLoadManager.downloadBackup(backupProperties.getBackupName(), storageSettingsName, taskId)) {
+                if (downloadedBackup == null) {
+                    throw new RuntimeException("Error downloading backup");
+                }
+
                 if (Thread.interrupted()) {
                     tasksManager.updateTaskState(taskId, Task.State.INTERRUPTED);
                     throw new InterruptedException();
@@ -205,23 +211,24 @@ public class TasksStarterService {
                 tasksManager.updateTaskState(taskId, Task.State.APPLYING_DEPROCESSORS);
                 logger.info("Deprocessing backup...");
 
-                InputStream deprocessedBackup = backupProcessorManager.deprocess(downloadedBackup, backupProperties.getProcessors());
-                if (Thread.interrupted()) {
-                    tasksManager.updateTaskState(taskId, Task.State.INTERRUPTED);
-                    throw new InterruptedException();
+                try (InputStream deprocessedBackup = backupProcessorManager.deprocess(downloadedBackup, backupProperties.getProcessors())) {
+                    if (Thread.interrupted()) {
+                        tasksManager.updateTaskState(taskId, Task.State.INTERRUPTED);
+                        throw new InterruptedException();
+                    }
+
+                    tasksManager.updateTaskState(taskId, Task.State.RESTORING);
+                    logger.info("Restoring backup...");
+
+                    databaseBackupManager.restoreBackup(deprocessedBackup, databaseSettings, taskId);
+                    if (Thread.interrupted()) {
+                        tasksManager.updateTaskState(taskId, Task.State.INTERRUPTED);
+                        throw new InterruptedException();
+                    }
+
+                    tasksManager.updateTaskState(taskId, Task.State.COMPLETED);
+                    logger.info("Restoring backup completed. Backup properties: {}", backupProperties);
                 }
-
-                tasksManager.updateTaskState(taskId, Task.State.RESTORING);
-                logger.info("Restoring backup...");
-
-                databaseBackupManager.restoreBackup(deprocessedBackup, databaseSettings, taskId);
-                if (Thread.interrupted()) {
-                    tasksManager.updateTaskState(taskId, Task.State.INTERRUPTED);
-                    throw new InterruptedException();
-                }
-
-                tasksManager.updateTaskState(taskId, Task.State.COMPLETED);
-                logger.info("Restoring backup completed. Backup properties: {}", backupProperties);
             } catch (IOException ex) {
                 logger.error("Error occurred while closing input stream of downloaded backup", ex);
             } catch (RuntimeException ex) {
@@ -275,8 +282,7 @@ public class TasksStarterService {
                 tasksManager.updateTaskState(taskId, Task.State.COMPLETED);
                 logger.info("Deleting backup completed. Backup properties: {}", backupProperties);
             } catch (RuntimeException ex) {
-                logger.info("Error occurred while deleting backup. Backup properties: {}",
-                        backupProperties, ex);
+                logger.error("Error occurred while deleting backup. Backup properties: {}", backupProperties, ex);
                 errorTasksManager.setError(taskId);
             } catch (InterruptedException ex) {
                 logger.error("Task was interrupted. Task ID: {}", taskId);

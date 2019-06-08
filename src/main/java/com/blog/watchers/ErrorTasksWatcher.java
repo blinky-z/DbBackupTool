@@ -79,6 +79,7 @@ class ErrorTasksWatcher {
                 // we can't revert task if the one is still executing
                 // so we check the corresponding lock of the current task trying to acquire it
                 // lock will be released immediately if it has been acquired successfully
+                // TODO: убрать лок, он нужен только для запланированных, т.к. ошибочные таски сразу прекращают работу
                 Optional<SimpleLock> lock = jdbcTemplateLockProvider.lock(
                         new LockConfiguration("taskLock" + task.getId(), Instant.now()));
                 if (!lock.isPresent()) {

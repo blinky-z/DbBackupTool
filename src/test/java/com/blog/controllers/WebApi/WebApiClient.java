@@ -14,6 +14,8 @@ import com.blog.webUI.formTransfer.database.WebPostgresSettings;
 import com.blog.webUI.formTransfer.storage.WebDropboxSettings;
 import com.blog.webUI.formTransfer.storage.WebLocalFileSystemSettings;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
@@ -26,7 +28,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
-class ControllersHttpClient {
+class WebApiClient {
     private TestRestTemplate restTemplate;
 
     @Autowired
@@ -96,25 +98,49 @@ class ControllersHttpClient {
         return request;
     }
 
-    WebCreateBackupRequest buildCreateBackupRequest(String databaseSettingsName, String storageSettingsName) {
+    WebCreateBackupRequest buildCreateBackupRequest(String databaseSettingsName, List<String> storageSettingsNameList,
+                                                    @Nullable List<String> processors) {
         WebCreateBackupRequest request = new WebCreateBackupRequest();
         request.setDatabaseSettingsName(databaseSettingsName);
-
-        HashMap<String, WebCreateBackupRequest.BackupCreationProperties> backupCreationPropertiesMap = new HashMap<>();
-        WebCreateBackupRequest.BackupCreationProperties backupCreationProperties = new WebCreateBackupRequest.BackupCreationProperties();
-        backupCreationPropertiesMap.put(storageSettingsName, backupCreationProperties);
-
-        request.setBackupCreationPropertiesMap(backupCreationPropertiesMap);
+        request.setStorageSettingsNameList(storageSettingsNameList);
+        if (processors != null) {
+            request.setProcessors(processors);
+        } else {
+            request.setProcessors(Collections.emptyList());
+        }
 
         return request;
     }
 
-    WebRestoreBackupRequest buildRestoreBackupRequest(Integer backupId, String databaseSettingsName) {
+    WebCreateBackupRequest buildCreateBackupRequest(String databaseSettingsName, String storageSettingsName,
+                                                    @Nullable List<String> processors) {
+        return buildCreateBackupRequest(databaseSettingsName, Collections.singletonList(storageSettingsName), processors);
+    }
+
+    WebCreateBackupRequest buildCreateBackupRequest(String databaseSettingsName, String storageSettingsName) {
+        return buildCreateBackupRequest(databaseSettingsName, Collections.singletonList(storageSettingsName), null);
+    }
+
+    WebRestoreBackupRequest buildRestoreBackupRequest(Integer backupId, String storageSettingsName, String databaseSettingsName) {
         WebRestoreBackupRequest request = new WebRestoreBackupRequest();
         request.setBackupId(String.valueOf(backupId));
+        request.setStorageSettingsName(storageSettingsName);
         request.setDatabaseSettingsName(databaseSettingsName);
 
         return request;
+    }
+
+    WebAddPlannedTaskRequest buildAddPlannedTaskRequest(String databaseSettingsName, Collection<String> storageSettingsNameList,
+                                                        @Nullable List<Processor> processors, Duration interval) {
+        WebAddPlannedTaskRequest webAddPlannedTaskRequest = new WebAddPlannedTaskRequest();
+        webAddPlannedTaskRequest.setDatabaseSettingsName(databaseSettingsName);
+        webAddPlannedTaskRequest.setStorageSettingsNameList(new ArrayList<>(storageSettingsNameList));
+        if (processors != null) {
+            webAddPlannedTaskRequest.setProcessors(processors.stream().map(Processor::getName).collect(Collectors.toList()));
+        }
+        webAddPlannedTaskRequest.setInterval(String.valueOf(interval.getSeconds()));
+
+        return webAddPlannedTaskRequest;
     }
 
     WebAddStorageRequest buildDefaultAddStorageRequest(StorageType type, String settingsName) {
@@ -148,19 +174,6 @@ class ControllersHttpClient {
         }
 
         return request;
-    }
-
-    WebAddPlannedTaskRequest buildAddPlannedTaskRequest(String databaseSettingsName, Collection<String> storageSettingsNameList,
-                                                        @Nullable List<Processor> processors, Duration interval) {
-        WebAddPlannedTaskRequest webAddPlannedTaskRequest = new WebAddPlannedTaskRequest();
-        webAddPlannedTaskRequest.setDatabaseSettingsName(databaseSettingsName);
-        webAddPlannedTaskRequest.setStorageSettingsNameList(new ArrayList<>(storageSettingsNameList));
-        if (processors != null) {
-            webAddPlannedTaskRequest.setProcessors(processors.stream().map(Processor::getName).collect(Collectors.toList()));
-        }
-        webAddPlannedTaskRequest.setInterval(String.valueOf(interval.getSeconds()));
-
-        return webAddPlannedTaskRequest;
     }
 
     WebAddDatabaseRequest buildDefaultAddDatabaseRequest(DatabaseType type, String settingsName) {
@@ -294,19 +307,9 @@ class ControllersHttpClient {
 
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("databaseSettingsName", request.getDatabaseSettingsName());
+        body.add("processors", convertListToString(request.getProcessors()));
+        body.add("storageSettingsNameList", convertListToString(request.getStorageSettingsNameList()));
 
-        for (Map.Entry<String, WebCreateBackupRequest.BackupCreationProperties> entry :
-                request.getBackupCreationPropertiesMap().entrySet()) {
-            String storageSettingsName = entry.getKey();
-            WebCreateBackupRequest.BackupCreationProperties backupCreationProperties = entry.getValue();
-
-            body.add("backupCreationPropertiesMap[" + storageSettingsName + "].selected", "true");
-
-            List<String> processors = backupCreationProperties.getProcessors();
-            if (!processors.isEmpty()) {
-                body.add("backupCreationPropertiesMap[" + storageSettingsName + "].processors", convertListToString(processors));
-            }
-        }
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(body, httpHeaders);
 
         return restTemplate.postForEntity("/create-backup", entity, String.class);
@@ -332,6 +335,7 @@ class ControllersHttpClient {
 
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("databaseSettingsName", request.getDatabaseSettingsName());
+        body.add("storageSettingsName", request.getStorageSettingsName());
         body.add("backupId", request.getBackupId());
 
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(body, httpHeaders);

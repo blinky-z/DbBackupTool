@@ -1,8 +1,8 @@
 package com.blog.entities.task;
 
-import com.blog.entities.IntegerListToStringFieldConverter;
 import com.blog.entities.StringListToStringFieldConverter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.*;
 import java.time.Duration;
@@ -69,12 +69,12 @@ public class PlannedTask {
     private Duration interval;
 
     /**
-     * What {@link Task backup tasks} handles this planned task in case of planned task is fired.
+     * What {@link Task} handles this planned task.
      * <p>
-     * This field automatically converted into single string and back to List by {@link IntegerListToStringFieldConverter} class.
+     * May by null if no task handles this planned task at the moment.
      */
-    @Convert(converter = IntegerListToStringFieldConverter.class)
-    private List<Integer> executingTasks;
+    @Nullable
+    private Integer handlerTaskId;
 
     PlannedTask() {
 
@@ -82,14 +82,14 @@ public class PlannedTask {
 
     private PlannedTask(@NotNull State state, @NotNull List<String> storageSettingsNameList, @NotNull String databaseSettingsName,
                         @NotNull List<String> processors, @NotNull LocalDateTime lastStartedTime, @NotNull Duration interval,
-                        @NotNull List<Integer> executingTasks) {
+                        @Nullable Integer handlerTaskId) {
         this.state = Objects.requireNonNull(state);
         this.storageSettingsNameList = Objects.requireNonNull(storageSettingsNameList);
         this.databaseSettingsName = Objects.requireNonNull(databaseSettingsName);
         this.processors = Objects.requireNonNull(processors);
         this.lastStartedTime = Objects.requireNonNull(lastStartedTime);
         this.interval = Objects.requireNonNull(interval);
-        this.executingTasks = Objects.requireNonNull(executingTasks);
+        this.handlerTaskId = handlerTaskId;
     }
 
     public Integer getId() {
@@ -140,12 +140,12 @@ public class PlannedTask {
         this.interval = interval;
     }
 
-    public List<Integer> getExecutingTasks() {
-        return executingTasks;
+    public Integer getHandlerTaskId() {
+        return handlerTaskId;
     }
 
-    public void setExecutingTasks(List<Integer> executingTasks) {
-        this.executingTasks = executingTasks;
+    public void setHandlerTaskId(Integer handlerTaskId) {
+        this.handlerTaskId = handlerTaskId;
     }
 
     public State getState() {
@@ -166,7 +166,7 @@ public class PlannedTask {
                 ", processors=" + processors +
                 ", lastStartedTime=" + lastStartedTime +
                 ", interval=" + interval +
-                ", executingTasks=" + executingTasks +
+                ", handlerTaskId=" + handlerTaskId +
                 '}';
     }
 
@@ -183,7 +183,7 @@ public class PlannedTask {
         private List<String> processors;
         private LocalDateTime lastStartedTime;
         private Duration interval;
-        private List<Integer> executingTasks;
+        private Integer handlerTaskId;
 
         public Builder() {
         }
@@ -218,14 +218,14 @@ public class PlannedTask {
             return this;
         }
 
-        public Builder withExecutingTasks(List<Integer> executingTasks) {
-            this.executingTasks = executingTasks;
+        public Builder withHandlerTaskId(@Nullable Integer handlerTaskId) {
+            this.handlerTaskId = handlerTaskId;
             return this;
         }
 
         public PlannedTask build() {
             return new PlannedTask(state, storageSettingsNameList, databaseSettingsName, processors, lastStartedTime,
-                    interval, executingTasks);
+                    interval, handlerTaskId);
         }
     }
 }

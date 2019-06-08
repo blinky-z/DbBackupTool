@@ -12,13 +12,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 /**
  * This class provides API to manage planned backup tasks.
+ *
+ * @see PlannedTask
  */
 @Component
 @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
@@ -66,37 +67,12 @@ public class PlannedTasksManager {
                 .withDatabaseSettingsName(databaseSettingsName)
                 .withStorageSettingsNameList(storageSettingsNameList)
                 .withLastStartedTime(LocalDateTime.now(ZoneOffset.UTC))
-                .withExecutingTasks(Collections.emptyList())
+                .withHandlerTaskId(null)
                 .withProcessors(processors)
                 .withInterval(Duration.ofSeconds(interval))
                 .build();
 
         return plannedTasksRepository.save(plannedTask);
-    }
-
-    /**
-     * Sets in entity IDs of tasks that handles this planned this.
-     * <p>
-     * Call this method when planned task started (i.e. planned task fired and tasks was started).
-     *
-     * @param plannedTaskId  planned task ID
-     * @param executingTasks {@literal Task} IDs.
-     */
-    public void setExecutingTasks(@NotNull Integer plannedTaskId, @NotNull List<Integer> executingTasks) {
-        plannedTasksRepository.findById(plannedTaskId).ifPresent(
-                plannedBackupTask -> plannedBackupTask.setExecutingTasks(executingTasks));
-    }
-
-    /**
-     * Removes from entity IDs of tasks that were handling this planned task.
-     * <p>
-     * Call this method when all related tasks completed.
-     *
-     * @param plannedTaskId planned task ID
-     */
-    public void clearExecutingTasks(@NotNull Integer plannedTaskId) {
-        plannedTasksRepository.findById(plannedTaskId).ifPresent(
-                plannedBackupTask -> plannedBackupTask.setExecutingTasks(Collections.emptyList()));
     }
 
     /**

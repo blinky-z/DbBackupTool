@@ -10,6 +10,8 @@ public class WebRestoreBackupRequest {
 
     private String databaseSettingsName;
 
+    private String storageSettingsName;
+
     public String getBackupId() {
         return backupId;
     }
@@ -26,11 +28,20 @@ public class WebRestoreBackupRequest {
         this.databaseSettingsName = databaseSettingsName;
     }
 
+    public String getStorageSettingsName() {
+        return storageSettingsName;
+    }
+
+    public void setStorageSettingsName(String storageSettingsName) {
+        this.storageSettingsName = storageSettingsName;
+    }
+
     @Override
     public String toString() {
         return "WebRestoreBackupRequest{" +
-                "backupId=" + backupId +
+                "backupId='" + backupId + '\'' +
                 ", databaseSettingsName='" + databaseSettingsName + '\'' +
+                ", storageSettingsName='" + storageSettingsName + '\'' +
                 '}';
     }
 }

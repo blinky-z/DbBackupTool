@@ -9,6 +9,7 @@ import com.dropbox.core.v2.DbxClientV2;
 import com.dropbox.core.v2.files.ListFolderResult;
 import com.dropbox.core.v2.files.Metadata;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,7 +101,7 @@ public class DropboxStorage implements Storage {
     /**
      * Downloads backup from Dropbox.
      */
-    @NotNull
+    @Nullable
     @Override
     public InputStream downloadBackup(@NotNull StorageSettings storageSettings, @NotNull String backupName, Integer id) {
         String backupFolderPath = "/" + backupName;

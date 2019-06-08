@@ -16,11 +16,11 @@ import java.util.concurrent.Executors;
 public class WatchersConfiguration implements SchedulingConfigurer {
     @Override
     public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
-        taskRegistrar.setScheduler(taskExecutor());
+        taskRegistrar.setScheduler(watchersExecutor());
     }
 
     @Bean(destroyMethod = "shutdown")
-    public Executor taskExecutor() {
+    public Executor watchersExecutor() {
         return Executors.newScheduledThreadPool(3);
     }
 }

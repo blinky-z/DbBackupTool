@@ -1,7 +1,6 @@
 package com.blog.manager;
 
 import com.blog.entities.backup.BackupProperties;
-import com.blog.entities.storage.StorageSettings;
 import com.blog.entities.task.Task;
 import com.blog.repositories.TasksRepository;
 import com.blog.service.TasksStarterService;
@@ -21,7 +20,9 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * This class provides API to manage tasks.
+ * This class provides API to manage backup related tasks.
+ *
+ * @see Task
  */
 @Component
 @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
@@ -54,16 +55,16 @@ public class TasksManager {
     /**
      * Creates a new {@link Task} instance.
      *
-     * @param taskType         backup task type
-     * @param backupProperties backup properties of created or being created backup
+     * @param taskType           backup task type
+     * @param backupPropertiesId identifier of backup properties of created or being created backup
      * @return ID of created task
-     * @see BackupPropertiesManager#initNewBackupProperties(StorageSettings, List, String)
+     * @see BackupPropertiesManager#initNewBackupProperties(List, List, String)
      */
-    public Integer initNewTask(Task.Type taskType, Task.RunType runType, BackupProperties backupProperties) {
+    public Integer initNewTask(Task.Type taskType, Task.RunType runType, Integer backupPropertiesId) {
         Task task = new Task.Builder()
                 .withType(taskType)
                 .withRunType(runType)
-                .withBackupPropertiesId(backupProperties.getId())
+                .withBackupPropertiesId(backupPropertiesId)
                 .withState(initialBackupTaskState)
                 .withDate(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
@@ -80,7 +81,7 @@ public class TasksManager {
      * @param state new state to set
      */
     public void updateTaskState(Integer id, Task.State state) {
-        Task task = tasksRepository.findById(id).orElseThrow(RuntimeException::new);
+        Task task = tasksRepository.findById(id).orElseThrow(() -> new RuntimeException("Can't update task state: no such task with ID" + id));
         task.setState(state);
     }
 
@@ -97,35 +98,44 @@ public class TasksManager {
         Objects.requireNonNull(task);
 
         Task.State state = task.getState();
-        Optional<BackupProperties> optionalBackupProperties = backupPropertiesManager.findById(task.getBackupPropertiesId());
-        if (!optionalBackupProperties.isPresent()) {
-            logger.error("Can't revert task: no related backup properties. Task info: {}", task);
-            return;
-        }
-
-        BackupProperties backupProperties = optionalBackupProperties.get();
 
         switch (state) {
             case DOWNLOADING:
             case APPLYING_DEPROCESSORS:
             case RESTORING:
             case DELETING: {
-                logger.error("Handling broken operation. Operation: {}. No extra actions required", state.toString());
+                logger.info("Handling broken operation. Operation: {}. No extra actions required", state.toString());
 
                 break;
             }
             case CREATING:
             case APPLYING_PROCESSORS: {
-                logger.error("Handling broken operation. Operation: {}. Delete backup properties...", state.toString());
+                logger.info("Handling broken operation. Operation: {}. Delete backup properties...", state.toString());
+
+                Optional<BackupProperties> optionalBackupProperties = backupPropertiesManager.findById(task.getBackupPropertiesId());
+                if (!optionalBackupProperties.isPresent()) {
+                    logger.error("Can't revert task: no related backup properties. Task info: {}", task);
+                    return;
+                }
+
+                BackupProperties backupProperties = optionalBackupProperties.get();
 
                 backupPropertiesManager.deleteById(backupProperties.getId());
 
                 break;
             }
             case UPLOADING: {
-                logger.error("Handling broken operation. Operation: {}. Deleting backup from storage...", state);
+                logger.info("Handling broken operation. Operation: {}. Deleting backup from storage...", state);
 
-                Integer deletionTaskId = initNewTask(Task.Type.DELETE_BACKUP, Task.RunType.INTERNAL, backupProperties);
+                Optional<BackupProperties> optionalBackupProperties = backupPropertiesManager.findById(task.getBackupPropertiesId());
+                if (!optionalBackupProperties.isPresent()) {
+                    logger.error("Can't revert task: no related backup properties. Task info: {}", task);
+                    return;
+                }
+
+                BackupProperties backupProperties = optionalBackupProperties.get();
+
+                Integer deletionTaskId = initNewTask(Task.Type.DELETE_BACKUP, Task.RunType.INTERNAL, backupProperties.getId());
                 tasksStarterService.startDeleteTask(deletionTaskId, backupProperties, logger);
 
                 backupPropertiesManager.deleteById(backupProperties.getId());

@@ -2,7 +2,7 @@ package com.blog.service.storage;
 
 import com.blog.entities.storage.LocalFileSystemSettings;
 import com.blog.entities.storage.StorageSettings;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -79,7 +79,7 @@ public class FileSystemStorage implements Storage {
     /**
      * Downloads backup from Local File System
      */
-    @NotNull
+    @Nullable
     @Override
     public InputStream downloadBackup(StorageSettings storageSettings, String backupName, Integer id) {
         LocalFileSystemSettings localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(() ->
