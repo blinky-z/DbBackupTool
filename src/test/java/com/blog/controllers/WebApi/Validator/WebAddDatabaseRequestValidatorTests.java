@@ -1,29 +1,20 @@
 package com.blog.controllers.WebApi.Validator;
 
 import com.blog.ApplicationTests;
+import com.blog.controllers.Errors.ValidationException;
+import com.blog.entities.database.DatabaseType;
 import com.blog.webUI.formTransfer.WebAddDatabaseRequest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class WebAddDatabaseRequestValidatorTests extends ApplicationTests {
     @Autowired
     WebAddDatabaseRequestValidator webAddDatabaseRequestValidator;
-
-    /**
-     * Construct WebAddDatabaseRequest object with minimum required fields set to test common fields
-     *
-     * @return new WebAddDatabaseRequest object to use in validator
-     */
-    private WebAddDatabaseRequest getWebAddDatabaseRequestForTestingCommonFields() {
-        WebAddDatabaseRequest webAddDatabaseRequest = new WebAddDatabaseRequest();
-        webAddDatabaseRequest.setDatabaseType("postgres");
-        return webAddDatabaseRequest;
-    }
 
     @Test
     void validate_ShouldRejectDatabaseTypeField_whenMissingDatabaseType() {
@@ -34,56 +25,61 @@ class WebAddDatabaseRequestValidatorTests extends ApplicationTests {
         webAddDatabaseRequestValidator.validate(webAddDatabaseRequest, errors);
 
         assertTrue(errors.hasFieldErrors("databaseType"));
+        assertEquals("error.addDatabaseRequest.databaseType.empty", errors.getFieldError("databaseType").getCode());
     }
 
     @Test
-    void validate_ShouldRejectDatabaseTypeField_whenSetInvalidDatabaseType() {
+    void validate_ShouldRejectDatabaseTypeField_whenPassedDatabaseTypeIsMalformed() {
         WebAddDatabaseRequest webAddDatabaseRequest = new WebAddDatabaseRequest();
-        webAddDatabaseRequest.setDatabaseType("invalidDatabaseType");
+        webAddDatabaseRequest.setDatabaseType("db113f");
 
         Errors errors = new BeanPropertyBindingResult(webAddDatabaseRequest, "");
 
         webAddDatabaseRequestValidator.validate(webAddDatabaseRequest, errors);
 
         assertTrue(errors.hasFieldErrors("databaseType"));
+        assertEquals("error.addDatabaseRequest.databaseType.malformed", errors.getFieldError("databaseType").getCode());
     }
 
     @Test
     void validate_ShouldRejectSettingsNameField_whenMissingSettingsName() {
-        WebAddDatabaseRequest webAddDatabaseRequest = getWebAddDatabaseRequestForTestingCommonFields();
+        WebAddDatabaseRequest webAddDatabaseRequest = new WebAddDatabaseRequest();
 
         Errors errors = new BeanPropertyBindingResult(webAddDatabaseRequest, "");
 
         webAddDatabaseRequestValidator.validate(webAddDatabaseRequest, errors);
 
         assertTrue(errors.hasFieldErrors("settingsName"));
+        assertEquals("error.addDatabaseRequest.settingsName.empty", errors.getFieldError("settingsName").getCode());
     }
 
     @Test
     void validate_ShouldRejectHostField_whenMissingHost() {
-        WebAddDatabaseRequest webAddDatabaseRequest = getWebAddDatabaseRequestForTestingCommonFields();
+        WebAddDatabaseRequest webAddDatabaseRequest = new WebAddDatabaseRequest();
 
         Errors errors = new BeanPropertyBindingResult(webAddDatabaseRequest, "");
 
         webAddDatabaseRequestValidator.validate(webAddDatabaseRequest, errors);
 
         assertTrue(errors.hasFieldErrors("host"));
+        assertEquals("error.addDatabaseRequest.host.empty", errors.getFieldError("host").getCode());
     }
 
     @Test
     void validate_ShouldRejectPortField_whenMissingPort() {
-        WebAddDatabaseRequest webAddDatabaseRequest = getWebAddDatabaseRequestForTestingCommonFields();
+        WebAddDatabaseRequest webAddDatabaseRequest = new WebAddDatabaseRequest();
 
         Errors errors = new BeanPropertyBindingResult(webAddDatabaseRequest, "");
 
         webAddDatabaseRequestValidator.validate(webAddDatabaseRequest, errors);
 
         assertTrue(errors.hasFieldErrors("port"));
+        assertEquals("error.addDatabaseRequest.port.empty", errors.getFieldError("port").getCode());
     }
 
     @Test
-    void validate_ShouldRejectPortField_whenPortMalformed() {
-        WebAddDatabaseRequest webAddDatabaseRequest = getWebAddDatabaseRequestForTestingCommonFields();
+    void validate_ShouldRejectPortField_whenPassedPortIsMalformed() {
+        WebAddDatabaseRequest webAddDatabaseRequest = new WebAddDatabaseRequest();
         webAddDatabaseRequest.setPort("8080f");
 
         Errors errors = new BeanPropertyBindingResult(webAddDatabaseRequest, "");
@@ -91,43 +87,47 @@ class WebAddDatabaseRequestValidatorTests extends ApplicationTests {
         webAddDatabaseRequestValidator.validate(webAddDatabaseRequest, errors);
 
         assertTrue(errors.hasFieldErrors("port"));
+        assertEquals("error.addDatabaseRequest.port.malformed", errors.getFieldError("port").getCode());
     }
 
     @Test
     void validate_ShouldRejectDatabaseNameField_whenMissingDatabaseName() {
-        WebAddDatabaseRequest webAddDatabaseRequest = getWebAddDatabaseRequestForTestingCommonFields();
+        WebAddDatabaseRequest webAddDatabaseRequest = new WebAddDatabaseRequest();
 
         Errors errors = new BeanPropertyBindingResult(webAddDatabaseRequest, "");
 
         webAddDatabaseRequestValidator.validate(webAddDatabaseRequest, errors);
 
         assertTrue(errors.hasFieldErrors("databaseName"));
+        assertEquals("error.addDatabaseRequest.databaseName.empty", errors.getFieldError("databaseName").getCode());
     }
 
     @Test
     void validate_ShouldRejectLoginField_whenMissingLogin() {
-        WebAddDatabaseRequest webAddDatabaseRequest = getWebAddDatabaseRequestForTestingCommonFields();
+        WebAddDatabaseRequest webAddDatabaseRequest = new WebAddDatabaseRequest();
 
         Errors errors = new BeanPropertyBindingResult(webAddDatabaseRequest, "");
 
         webAddDatabaseRequestValidator.validate(webAddDatabaseRequest, errors);
 
         assertTrue(errors.hasFieldErrors("login"));
+        assertEquals("error.addDatabaseRequest.login.empty", errors.getFieldError("login").getCode());
     }
 
     @Test
     void validate_ShouldRejectPasswordField_whenMissingPassword() {
-        WebAddDatabaseRequest webAddDatabaseRequest = getWebAddDatabaseRequestForTestingCommonFields();
+        WebAddDatabaseRequest webAddDatabaseRequest = new WebAddDatabaseRequest();
 
         Errors errors = new BeanPropertyBindingResult(webAddDatabaseRequest, "");
 
         webAddDatabaseRequestValidator.validate(webAddDatabaseRequest, errors);
 
         assertTrue(errors.hasFieldErrors("password"));
+        assertEquals("error.addDatabaseRequest.password.empty", errors.getFieldError("password").getCode());
     }
 
     @Test
-    void validate_ShouldPass_whenGivenProperPostgresDatabaseSettings() {
+    void validate_ShouldPass_whenGivenProperPostgresSettings() {
         WebAddDatabaseRequest webAddDatabaseRequest = new WebAddDatabaseRequest();
         webAddDatabaseRequest.setDatabaseType("postgres");
         webAddDatabaseRequest.setSettingsName("testPostgresSettings");
@@ -141,7 +141,23 @@ class WebAddDatabaseRequestValidatorTests extends ApplicationTests {
 
         webAddDatabaseRequestValidator.validate(webAddDatabaseRequest, errors);
 
-        System.out.println(errors.getAllErrors());
         assertFalse(errors.hasErrors());
+    }
+
+    @Test
+    void validate_shouldNotThrowValidationException_whenPassAnyDatabaseType(TestInfo testInfo) {
+        for (DatabaseType database : DatabaseType.values()) {
+            WebAddDatabaseRequest webAddDatabaseRequest = new WebAddDatabaseRequest();
+            webAddDatabaseRequest.setSettingsName(testInfo.getDisplayName());
+            webAddDatabaseRequest.setDatabaseType(database.getDatabaseAsString());
+
+            Errors errors = new BeanPropertyBindingResult(webAddDatabaseRequest, "");
+
+            try {
+                webAddDatabaseRequestValidator.validate(webAddDatabaseRequest, errors);
+            } catch (ValidationException ex) {
+                fail("Exception must not be thrown on database type " + database);
+            }
+        }
     }
 }
