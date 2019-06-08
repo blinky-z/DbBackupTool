@@ -16,17 +16,17 @@ import java.util.List;
  * This rest controller allows to get backup task states as JSON data.
  * <p>
  * That is, it becomes possible to refresh task states not reloading page using ajax.
- * This feature is very optional and even if javascript is disabled in browser no main functionality will be affected.
+ * This feature is optional and even if javascript is disabled in browser no main functionality will be affected.
  */
 @RestController
 public class RestApiBackupTaskMonitor {
-    private DateTimeFormatter dateFormatter;
+    private DateTimeFormatter webDateFormatter;
 
     private TasksManager tasksManager;
 
     @Autowired
-    public void setDateFormatter(DateTimeFormatter dateFormatter) {
-        this.dateFormatter = dateFormatter;
+    public void setWebDateFormatter(DateTimeFormatter webDateFormatter) {
+        this.webDateFormatter = webDateFormatter;
     }
 
     @Autowired
@@ -43,7 +43,7 @@ public class RestApiBackupTaskMonitor {
                     .withId(task.getId())
                     .withType(task.getType().toString())
                     .withState(task.getState().toString())
-                    .withTime(dateFormatter.format(task.getDate()))
+                    .withTime(webDateFormatter.format(task.getDate()))
                     .build();
 
             webBackupTasks.add(webBackupTask);

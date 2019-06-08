@@ -1,6 +1,6 @@
 package com.blog.controllers.WebApi;
 
-import com.blog.controllers.Errors.ValidationError;
+import com.blog.controllers.Errors.ValidationException;
 import com.blog.controllers.WebApi.Validator.WebAddStorageRequestValidator;
 import com.blog.entities.storage.DropboxSettings;
 import com.blog.entities.storage.LocalFileSystemSettings;
@@ -120,7 +120,7 @@ public class WebApiStorageController {
 
         String error = validateDeleteStorageRequest(optionalSettingsName.orElse(null));
         if (error != null) {
-            throw new ValidationError(error);
+            throw new ValidationException(error);
         }
 
         String settingsName = optionalSettingsName.get();

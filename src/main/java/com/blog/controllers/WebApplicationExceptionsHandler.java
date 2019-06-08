@@ -1,6 +1,6 @@
 package com.blog.controllers;
 
-import com.blog.controllers.Errors.ValidationError;
+import com.blog.controllers.Errors.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -21,9 +21,9 @@ public class WebApplicationExceptionsHandler {
 
     private static final String ERROR_VIEW = "error";
 
-    @ExceptionHandler(value = {ValidationError.class})
+    @ExceptionHandler(value = {ValidationException.class})
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
-    public ModelAndView handleValidationError(HttpServletRequest request, ValidationError ex) {
+    public ModelAndView handleValidationError(HttpServletRequest request, ValidationException ex) {
         logger.error("Validation Error Exception at request {} : {}", request.getRequestURL(), ex.getMessage());
 
         ModelAndView mav = new ModelAndView();

@@ -1,6 +1,6 @@
 package com.blog.controllers.WebApi;
 
-import com.blog.controllers.Errors.ValidationError;
+import com.blog.controllers.Errors.ValidationException;
 import com.blog.controllers.WebApi.Validator.WebAddDatabaseRequestValidator;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.database.DatabaseType;
@@ -106,7 +106,7 @@ public class WebApiDatabaseController {
         if (error != null) {
             logger.error("Invalid database settings deletion request. Error: {}", error);
 
-            throw new ValidationError(error);
+            throw new ValidationException(error);
         }
 
         String settingsName = optionalSettingsName.get();

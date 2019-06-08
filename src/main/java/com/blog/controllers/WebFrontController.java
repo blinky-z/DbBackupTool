@@ -28,11 +28,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 @Controller
 @ControllerAdvice
 public class WebFrontController {
-    private DateTimeFormatter dateFormatter;
+    private DateTimeFormatter webDateFormatter;
 
     private DatabaseSettingsManager databaseSettingsManager;
 
@@ -43,8 +44,8 @@ public class WebFrontController {
     private TasksManager tasksManager;
 
     @Autowired
-    public void setDateFormatter(DateTimeFormatter dateFormatter) {
-        this.dateFormatter = dateFormatter;
+    public void setWebDateFormatter(DateTimeFormatter webDateFormatter) {
+        this.webDateFormatter = webDateFormatter;
     }
 
     @Autowired
@@ -84,37 +85,44 @@ public class WebFrontController {
             List<WebStorageItem> storageList = new ArrayList<>();
 
             // add local file system settings
-            for (StorageSettings storageSettings : storageSettingsManager.getAllByType(StorageType.LOCAL_FILE_SYSTEM)) {
-                LocalFileSystemSettings localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(
-                        RuntimeException::new);
+            for (StorageSettings storageSettings : storageSettingsManager.findAllByType(StorageType.LOCAL_FILE_SYSTEM)) {
+                Optional<LocalFileSystemSettings> optionalLocalFileSystemSettings = storageSettings.getLocalFileSystemSettings();
+                if (!optionalLocalFileSystemSettings.isPresent()) {
+                    continue;
+                }
+                LocalFileSystemSettings localFileSystemSettings = optionalLocalFileSystemSettings.get();
 
-                HashMap<String, String> storageProperties = new HashMap<>();
-                storageProperties.put("Settings name", storageSettings.getSettingsName());
-                storageProperties.put("Backup path", localFileSystemSettings.getBackupPath());
+                HashMap<String, String> webStorageProperties = new HashMap<>();
+                webStorageProperties.put("Settings name", storageSettings.getSettingsName());
+                webStorageProperties.put("Backup path", localFileSystemSettings.getBackupPath());
 
                 WebStorageItem storageItem = new WebStorageItem.Builder()
                         .withType(storageSettings.getType())
                         .withSettingsName(storageSettings.getSettingsName())
-                        .withDesc(storageProperties.toString())
-                        .withTime(dateFormatter.format(storageSettings.getDate()))
+                        .withDesc(webStorageProperties.toString())
+                        .withTime(webDateFormatter.format(storageSettings.getDate()))
                         .build();
 
                 storageList.add(storageItem);
             }
 
             // add dropbox settings
-            for (StorageSettings storageSettings : storageSettingsManager.getAllByType(StorageType.DROPBOX)) {
-                DropboxSettings dropboxSettings = storageSettings.getDropboxSettings().orElseThrow(RuntimeException::new);
+            for (StorageSettings storageSettings : storageSettingsManager.findAllByType(StorageType.DROPBOX)) {
+                Optional<DropboxSettings> optionalDropboxSettings = storageSettings.getDropboxSettings();
+                if (!optionalDropboxSettings.isPresent()) {
+                    continue;
+                }
+                DropboxSettings dropboxSettings = optionalDropboxSettings.get();
 
-                HashMap<String, String> storageProperties = new HashMap<>();
-                storageProperties.put("Settings name", storageSettings.getSettingsName());
-                storageProperties.put("Access token", dropboxSettings.getAccessToken());
+                HashMap<String, String> webStorageProperties = new HashMap<>();
+                webStorageProperties.put("Settings name", storageSettings.getSettingsName());
+                webStorageProperties.put("Access token", dropboxSettings.getAccessToken());
 
                 WebStorageItem storageItem = new WebStorageItem.Builder()
                         .withType(storageSettings.getType())
                         .withSettingsName(storageSettings.getSettingsName())
-                        .withDesc(storageProperties.toString())
-                        .withTime(dateFormatter.format(storageSettings.getDate()))
+                        .withTime(webDateFormatter.format(storageSettings.getDate()))
+                        .withDesc(webStorageProperties.toString())
                         .build();
 
                 storageList.add(storageItem);
@@ -128,17 +136,17 @@ public class WebFrontController {
             List<WebDatabaseItem> databaseList = new ArrayList<>();
 
             for (DatabaseSettings databaseSettings : databaseSettingsManager.getAllByType(DatabaseType.POSTGRES)) {
-                HashMap<String, String> databaseProperties = new HashMap<>();
-                databaseProperties.put("Settings name", databaseSettings.getSettingsName());
-                databaseProperties.put("Host", databaseSettings.getHost());
-                databaseProperties.put("Port", Integer.toString(databaseSettings.getPort()));
-                databaseProperties.put("Database name", databaseSettings.getName());
+                HashMap<String, String> webDatabaseProperties = new HashMap<>();
+                webDatabaseProperties.put("Settings name", databaseSettings.getSettingsName());
+                webDatabaseProperties.put("Host", databaseSettings.getHost());
+                webDatabaseProperties.put("Port", Integer.toString(databaseSettings.getPort()));
+                webDatabaseProperties.put("Database name", databaseSettings.getName());
 
                 WebDatabaseItem databaseItem = new WebDatabaseItem.Builder()
                         .withType(databaseSettings.getType())
                         .withSettingsName(databaseSettings.getSettingsName())
-                        .withDesc(databaseProperties.toString())
-                        .withTime(dateFormatter.format(databaseSettings.getDate()))
+                        .withTime(webDateFormatter.format(databaseSettings.getDate()))
+                        .withDesc(webDatabaseProperties.toString())
                         .build();
 
                 databaseList.add(databaseItem);
@@ -151,22 +159,17 @@ public class WebFrontController {
         {
             List<WebBackupItem> backupList = new ArrayList<>();
 
-            for (BackupProperties currentBackupProperties : backupPropertiesManager.findAll()) {
-                HashMap<String, String> backupProperties = new HashMap<>();
+            for (BackupProperties backupProperties : backupPropertiesManager.findAll()) {
+                HashMap<String, String> webBackupProperties = new HashMap<>();
 
-                String storageSettingsName = currentBackupProperties.getStorageSettingsName();
-                StorageSettings storageSettings = storageSettingsManager.getById(storageSettingsName).orElseThrow(() ->
-                        new RuntimeException(String.format("Error occurred while rendering page: Missing " +
-                                "storage settings with name %d", storageSettingsName)));
-
-                backupProperties.put("Processors", currentBackupProperties.getProcessors().toString());
-                backupProperties.put("Stored on", storageSettings.getType().toString());
+                webBackupProperties.put("Processors", backupProperties.getProcessors().toString());
 
                 WebBackupItem webBackupItem = new WebBackupItem.Builder()
-                        .withId(currentBackupProperties.getId())
-                        .withDesc(backupProperties.toString())
-                        .withName(currentBackupProperties.getBackupName())
-                        .withTime(dateFormatter.format(currentBackupProperties.getDate()))
+                        .withId(backupProperties.getId())
+                        .withStorageNames(backupProperties.getStorageSettingsNameList())
+                        .withName(backupProperties.getBackupName())
+                        .withTime(webDateFormatter.format(backupProperties.getDate()))
+                        .withDesc(webBackupProperties.toString())
                         .build();
 
                 backupList.add(webBackupItem);
@@ -184,7 +187,7 @@ public class WebFrontController {
                         .withId(task.getId())
                         .withType(task.getType().toString())
                         .withState(task.getState().toString())
-                        .withTime(dateFormatter.format(task.getDate()))
+                        .withTime(webDateFormatter.format(task.getDate()))
                         .build();
 
                 backupTaskList.add(webBackupTask);
@@ -193,7 +196,7 @@ public class WebFrontController {
             model.addAttribute("backupTasks", backupTaskList);
         }
 
-        // add forms for input
+        // add input forms
         model.addAttribute("webAddDatabaseRequest", new WebAddDatabaseRequest());
         model.addAttribute("webAddStorageRequest", new WebAddStorageRequest());
         model.addAttribute("webCreateBackupRequest", new WebCreateBackupRequest());

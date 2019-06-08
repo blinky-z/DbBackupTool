@@ -1,6 +1,6 @@
 package com.blog.controllers.WebApi;
 
-import com.blog.controllers.Errors.ValidationError;
+import com.blog.controllers.Errors.ValidationException;
 import com.blog.controllers.WebApi.Validator.WebAddPlannedTaskRequestValidator;
 import com.blog.controllers.WebApi.Validator.WebCreateBackupRequestValidator;
 import com.blog.controllers.WebApi.Validator.WebRestoreBackupRequestValidator;
@@ -24,9 +24,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 
 /**
@@ -121,38 +120,28 @@ public class WebApiBackupController {
         String databaseSettingsName = webCreateBackupRequest.getDatabaseSettingsName();
         DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseSettingsName).orElseThrow(() ->
                 new IllegalStateException("Can't retrieve database settings. Error: no database settings with name " + databaseSettingsName));
-        String databaseName = databaseSettings.getName();
 
         logger.info("createBackup(): Database settings: {}", databaseSettings);
 
-        final int storagesCount = webCreateBackupRequest.getBackupCreationPropertiesMap().size();
-        logger.info("createBackup(): Uploading to storages started. Total storages amount: {}", storagesCount);
-
-        int currentStorage = 1;
-        for (Map.Entry<String, WebCreateBackupRequest.BackupCreationProperties> entry :
-                webCreateBackupRequest.getBackupCreationPropertiesMap().entrySet()) {
-            String storageSettingsName = entry.getKey();
-
-            Optional<StorageSettings> optionalStorageSettings = storageSettingsManager.getById(storageSettingsName);
-            if (!optionalStorageSettings.isPresent()) {
+        List<String> storageSettingsNameList = new ArrayList<>();
+        for (String storageSettingsName : webCreateBackupRequest.getStorageSettingsNameList()) {
+            if (!storageSettingsManager.existsById(storageSettingsName)) {
                 logger.error("createBackup(): No storage settings with name {}. Skipping this storage", storageSettingsName);
                 continue;
             }
-
-            StorageSettings storageSettings = optionalStorageSettings.get();
-
-            logger.info("createBackup(): Current storage - [{}/{}]. Storage settings: {}", currentStorage, storagesCount, storageSettings);
-
-            WebCreateBackupRequest.BackupCreationProperties backupCreationProperties = entry.getValue();
-
-            BackupProperties backupProperties =
-                    backupPropertiesManager.initNewBackupProperties(storageSettings, backupCreationProperties.getProcessors(), databaseName);
-
-            Integer taskId = tasksManager.initNewTask(Task.Type.CREATE_BACKUP, Task.RunType.USER, backupProperties);
-            tasksStarterService.startBackupTask(taskId, backupProperties, databaseSettings, logger);
-
-            currentStorage++;
+            storageSettingsNameList.add(storageSettingsName);
         }
+        for (String processorName : webCreateBackupRequest.getProcessors()) {
+            if (!backupProcessorManager.existsByName(processorName)) {
+                throw new ValidationException("Can't create backup: invalid processor '" + processorName + "'");
+            }
+        }
+
+        BackupProperties backupProperties = backupPropertiesManager.initNewBackupProperties(
+                storageSettingsNameList, webCreateBackupRequest.getProcessors(), databaseSettings.getName());
+
+        Integer taskId = tasksManager.initNewTask(Task.Type.CREATE_BACKUP, Task.RunType.USER, backupProperties.getId());
+        tasksStarterService.startBackupTask(taskId, backupProperties, databaseSettings, logger);
 
         return "redirect:/dashboard";
     }
@@ -172,15 +161,19 @@ public class WebApiBackupController {
         BackupProperties backupProperties = backupPropertiesManager.findById(backupId).orElseThrow(() ->
                 new IllegalStateException("Can't restore backup: no such backup properties with ID " + backupId));
 
+        String storageSettingsName = webRestoreBackupRequest.getStorageSettingsName();
+        StorageSettings storageSettings = storageSettingsManager.findById(storageSettingsName).orElseThrow(() ->
+                new IllegalStateException("Can't restore backup: no such storage settings with name " + storageSettingsName));
+
         String databaseSettingsName = webRestoreBackupRequest.getDatabaseSettingsName();
         DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseSettingsName).orElseThrow(() ->
                 new IllegalStateException("Can't restore backup: no such database settings with name " + databaseSettingsName));
 
-        logger.info("restoreBackup(): Starting backup restoration... Backup properties: {}. Database settings: {}",
-                backupProperties, databaseSettings);
+        logger.info("restoreBackup(): Starting backup restoration... Backup properties: {}. Storage: {}. Database: {}",
+                backupProperties, storageSettings, databaseSettings);
 
-        Integer taskId = tasksManager.initNewTask(Task.Type.RESTORE_BACKUP, Task.RunType.USER, backupProperties);
-        tasksStarterService.startRestoreTask(taskId, backupProperties, databaseSettings, logger);
+        Integer taskId = tasksManager.initNewTask(Task.Type.RESTORE_BACKUP, Task.RunType.USER, backupProperties.getId());
+        tasksStarterService.startRestoreTask(taskId, backupProperties, storageSettingsName, databaseSettings, logger);
 
         return "redirect:/dashboard";
     }
@@ -209,14 +202,14 @@ public class WebApiBackupController {
         if (error != null) {
             logger.error("Invalid backup deletion request. Error: {}", error);
 
-            throw new ValidationError(error);
+            throw new ValidationException(error);
         }
 
         Integer backupId = Integer.valueOf(webDeleteBackupRequest.getBackupId());
         BackupProperties backupProperties = backupPropertiesManager.findById(backupId).orElseThrow(() ->
                 new IllegalStateException("Can't delete backup: no such backup properties with ID " + backupId));
 
-        Integer taskId = tasksManager.initNewTask(Task.Type.DELETE_BACKUP, Task.RunType.USER, backupProperties);
+        Integer taskId = tasksManager.initNewTask(Task.Type.DELETE_BACKUP, Task.RunType.USER, backupProperties.getId());
 
         backupPropertiesManager.deleteById(backupId);
         tasksStarterService.startDeleteTask(taskId, backupProperties, logger);
@@ -237,14 +230,14 @@ public class WebApiBackupController {
 
         String databaseSettingsName = webAddPlannedTaskRequest.getDatabaseSettingsName();
         if (!databaseSettingsManager.existsById(databaseSettingsName)) {
-            throw new ValidationError(
+            throw new ValidationException(
                     String.format("Can't create planned task: Non-existing database: [%s]", databaseSettingsName));
         }
 
         List<String> storageSettingsNameList = webAddPlannedTaskRequest.getStorageSettingsNameList();
         for (String storageSettingsName : storageSettingsNameList) {
             if (!storageSettingsManager.existsById(storageSettingsName)) {
-                throw new ValidationError(
+                throw new ValidationException(
                         String.format("Can't create planned task: Non-existing storage: [%s]", storageSettingsName));
             }
         }
@@ -252,7 +245,7 @@ public class WebApiBackupController {
         List<String> processors = webAddPlannedTaskRequest.getProcessors();
         for (String processorName : processors) {
             if (!backupProcessorManager.existsByName(processorName)) {
-                throw new ValidationError(
+                throw new ValidationException(
                         String.format("Can't create planned task: Non-existing processor: [%s]", processorName));
             }
         }
