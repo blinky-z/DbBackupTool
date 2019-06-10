@@ -39,4 +39,9 @@ public class BackupCompressor implements Processor {
     public ProcessorType getType() {
         return ProcessorType.COMPRESSOR;
     }
+
+    @Override
+    public int getPrecedence() {
+        return 0;
+    }
 }

@@ -9,8 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * This class provides API to work with processors.
@@ -21,35 +23,45 @@ import java.util.Objects;
 public class BackupProcessorManager {
     private static final Logger logger = LoggerFactory.getLogger(BackupProcessorManager.class);
 
-    private List<Processor> processors;
+    private List<Processor> allProcessors;
 
     @Autowired
-    public void setProcessors(List<Processor> processors) {
-        this.processors = processors;
+    public void setAllProcessors(List<Processor> allProcessors) {
+        this.allProcessors = allProcessors;
+    }
+
+    List<Processor> getProcessorsToApplySorted(List<ProcessorType> processorTypes) {
+        return allProcessors.stream()
+                .filter(processor -> processorTypes.contains(processor.getType()))
+                .sorted(Comparator.comparingInt(Processor::getPrecedence))
+                .collect(Collectors.toList());
     }
 
     /**
      * Applies processors on backup.
+     * <p>
+     * Processors is applied in descending order by processor precedence.
      *
-     * @param in            InputStream from which backup can be read.
-     * @param processorList processor names to apply
+     * @param in             InputStream from which backup can be read
+     * @param processorTypes processors to apply
      * @return processed backup
      */
     @NotNull
-    public InputStream process(@NotNull InputStream in, @NotNull List<ProcessorType> processorList) {
+    public InputStream process(@NotNull InputStream in, @NotNull List<ProcessorType> processorTypes) {
         Objects.requireNonNull(in);
-        Objects.requireNonNull(processorList);
+        Objects.requireNonNull(processorTypes);
 
-        logger.info("Processing backup... Processors: {}", processorList);
-        int processorsAmount = processorList.size();
+        List<Processor> processors = getProcessorsToApplySorted(processorTypes);
+
+        logger.info("Processing backup... Processors: {}", processorTypes);
+
+        int processorsAmount = processors.size();
         for (int currentProcessor = 0; currentProcessor < processorsAmount; currentProcessor++) {
-            ProcessorType processorType = processorList.get(currentProcessor);
-            logger.info("Applying processor [{}/{}]: {}", currentProcessor + 1, processorsAmount, processorType);
-            for (Processor processor : processors) {
-                if (processor.getType().equals(processorType)) {
-                    in = processor.process(in);
-                }
-            }
+            final Processor processor = processors.get(currentProcessor);
+
+            logger.info("Applying processor [{}/{}]: {}", currentProcessor + 1, processorsAmount, processor.getType());
+
+            in = processor.process(in);
         }
 
         return in;
@@ -57,26 +69,29 @@ public class BackupProcessorManager {
 
     /**
      * Applies deprocessors on backup.
+     * <p>
+     * Deprocessors is applied in descending order by deprocessor precedence.
      *
-     * @param in              InputStream from which backup can be read.
-     * @param deprocessorList deprocessor names to apply
+     * @param in               InputStream from which backup can be read
+     * @param deprocessorTypes deprocessors to apply
      * @return deprocessed backup
      */
     @NotNull
-    public InputStream deprocess(@NotNull InputStream in, @NotNull List<ProcessorType> deprocessorList) {
+    public InputStream deprocess(@NotNull InputStream in, @NotNull List<ProcessorType> deprocessorTypes) {
         Objects.requireNonNull(in);
-        Objects.requireNonNull(deprocessorList);
+        Objects.requireNonNull(deprocessorTypes);
 
-        logger.info("Deprocessing backup... Processors: {}", deprocessorList);
-        int processorsAmount = deprocessorList.size();
-        for (int currentProcessor = 0; currentProcessor < processorsAmount; currentProcessor++) {
-            ProcessorType processorType = deprocessorList.get(currentProcessor);
-            logger.info("Applying deprocessor [{}/{}]: {}", currentProcessor + 1, processorsAmount, processorType);
-            for (Processor processor : processors) {
-                if (processor.getType().equals(processorType)) {
-                    in = processor.deprocess(in);
-                }
-            }
+        List<Processor> deprocessors = getProcessorsToApplySorted(deprocessorTypes);
+
+        logger.info("Deprocessing backup... Deprocessors: {}", deprocessors);
+
+        int deprocessorsAmount = deprocessors.size();
+        for (int currentDeprocessor = 0; currentDeprocessor < deprocessorsAmount; currentDeprocessor++) {
+            final Processor deprocessor = deprocessors.get(currentDeprocessor);
+
+            logger.info("Applying deprocessor [{}/{}]: {}", currentDeprocessor + 1, deprocessorsAmount, deprocessor.getType());
+
+            in = deprocessor.deprocess(in);
         }
 
         return in;

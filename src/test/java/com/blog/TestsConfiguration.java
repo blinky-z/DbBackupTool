@@ -9,6 +9,8 @@ import com.blog.entities.storage.StorageSettings;
 import com.blog.entities.storage.StorageType;
 import com.blog.manager.DatabaseSettingsManager;
 import com.blog.manager.StorageSettingsManager;
+import com.blog.service.processor.Processor;
+import com.blog.service.processor.ProcessorType;
 import com.dropbox.core.DbxRequestConfig;
 import com.dropbox.core.v2.DbxClientV2;
 import org.jetbrains.annotations.NotNull;
@@ -51,11 +53,18 @@ public class TestsConfiguration {
     @Autowired
     private List<StorageSettings> storageSettingsList;
     @Autowired
+    private List<Processor> processors;
+    @Autowired
     @Qualifier("masterPostgresDataSource")
     private DataSource masterPostgresDataSource;
     @Autowired
     @Qualifier("copyPostgresDataSource")
     private DataSource copyPostgresDataSource;
+
+    @Bean
+    public Map<ProcessorType, Processor> processorMap() {
+        return processors.stream().collect(Collectors.toMap(Processor::getType, processor -> processor));
+    }
 
     @Bean
     public Map<StorageType, String> storageSettingsNameMap() {
