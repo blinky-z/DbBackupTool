@@ -11,6 +11,7 @@ import com.blog.entities.task.PlannedTask;
 import com.blog.entities.task.Task;
 import com.blog.manager.*;
 import com.blog.service.TasksStarterService;
+import com.blog.service.processor.ProcessorType;
 import com.blog.webUI.formTransfer.WebAddPlannedTaskRequest;
 import com.blog.webUI.formTransfer.WebCreateBackupRequest;
 import com.blog.webUI.formTransfer.WebDeleteBackupRequest;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 
 /**
@@ -38,8 +40,6 @@ public class WebApiBackupController {
     private DatabaseSettingsManager databaseSettingsManager;
 
     private StorageSettingsManager storageSettingsManager;
-
-    private BackupProcessorManager backupProcessorManager;
 
     private WebCreateBackupRequestValidator webCreateBackupRequestValidator;
 
@@ -63,11 +63,6 @@ public class WebApiBackupController {
     @Autowired
     public void setStorageSettingsManager(StorageSettingsManager storageSettingsManager) {
         this.storageSettingsManager = storageSettingsManager;
-    }
-
-    @Autowired
-    public void setBackupProcessorManager(BackupProcessorManager backupProcessorManager) {
-        this.backupProcessorManager = backupProcessorManager;
     }
 
     @Autowired
@@ -118,7 +113,7 @@ public class WebApiBackupController {
         }
 
         String databaseSettingsName = webCreateBackupRequest.getDatabaseSettingsName();
-        DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseSettingsName).orElseThrow(() ->
+        DatabaseSettings databaseSettings = databaseSettingsManager.findById(databaseSettingsName).orElseThrow(() ->
                 new IllegalStateException("Can't retrieve database settings. Error: no database settings with name " + databaseSettingsName));
 
         logger.info("createBackup(): Database settings: {}", databaseSettings);
@@ -131,14 +126,17 @@ public class WebApiBackupController {
             }
             storageSettingsNameList.add(storageSettingsName);
         }
+        List<ProcessorType> processors = new ArrayList<>();
         for (String processorName : webCreateBackupRequest.getProcessors()) {
-            if (!backupProcessorManager.existsByName(processorName)) {
+            Optional<ProcessorType> optionalProcessorType = ProcessorType.of(processorName);
+            if (!optionalProcessorType.isPresent()) {
                 throw new ValidationException("Can't create backup: invalid processor '" + processorName + "'");
             }
+            processors.add(optionalProcessorType.get());
         }
 
         BackupProperties backupProperties = backupPropertiesManager.initNewBackupProperties(
-                storageSettingsNameList, webCreateBackupRequest.getProcessors(), databaseSettings.getName());
+                storageSettingsNameList, processors, databaseSettings.getName());
 
         Integer taskId = tasksManager.initNewTask(Task.Type.CREATE_BACKUP, Task.RunType.USER, backupProperties.getId());
         tasksStarterService.startBackupTask(taskId, backupProperties, databaseSettings, logger);
@@ -166,7 +164,7 @@ public class WebApiBackupController {
                 new IllegalStateException("Can't restore backup: no such storage settings with name " + storageSettingsName));
 
         String databaseSettingsName = webRestoreBackupRequest.getDatabaseSettingsName();
-        DatabaseSettings databaseSettings = databaseSettingsManager.getById(databaseSettingsName).orElseThrow(() ->
+        DatabaseSettings databaseSettings = databaseSettingsManager.findById(databaseSettingsName).orElseThrow(() ->
                 new IllegalStateException("Can't restore backup: no such database settings with name " + databaseSettingsName));
 
         logger.info("restoreBackup(): Starting backup restoration... Backup properties: {}. Storage: {}. Database: {}",
@@ -237,22 +235,22 @@ public class WebApiBackupController {
         List<String> storageSettingsNameList = webAddPlannedTaskRequest.getStorageSettingsNameList();
         for (String storageSettingsName : storageSettingsNameList) {
             if (!storageSettingsManager.existsById(storageSettingsName)) {
-                throw new ValidationException(
-                        String.format("Can't create planned task: Non-existing storage: [%s]", storageSettingsName));
+                throw new ValidationException(String.format("Can't create planned task: Non-existing storage: [%s]", storageSettingsName));
             }
         }
 
-        List<String> processors = webAddPlannedTaskRequest.getProcessors();
-        for (String processorName : processors) {
-            if (!backupProcessorManager.existsByName(processorName)) {
-                throw new ValidationException(
-                        String.format("Can't create planned task: Non-existing processor: [%s]", processorName));
+        List<ProcessorType> processors = new ArrayList<>();
+        for (String processorName : webAddPlannedTaskRequest.getProcessors()) {
+            Optional<ProcessorType> optionalProcessorType = ProcessorType.of(processorName);
+            if (!optionalProcessorType.isPresent()) {
+                throw new ValidationException(String.format("Can't create planned task: Non-existing processor: [%s]", processorName));
             }
+            processors.add(optionalProcessorType.get());
         }
 
         PlannedTask savedPlannedTask = plannedTasksManager.addNewTask(
                 webAddPlannedTaskRequest.getDatabaseSettingsName(),
-                webAddPlannedTaskRequest.getStorageSettingsNameList(), webAddPlannedTaskRequest.getProcessors(),
+                webAddPlannedTaskRequest.getStorageSettingsNameList(), processors,
                 Long.valueOf(webAddPlannedTaskRequest.getInterval()));
 
         logger.info("Planned backup task saved into database. Saved task: {}", savedPlannedTask);

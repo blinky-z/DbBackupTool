@@ -2,6 +2,7 @@ package com.blog.manager;
 
 import com.blog.entities.task.PlannedTask;
 import com.blog.repositories.PlannedTasksRepository;
+import com.blog.service.processor.ProcessorType;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -31,32 +32,28 @@ public class PlannedTasksManager {
         this.plannedTasksRepository = plannedTasksRepository;
     }
 
-    public Optional<PlannedTask> findById(Integer id) {
-        return plannedTasksRepository.findById(id);
-    }
-
     /**
      * Returns first N rows and sets pessimistic lock on them. Skips already locked rows.
      *
      * @param size  how many rows to retrieve
      * @param state entity state
-     * @return first N entities
+     * @return first N not locked entities
      */
     public Iterable<PlannedTask> findFirstNByState(@NotNull Integer size, @NotNull PlannedTask.State state) {
         return plannedTasksRepository.findFirstNByState(size, state);
     }
 
     /**
-     * Use this method to add a new planned task.
+     * Creates a new instance of {@link PlannedTask}.
      *
      * @param databaseSettingsName    name of related {@literal DatabaseSettings}
      * @param storageSettingsNameList names of related {@literal StorageSettings}
      * @param processors              processors to apply on backup when starting planned task
      * @param interval                interval between previous start and next start of planned task
-     * @return created {@literal PlannedTask} entity.
+     * @return saved entity
      */
     public PlannedTask addNewTask(@NotNull String databaseSettingsName, @NotNull List<String> storageSettingsNameList,
-                                  @NotNull List<String> processors, @NotNull Long interval) {
+                                  @NotNull List<ProcessorType> processors, @NotNull Long interval) {
         Objects.requireNonNull(databaseSettingsName);
         Objects.requireNonNull(storageSettingsNameList);
         Objects.requireNonNull(processors);
@@ -76,22 +73,30 @@ public class PlannedTasksManager {
     }
 
     /**
-     * Updates planned task state.
+     * Updates {@link PlannedTask.State} column of the entity with the given id.
      *
-     * @param plannedTaskId planned task ID
-     * @param state         new state to set
+     * @param id    entity ID
+     * @param state new state to set
      */
-    public void updateState(@NotNull Integer plannedTaskId, @NotNull PlannedTask.State state) {
-        plannedTasksRepository.findById(plannedTaskId).ifPresent(
+    public void updateState(@NotNull Integer id, @NotNull PlannedTask.State state) {
+        plannedTasksRepository.findById(id).ifPresent(
                 plannedTask -> plannedTask.setState(state));
     }
 
     /**
-     * Deletes planned task.
-     * <p>
-     * This method doesn't throw exception of no such entity exists.
+     * Sets last start time to now causing task timer to reset.
      *
-     * @param id planned task ID
+     * @param id entity ID
+     */
+    public void updateLastStartedTimeWithNow(@NotNull Integer id) {
+        plannedTasksRepository.findById(id).ifPresent(
+                plannedBackupTask -> plannedBackupTask.setLastStartedTime(LocalDateTime.now(ZoneOffset.UTC)));
+    }
+
+    /**
+     * Attempts to delete the entity with the given id if the one exists.
+     *
+     * @param id entity ID
      */
     public void deleteById(@NotNull Integer id) {
         plannedTasksRepository.findById(id).ifPresent(
@@ -99,12 +104,12 @@ public class PlannedTasksManager {
     }
 
     /**
-     * Sets last start time with now causing task timer to reset.
+     * Retrieves an entity by its id.
      *
-     * @param id planned task ID
+     * @param id entity ID
+     * @return the entity with the given id or {@literal Optional#empty()} if none found
      */
-    public void updateLastStartedTimeWithNow(@NotNull Integer id) {
-        plannedTasksRepository.findById(id).ifPresent(
-                plannedBackupTask -> plannedBackupTask.setLastStartedTime(LocalDateTime.now(ZoneOffset.UTC)));
+    public Optional<PlannedTask> findById(Integer id) {
+        return plannedTasksRepository.findById(id);
     }
 }

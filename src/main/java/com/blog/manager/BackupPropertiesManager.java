@@ -2,6 +2,7 @@ package com.blog.manager;
 
 import com.blog.entities.backup.BackupProperties;
 import com.blog.repositories.BackupPropertiesRepository;
+import com.blog.service.processor.ProcessorType;
 import com.blog.service.storage.StorageConstants;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,9 +40,9 @@ public class BackupPropertiesManager {
      * @param storageSettingsNameList list of storage settings identifiers where backup will be uploaded to
      * @param processors              processors that applies on backup
      * @param databaseName            database name of database of which backup was created
-     * @return new BackupProperties with required fields set
+     * @return saved entity
      */
-    public BackupProperties initNewBackupProperties(@NotNull List<String> storageSettingsNameList, @Nullable List<String> processors,
+    public BackupProperties initNewBackupProperties(@NotNull List<String> storageSettingsNameList, @Nullable List<ProcessorType> processors,
                                                     @NotNull String databaseName) {
         LocalDateTime creationTime = LocalDateTime.now(ZoneOffset.UTC);
         String backupName = String.format(
@@ -60,29 +61,56 @@ public class BackupPropertiesManager {
      * @param storageSettingsName identifier of storage settings where backup will be uploaded to
      * @param processors          processors that applies on backup
      * @param databaseName        database name of database of which backup was created
-     * @return new BackupProperties with required fields set
+     * @return saved entity
      */
-    public BackupProperties initNewBackupProperties(@NotNull String storageSettingsName, @Nullable List<String> processors,
+    public BackupProperties initNewBackupProperties(@NotNull String storageSettingsName, @Nullable List<ProcessorType> processors,
                                                     @NotNull String databaseName) {
         return initNewBackupProperties(Collections.singletonList(storageSettingsName), processors, databaseName);
     }
 
+    /**
+     * Retrieves an entity by its id.
+     *
+     * @param id entity ID
+     * @return the entity with the given id or {@literal Optional#empty()} if none found
+     */
     public Optional<BackupProperties> findById(@NotNull Integer id) {
         return backupPropertiesRepository.findById(id);
     }
 
+    /**
+     * Returns all instances of the type.
+     *
+     * @return all entities
+     */
     public Iterable<BackupProperties> findAll() {
         return backupPropertiesRepository.findAll();
     }
 
+    /**
+     * Returns whether an entity with the given id exists.
+     *
+     * @param id entity ID
+     * @return {@literal true} if an entity with the given id exists, {@literal false} otherwise.
+     */
     public boolean existsById(@NotNull Integer id) {
         return backupPropertiesRepository.existsById(id);
     }
 
+    /**
+     * Returns all instances sorted by id in descending order.
+     *
+     * @return all entities
+     */
     public ArrayList<BackupProperties> findAllByOrderByIdDesc() {
         return backupPropertiesRepository.findAllByOrderByIdDesc();
     }
 
+    /**
+     * Attempts to delete the entity with the given id if the one exists.
+     *
+     * @param id entity ID
+     */
     public void deleteById(@NotNull Integer id) {
         backupPropertiesRepository.findById(id).ifPresent(
                 backupProperties -> backupPropertiesRepository.delete(backupProperties));

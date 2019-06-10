@@ -1,7 +1,9 @@
 package com.blog.entities.backup;
 
+import com.blog.entities.ProcessorTypeEnumListToStringFieldConverter;
 import com.blog.entities.StringListToStringFieldConverter;
 import com.blog.entities.storage.StorageSettings;
+import com.blog.service.processor.ProcessorType;
 import org.jetbrains.annotations.NotNull;
 
 import javax.persistence.*;
@@ -49,8 +51,8 @@ public class BackupProperties {
      * This field is automatically converted into single string and back to List by {@link StringListToStringFieldConverter} class.
      */
     @Column(updatable = false)
-    @Convert(converter = StringListToStringFieldConverter.class)
-    private List<String> processors;
+    @Convert(converter = ProcessorTypeEnumListToStringFieldConverter.class)
+    private List<ProcessorType> processors;
 
     /**
      * List of storage identifiers where backup is saved.
@@ -62,7 +64,7 @@ public class BackupProperties {
 
     }
 
-    public BackupProperties(@NotNull String backupName, @NotNull List<String> processors, @NotNull LocalDateTime date,
+    public BackupProperties(@NotNull String backupName, @NotNull List<ProcessorType> processors, @NotNull LocalDateTime date,
                             @NotNull List<String> storageSettingsNameList) {
         this.backupName = Objects.requireNonNull(backupName);
         this.processors = Objects.requireNonNull(processors);
@@ -94,11 +96,11 @@ public class BackupProperties {
         this.backupName = backupName;
     }
 
-    public List<String> getProcessors() {
+    public List<ProcessorType> getProcessors() {
         return processors;
     }
 
-    public void setProcessors(List<String> processors) {
+    public void setProcessors(List<ProcessorType> processors) {
         this.processors = processors;
     }
 

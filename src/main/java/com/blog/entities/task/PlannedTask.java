@@ -1,6 +1,8 @@
 package com.blog.entities.task;
 
+import com.blog.entities.ProcessorTypeEnumListToStringFieldConverter;
 import com.blog.entities.StringListToStringFieldConverter;
+import com.blog.service.processor.ProcessorType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -53,8 +55,8 @@ public class PlannedTask {
      * This field automatically converted into single string and back to List by {@link StringListToStringFieldConverter} class.
      */
     @Column(updatable = false)
-    @Convert(converter = StringListToStringFieldConverter.class)
-    private List<String> processors;
+    @Convert(converter = ProcessorTypeEnumListToStringFieldConverter.class)
+    private List<ProcessorType> processors;
 
     /**
      * Timestamp of moment when task was started last time.
@@ -81,7 +83,7 @@ public class PlannedTask {
     }
 
     private PlannedTask(@NotNull State state, @NotNull List<String> storageSettingsNameList, @NotNull String databaseSettingsName,
-                        @NotNull List<String> processors, @NotNull LocalDateTime lastStartedTime, @NotNull Duration interval,
+                        @NotNull List<ProcessorType> processors, @NotNull LocalDateTime lastStartedTime, @NotNull Duration interval,
                         @Nullable Integer handlerTaskId) {
         this.state = Objects.requireNonNull(state);
         this.storageSettingsNameList = Objects.requireNonNull(storageSettingsNameList);
@@ -116,11 +118,11 @@ public class PlannedTask {
         this.databaseSettingsName = databaseSettingsName;
     }
 
-    public List<String> getProcessors() {
+    public List<ProcessorType> getProcessors() {
         return processors;
     }
 
-    public void setProcessors(List<String> processors) {
+    public void setProcessors(List<ProcessorType> processors) {
         this.processors = processors;
     }
 
@@ -180,7 +182,7 @@ public class PlannedTask {
         private State state;
         private List<String> storageSettingsNameList;
         private String databaseSettingsName;
-        private List<String> processors;
+        private List<ProcessorType> processors;
         private LocalDateTime lastStartedTime;
         private Duration interval;
         private Integer handlerTaskId;
@@ -203,7 +205,7 @@ public class PlannedTask {
             return this;
         }
 
-        public Builder withProcessors(List<String> processors) {
+        public Builder withProcessors(List<ProcessorType> processors) {
             this.processors = processors;
             return this;
         }
