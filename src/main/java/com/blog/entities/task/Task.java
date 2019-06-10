@@ -54,6 +54,13 @@ public class Task {
     private State state;
 
     /**
+     * This field is set when task interrupted.
+     * <p>
+     * Default is {@literal false}.
+     */
+    private Boolean interrupted;
+
+    /**
      * Identifier of {@link BackupProperties}.
      * <p>
      * We should know backup ID to be able to handle occurred errors while executing task.
@@ -111,6 +118,14 @@ public class Task {
         this.state = state;
     }
 
+    public Boolean getInterrupted() {
+        return interrupted;
+    }
+
+    public void setInterrupted(Boolean interrupted) {
+        this.interrupted = interrupted;
+    }
+
     public Integer getBackupPropertiesId() {
         return backupPropertiesId;
     }
@@ -134,6 +149,7 @@ public class Task {
                 ", type=" + type +
                 ", runType=" + runType +
                 ", state=" + state +
+                ", interrupted=" + interrupted +
                 ", backupPropertiesId=" + backupPropertiesId +
                 ", date=" + date +
                 '}';
@@ -154,7 +170,6 @@ public class Task {
         DOWNLOADING,
         UPLOADING,
         COMPLETED,
-        INTERRUPTED
     }
 
     public enum Type {

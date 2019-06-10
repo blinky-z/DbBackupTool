@@ -75,24 +75,32 @@ public class TasksManager {
     }
 
     /**
-     * Updates task state.
+     * Updates {@link Task.State} column of the entity with the given id.
      *
-     * @param id    ID of task
+     * @param id    entity ID
      * @param state new state to set
      */
-    public void updateTaskState(Integer id, Task.State state) {
-        Task task = tasksRepository.findById(id).orElseThrow(() -> new RuntimeException("Can't update task state: no such task with ID" + id));
-        task.setState(state);
+    public void updateTaskState(@NotNull Integer id, @NotNull Task.State state) {
+        tasksRepository.findById(id).ifPresent(task -> task.setState(state));
     }
 
     /**
-     * This function reverts erroneous task.
+     * Set interrupt flag to entity.
+     *
+     * @param id entity ID
+     */
+    public void setInterrupted(@NotNull Integer id) {
+        tasksRepository.findById(id).ifPresent(task -> task.setInterrupted(Boolean.TRUE));
+    }
+
+    /**
+     * This function reverts erroneous task by its entity.
      * <p>
      * Use this function only after canceling related {@literal Future}.
      * <p>
-     * If task was of type {@link Task.Type#CREATE_BACKUP} then also related {@link BackupProperties} will be deleted.
+     * If the task was of the type {@link Task.Type#CREATE_BACKUP} then related {@link BackupProperties} will be deleted.
      *
-     * @param task the instance of {@link Task}.
+     * @param task the entity
      */
     public void revertTask(@NotNull Task task) {
         Objects.requireNonNull(task);
@@ -149,30 +157,29 @@ public class TasksManager {
     }
 
     /**
-     * Removes task entity.
+     * Attempts to delete the entity with the given id if the one exists.
      *
-     * @param id task ID
+     * @param id entity ID
      */
-    public void removeTask(Integer id) {
+    public void deleteById(Integer id) {
         tasksRepository.findById(id).ifPresent(backupTask -> tasksRepository.delete(backupTask));
     }
 
     /**
-     * Retrieves an {@literal Task} by its id.
+     * Retrieves an entity by its id.
      *
      * @param id entity ID
      * @return the entity with the given id or {@literal Optional#empty()} if none found
-     * @throws IllegalArgumentException if {@code id} is {@literal null}.
      */
     public Optional<Task> findById(@NotNull Integer id) {
         return tasksRepository.findById(id);
     }
 
     /**
-     * Returns all {@literal Task} entities of specified {@link Task.RunType}.
+     * Returns all instances of the given {@link Task.RunType}.
      *
      * @param runType run type
-     * @return entities as {@literal Iterable<Task>}.
+     * @return all entities of the given {@link Task.RunType}
      */
     public Iterable<Task> findAllByRunType(Task.RunType runType) {
         return tasksRepository.findAllByRunType(runType);
@@ -181,7 +188,7 @@ public class TasksManager {
     /**
      * Returns all tasks sorted by date in descending order.
      *
-     * @return tasks as {@literal Iterable<Task>}.
+     * @return all entities
      */
     public Iterable<Task> findAllByOrderByDateDesc() {
         return tasksRepository.findAllByOrderByDateDesc();

@@ -13,8 +13,7 @@ import java.util.concurrent.Future;
 /**
  * This class allows services to notify about exceptions from additional threads.
  * <p>
- * Services can run additional threads for different work that can produce exceptions, so this service is a way to report about exceptions
- * in tasks and prevent further executing.
+ * After reporting about an exception current task will be prevented from further executing and marked as interrupted and erroneous.
  */
 @Component
 public class ErrorCallbackService {
@@ -44,7 +43,6 @@ public class ErrorCallbackService {
      *
      * @param t      an exception
      * @param taskId task id
-     * @see TasksStarterService
      */
     public void onError(@NotNull Throwable t, @NotNull Integer taskId) {
         logger.error("Exception caught: ", t);
