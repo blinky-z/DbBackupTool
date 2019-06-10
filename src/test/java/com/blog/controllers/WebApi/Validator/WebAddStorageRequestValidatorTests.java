@@ -8,16 +8,13 @@ import com.blog.webUI.formTransfer.storage.WebDropboxSettings;
 import com.blog.webUI.formTransfer.storage.WebLocalFileSystemSettings;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-
 class WebAddStorageRequestValidatorTests extends ApplicationTests {
-    @Autowired
-    private WebAddStorageRequestValidator webAddStorageRequestValidator;
+    private WebAddStorageRequestValidator webAddStorageRequestValidator = new WebAddStorageRequestValidator();
 
     @Test
     void validate_ShouldRejectStorageTypeField_whenMissingStorageType() {
@@ -125,15 +122,15 @@ class WebAddStorageRequestValidatorTests extends ApplicationTests {
         for (StorageType storage : StorageType.values()) {
             WebAddStorageRequest webAddStorageRequest = new WebAddStorageRequest();
             webAddStorageRequest.setStorageType(storage.getStorageAsString());
-            webAddStorageRequest.setSettingsName(testInfo.getDisplayName());
 
             Errors errors = new BeanPropertyBindingResult(webAddStorageRequest, "");
 
             try {
-                webAddStorageRequestValidator.validate(webAddStorageRequest, errors);
+                webAddStorageRequestValidator.validateStorageSpecificFields(webAddStorageRequest, errors);
             } catch (ValidationException ex) {
                 fail("Exception must not be thrown on storage type " + storage);
             }
+            assertFalse(errors.hasFieldErrors("storageType"));
         }
     }
 }

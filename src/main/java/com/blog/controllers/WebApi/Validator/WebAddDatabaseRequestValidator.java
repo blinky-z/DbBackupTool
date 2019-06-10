@@ -19,6 +19,26 @@ import java.util.Optional;
  */
 @Component
 public class WebAddDatabaseRequestValidator {
+    void validateDatabaseSpecificFields(Object target, Errors errors) {
+        WebAddDatabaseRequest webAddDatabaseRequest = (WebAddDatabaseRequest) target;
+
+        Optional<DatabaseType> optionalDatabaseType = DatabaseType.of(webAddDatabaseRequest.getDatabaseType());
+        if (!optionalDatabaseType.isPresent()) {
+            errors.rejectValue("databaseType", "error.addDatabaseRequest.databaseType.malformed");
+            return;
+        }
+
+        DatabaseType databaseType = optionalDatabaseType.get();
+        switch (databaseType) {
+            case POSTGRES: {
+                break;
+            }
+            default: {
+                throw new ValidationException("Unknown database type: " + databaseType);
+            }
+        }
+    }
+
     public void validate(@NotNull Object target, @NotNull Errors errors) throws ValidationException {
         Objects.requireNonNull(target);
         Objects.requireNonNull(errors);
@@ -46,21 +66,7 @@ public class WebAddDatabaseRequestValidator {
 
         // validate database specific fields
         if (!errors.hasFieldErrors("databaseType")) {
-            Optional<DatabaseType> optionalDatabaseType = DatabaseType.of(webAddDatabaseRequest.getDatabaseType());
-            if (!optionalDatabaseType.isPresent()) {
-                errors.rejectValue("databaseType", "error.addDatabaseRequest.databaseType.malformed");
-                return;
-            }
-
-            DatabaseType databaseType = optionalDatabaseType.get();
-            switch (databaseType) {
-                case POSTGRES: {
-                    break;
-                }
-                default: {
-                    throw new ValidationException("Can't validate database settings. Unknown database type: " + databaseType);
-                }
-            }
+            validateDatabaseSpecificFields(target, errors);
         }
     }
 }

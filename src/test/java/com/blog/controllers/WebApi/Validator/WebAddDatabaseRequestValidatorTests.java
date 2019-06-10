@@ -148,16 +148,16 @@ class WebAddDatabaseRequestValidatorTests extends ApplicationTests {
     void validate_shouldNotThrowValidationException_whenPassAnyDatabaseType(TestInfo testInfo) {
         for (DatabaseType database : DatabaseType.values()) {
             WebAddDatabaseRequest webAddDatabaseRequest = new WebAddDatabaseRequest();
-            webAddDatabaseRequest.setSettingsName(testInfo.getDisplayName());
             webAddDatabaseRequest.setDatabaseType(database.getDatabaseAsString());
 
             Errors errors = new BeanPropertyBindingResult(webAddDatabaseRequest, "");
 
             try {
-                webAddDatabaseRequestValidator.validate(webAddDatabaseRequest, errors);
+                webAddDatabaseRequestValidator.validateDatabaseSpecificFields(webAddDatabaseRequest, errors);
             } catch (ValidationException ex) {
                 fail("Exception must not be thrown on database type " + database);
             }
+            assertFalse(errors.hasFieldErrors("databaseType"));
         }
     }
 }
