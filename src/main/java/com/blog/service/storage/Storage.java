@@ -26,12 +26,12 @@ import java.io.InputStream;
  * can throw {@link InterruptedException} or any blocking I/O operation and thread was interrupted (either before calling or while thread
  * was blocked on the call) {@link InterruptedException} or {@link java.io.InterruptedIOException} exception will be thrown.
  * <p>
- * But if you do (e.g in the {@link #deleteBackup(StorageSettings, String, Integer)} where may be no blocking I/O calls),
- * remember that {@link Thread#interrupted()} clears the interrupt flag.
- * <p>
  * If an interrupt occurs, you should properly stop the work and make all the additional threads stop the work too (if any run).
  * You don't need to report (throwing an exception or using {@link com.blog.service.ErrorCallbackService}) about occurred interrupt neither
  * from the main thread nor additional threads.
+ * <p>
+ * You <b>do not</b> need to revert any operation. What you should do while was interrupted, just properly stop the work and release all
+ * resources.
  * @see com.blog.service.TasksStarterService
  * @see com.blog.manager.BackupLoadManager
  * @see StorageConstants
@@ -44,6 +44,7 @@ public interface Storage {
      * @param storageSettings storage settings to access storage where backup stored
      * @param backupName      backup name
      * @param id              backup uploading task ID
+     * @implSpec This method should not return until backup will be fully uploaded or exception occurs.
      */
     void uploadBackup(InputStream in, StorageSettings storageSettings, String backupName, Integer id);
 
@@ -54,7 +55,13 @@ public interface Storage {
      * @param backupName      backup name
      * @param id              backup downloading task ID
      * @return input stream, from which backup can be read after download complete
-     * @implSpec if an interrupt occurs, you can safely return {@literal null}.
+     * @implSpec This method may return while backup is still downloading (e.g. downloading is streaming).
+     * <p>
+     * if an interrupt occurs, you should return {@literal null}, otherwise throw an occurred exception.
+     * <p>
+     * if any exception occurs while working with the returned input stream, it is guaranteed that this input stream will be closed.
+     * So if you have a thread that writes to this stream, the thread will get an {@link java.io.IOException} when attempts to write to the
+     * closed stream.
      */
     @Nullable
     InputStream downloadBackup(StorageSettings storageSettings, String backupName, Integer id);
@@ -65,6 +72,9 @@ public interface Storage {
      * @param storageSettings storage settings to access storage where backup stored
      * @param backupName      backup name
      * @param id              backup deletion task ID
+     * @implSpec This method should not return until backup will be fully deleted or exception occurs.
+     * <p>
+     * You can ignore interrupts and delete backup fully.
      */
     void deleteBackup(StorageSettings storageSettings, String backupName, Integer id);
 }
