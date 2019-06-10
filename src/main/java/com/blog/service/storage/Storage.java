@@ -30,8 +30,7 @@ import java.io.InputStream;
  * You don't need to report (throwing an exception or using {@link com.blog.service.ErrorCallbackService}) about occurred interrupt neither
  * from the main thread nor additional threads.
  * <p>
- * You <b>do not</b> need to revert any operation. What you should do while was interrupted, just properly stop the work and release all
- * resources.
+ * You <b>do not</b> need to revert any operation when interrupt occurs.
  * @see com.blog.service.TasksStarterService
  * @see com.blog.manager.BackupLoadManager
  * @see StorageConstants
@@ -54,7 +53,7 @@ public interface Storage {
      * @param storageSettings storage settings to access storage where backup stored
      * @param backupName      backup name
      * @param id              backup downloading task ID
-     * @return input stream, from which backup can be read after download complete
+     * @return input stream, from which backup can be read
      * @implSpec This method may return while backup is still downloading (e.g. downloading is streaming).
      * <p>
      * if an interrupt occurs, you should return {@literal null}, otherwise throw an occurred exception.

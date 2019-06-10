@@ -17,7 +17,8 @@ public interface PlannedTasksRepository extends CrudRepository<PlannedTask, Inte
      * <p>
      * Use this method only inside manually started transaction otherwise lock will not be attempted.
      *
-     * @param size how many rows to retrieve
+     * @param state planned task state
+     * @param size  how many rows to retrieve
      * @return first N entities
      */
     @Query(value = "select * from planned_backup_tasks where state = :#{#state.name()} limit :#{#size} FOR UPDATE skip locked", nativeQuery = true)

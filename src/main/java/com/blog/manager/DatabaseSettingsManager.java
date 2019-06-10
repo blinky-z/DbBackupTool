@@ -80,6 +80,7 @@ public class DatabaseSettingsManager {
     /**
      * Returns all instances of the type of the given {@link DatabaseType}.
      *
+     * @param type database type
      * @return all entities of the given {@link DatabaseType}
      */
     public Iterable<DatabaseSettings> findAllByType(@NotNull DatabaseType type) {

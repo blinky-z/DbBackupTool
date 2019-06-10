@@ -14,14 +14,14 @@ import java.util.Optional;
  * (e.g. {@link #dropboxSettings(DropboxSettings)}.
  * <p>
  * Example of creating a new instance:
- * <code>
+ * <pre>
  * DropboxSettings dropboxSettings = new DropboxSettings();
  * dropboxSettings.setAccessToken(token);
- * <p>
+ *
  * StorageSettings storageSettings = StorageSettings.dropboxSettings(dropboxSettings)
- * .withSettingsName(name)
- * .build();
- * </code>
+ *                                                  .withSettingsName(name)
+ *                                                  .build();
+ * </pre>
  * <p>
  * This entity is mainly used by {@link com.blog.service.storage.Storage} services to access storage.
  */

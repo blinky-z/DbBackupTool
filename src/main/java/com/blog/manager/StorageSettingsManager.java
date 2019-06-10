@@ -80,6 +80,7 @@ public class StorageSettingsManager {
     /**
      * Returns all instances of the type of the given {@link StorageType}.
      *
+     * @param type database type
      * @return all entities of the given {@link StorageType}
      */
     public Iterable<StorageSettings> findAllByType(@NotNull StorageType type) {

@@ -56,6 +56,7 @@ public class TasksManager {
      * Creates a new {@link Task} instance.
      *
      * @param taskType           backup task type
+     * @param runType            task initiator
      * @param backupPropertiesId identifier of backup properties of created or being created backup
      * @return ID of created task
      * @see BackupPropertiesManager#initNewBackupProperties(List, List, String)

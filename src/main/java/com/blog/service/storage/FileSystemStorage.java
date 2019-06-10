@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Implementation of {@link Storage} interface for Local File System.
+ * Implementation of the {@link Storage} interface for Local File System.
  */
 @Service
 public class FileSystemStorage implements Storage {

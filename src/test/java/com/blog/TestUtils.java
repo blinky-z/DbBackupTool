@@ -28,14 +28,15 @@ public class TestUtils {
      * Tables must have INTEGER (serial) primary key 'id' column.
      * <p>
      * Example of using:
-     * <code>
+     * <pre>
      * import static com.blog.TestUtils.*;
-     * <p>
+     *
      * assertThat(slaveDatabase, equalToMasterDatabase(masterDatabase, tableNames));
-     * </code>
+     * </pre>
      *
      * @param tableNames names of tables to compare
      * @param expected   the master database
+     * @return hamcrest matcher
      */
     public static Matcher<JdbcTemplate> equalToMasterDatabase(JdbcTemplate expected, List<String> tableNames) {
         return new equalsToMaster(expected, tableNames);
@@ -43,7 +44,6 @@ public class TestUtils {
 
     /**
      * Initializes database with some tables.
-     * <p>
      * <p>
      * Use it only when you need database contain some data (e.g. for storage upload testing) but not the table itself.
      * You should not rely on realization of this function - table name, columns and other params can be changed.
@@ -112,15 +112,15 @@ public class TestUtils {
      * Hamcrest matcher for comparing content of two streams.
      * <p>
      * Example of using:
-     * <code>
+     * <pre>
      * import static com.blog.TestUtils.*;
-     * <p>
+     *
      * assertThat(actualInputStream, equalToSourceInputStream(sourceInputStream));
-     * </code>
+     * </pre>
      * Both passed input stream will not be available for reading anymore.
      *
      * @param expected expected stream content
-     * @return true if content of both streams are equal, false otherwise
+     * @return hamcrest matcher
      */
     public static Matcher<InputStream> equalToSourceInputStream(InputStream expected) {
         return new equalsToSourceStream(expected);

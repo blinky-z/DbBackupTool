@@ -43,7 +43,6 @@ class ErrorTasksWatcher {
      * tasks if any.
      * <p>
      * The watcher handles at most N tasks as described by {@link #nRows} constant and skips already locked tasks.
-     * <p>
      * When retrieving error tasks from database pessimistic lock is set. It allows safely run more than one copy of program, as no other
      * watcher can pick up already being handled error tasks.
      * <p>

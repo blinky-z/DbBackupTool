@@ -96,7 +96,6 @@ class PlannedBackupTasksWatcher {
      * progress.
      * <p>
      * The watcher handles at most N tasks as described by {@link #nRows} constant and skips already locked tasks.
-     * <p>
      * When retrieving planned tasks from database pessimistic lock is set. It allows safely run more than one copy of program, as no other
      * watcher can handle already being handled planned tasks.
      * <p>
@@ -106,15 +105,14 @@ class PlannedBackupTasksWatcher {
      * This watcher does not correlate with {@link #watchPlannedTasks()} watcher and thread can't be blocked when updating entity,
      * because the watchers locks tasks of different types.
      *
-     * <ol>
+     * <ul>
      * <li> If all tasks related to current planned task completed successfully, then timer resets and planned task turns into
      * {@link PlannedTask.State#WAITING} state, so the planned task will be waiting for next timer firing.
      * firing.</li>
      * <li> If at least one task relates to current planned task is erroneous, then watcher marks all handler tasks as erroneous and
      * the planned task turns into {@link PlannedTask.State#WAITING} state causing it to be picked up by {@link #watchPlannedTasks()}
      * watcher.</li>
-     * </ol>
-     * <p>
+     * </ul>
      */
     @Scheduled(fixedDelay = 30 * 1000)
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
@@ -162,7 +160,6 @@ class PlannedBackupTasksWatcher {
      * This watcher wakes up every time 1 minute passed from the last completion, checks waiting planned tasks and starts them if timer is fired.
      * <p>
      * The watcher handles at most N tasks as described by {@link #nRows} constant. It skips locked tasks.
-     * <p>
      * When retrieving planned tasks from database pessimistic lock is set. It allows safely run more than one copy of program, as no other
      * watcher can handle already being handled planned tasks.
      * <p>

@@ -144,10 +144,11 @@ public class TasksStarterService {
     /**
      * Starts backup restoration task.
      *
-     * @param taskId           pre-created {@link Task} entity's ID
-     * @param backupProperties backup properties of backup saved on storage
-     * @param databaseSettings database settings
-     * @param logger           the logger
+     * @param taskId              pre-created {@link Task} entity's ID
+     * @param backupProperties    backup properties of backup saved on storage
+     * @param storageSettingsName storage settings name
+     * @param databaseSettings    database settings
+     * @param logger              the logger
      * @return {@literal Future} of started task
      */
     public Future startRestoreTask(@NotNull Integer taskId, @NotNull BackupProperties backupProperties, @NotNull String storageSettingsName,
