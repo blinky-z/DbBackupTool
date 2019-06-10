@@ -22,8 +22,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class RestApiBackupTaskMonitorTests extends ApplicationTests {
+    @Autowired
     private TestRestTemplate testRestTemplate;
-
+    @Autowired
     private RestApiClient restApiClient;
     @Autowired
     private TasksManager tasksManager;
@@ -33,23 +34,14 @@ class RestApiBackupTaskMonitorTests extends ApplicationTests {
     private BackupPropertiesManager backupPropertiesManager;
     @Autowired
     private BackupPropertiesRepository backupPropertiesRepository;
-    private AtomicBoolean sdkInitialized = new AtomicBoolean(false);
     @Autowired
     private DateTimeFormatter webDateFormatter;
 
-    @Autowired
-    void setTestRestTemplate(TestRestTemplate testRestTemplate) {
-        this.testRestTemplate = testRestTemplate;
-    }
-
-    @Autowired
-    void setRestApiClient(RestApiClient restApiClient) {
-        this.restApiClient = restApiClient;
-    }
+    private AtomicBoolean initialized = new AtomicBoolean(false);
 
     @BeforeEach
     void init() {
-        if (sdkInitialized.compareAndSet(false, true)) {
+        if (initialized.compareAndSet(false, true)) {
             restApiClient.setTestRestTemplate(testRestTemplate);
         }
     }

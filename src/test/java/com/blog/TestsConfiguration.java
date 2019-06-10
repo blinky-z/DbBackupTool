@@ -31,7 +31,10 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @TestConfiguration
 public class TestsConfiguration {
@@ -46,6 +49,8 @@ public class TestsConfiguration {
     @Autowired
     private DatabaseSettingsManager databaseSettingsManager;
     @Autowired
+    private List<StorageSettings> storageSettingsList;
+    @Autowired
     @Qualifier("masterPostgresDataSource")
     private DataSource masterPostgresDataSource;
     @Autowired
@@ -53,22 +58,19 @@ public class TestsConfiguration {
     private DataSource copyPostgresDataSource;
 
     @Bean
-    public HashMap<StorageType, String> storageSettingsNameMap() {
-        HashMap<StorageType, String> map = new HashMap<>();
-        map.put(StorageType.LOCAL_FILE_SYSTEM, localFileSystemStorageSettingsName);
-        map.put(StorageType.DROPBOX, dropboxStorageSettingsName);
-        return map;
+    public Map<StorageType, String> storageSettingsNameMap() {
+        return storageSettingsList.stream().collect(Collectors.toMap(StorageSettings::getType, StorageSettings::getSettingsName));
     }
 
     @Bean
-    public HashMap<DatabaseType, String> databaseSettingsNameMap() {
+    public Map<DatabaseType, String> databaseSettingsNameMap() {
         HashMap<DatabaseType, String> map = new HashMap<>();
         map.put(DatabaseType.POSTGRES, masterPostgresDatabaseSettingsName);
         return map;
     }
 
     @Bean
-    public HashMap<DatabaseType, String> slaveDatabaseSettingsNameMap() {
+    public Map<DatabaseType, String> slaveDatabaseSettingsNameMap() {
         HashMap<DatabaseType, String> map = new HashMap<>();
         map.put(DatabaseType.POSTGRES, slavePostgresDatabaseSettingsName);
         return map;

@@ -1,7 +1,6 @@
 package com.blog.service.storage;
 
 import com.blog.ApplicationTests;
-import com.blog.TestUtils;
 import com.blog.entities.storage.DropboxSettings;
 import com.blog.entities.storage.StorageSettings;
 import com.dropbox.core.DbxException;
@@ -17,21 +16,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 
+import static com.blog.TestUtils.equalToSourceInputStream;
+import static com.blog.TestUtils.getRandomBytes;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DropboxStorageTests extends ApplicationTests {
     private static final Integer testTaskID = 0;
 
-    private TestUtils testUtils;
-
     private DropboxStorage dropboxStorage;
 
     private StorageSettings dropboxStorageSettings;
-
-    @Autowired
-    void setTestUtils(TestUtils testUtils) {
-        this.testUtils = testUtils;
-    }
 
     @Autowired
     void setDropboxStorageSettings(StorageSettings dropboxStorageSettings) {
@@ -44,9 +39,9 @@ class DropboxStorageTests extends ApplicationTests {
     }
 
     @Test
-    void whenUploadSmallBackupAndDownload_contentIsEqual(TestInfo testInfo) throws IOException {
+    void whenUploadBackupAndDownload_contentIsEqual(TestInfo testInfo) throws IOException {
         String backupName = testInfo.getDisplayName() + "_" + StorageConstants.dateFormatter.format(LocalDateTime.now());
-        byte[] source = testUtils.getRandomBytes(1000);
+        byte[] source = getRandomBytes(1000000);
 
         try (
                 ByteArrayInputStream sourceInputStream = new ByteArrayInputStream(source)
@@ -55,24 +50,7 @@ class DropboxStorageTests extends ApplicationTests {
             try (
                     InputStream downloadedBackup = dropboxStorage.downloadBackup(dropboxStorageSettings, backupName, testTaskID)
             ) {
-                assertTrue(testUtils.streamsContentEquals(new ByteArrayInputStream(source), downloadedBackup));
-            }
-        }
-    }
-
-    @Test
-    void whenUploadBigBackupAndDownload_contentIsEqual(TestInfo testInfo) throws IOException {
-        String backupName = testInfo.getDisplayName() + "_" + StorageConstants.dateFormatter.format(LocalDateTime.now());
-        byte[] source = testUtils.getRandomBytes(1000000);
-
-        try (
-                ByteArrayInputStream sourceInputStream = new ByteArrayInputStream(source)
-        ) {
-            dropboxStorage.uploadBackup(sourceInputStream, dropboxStorageSettings, backupName, testTaskID);
-            try (
-                    InputStream downloadedBackup = dropboxStorage.downloadBackup(dropboxStorageSettings, backupName, testTaskID)
-            ) {
-                assertTrue(testUtils.streamsContentEquals(new ByteArrayInputStream(source), downloadedBackup));
+                assertThat(downloadedBackup, equalToSourceInputStream(new ByteArrayInputStream(source)));
             }
         }
     }
@@ -80,7 +58,7 @@ class DropboxStorageTests extends ApplicationTests {
     @Test
     void whenUploadBackupAndDelete_backupIsDeletedOnStorage(TestInfo testInfo) throws IOException, DbxException {
         String backupName = testInfo.getDisplayName() + "_" + StorageConstants.dateFormatter.format(LocalDateTime.now());
-        byte[] source = testUtils.getRandomBytes(1000000);
+        byte[] source = getRandomBytes(1000000);
 
         try (
                 ByteArrayInputStream sourceInputStream = new ByteArrayInputStream(source)

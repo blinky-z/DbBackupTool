@@ -1,12 +1,12 @@
 package com.blog.service.databaseBackup.PostgresDatabaseBackup;
 
 import com.blog.ApplicationTests;
-import com.blog.TestUtils;
 import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.entities.storage.StorageType;
 import com.blog.manager.*;
+import com.blog.service.processor.ProcessorType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,90 +16,45 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
+import static com.blog.TestUtils.clearDatabase;
+import static com.blog.TestUtils.equalToMasterDatabase;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 class PostgresDatabaseBackupTests extends ApplicationTests {
     private static final List<String> tableNames = new ArrayList<>(Arrays.asList("comments"));
     private static final Integer testTaskID = 0;
-    private TestUtils testUtils;
+
+    @Autowired
     private JdbcTemplate jdbcPostgresMasterTemplate;
+    @Autowired
     private JdbcTemplate jdbcPostgresSlaveTemplate;
+    @Autowired
     private DatabaseSettings masterPostgresDatabaseSettings;
+    @Autowired
     private DatabaseSettings slavePostgresDatabaseSettings;
-    private HashMap<StorageType, String> storageSettingsNameMap;
+    @Autowired
+    private Map<StorageType, String> storageSettingsNameMap;
+    @Autowired
     private DatabaseBackupManager databaseBackupManager;
+    @Autowired
     private BackupProcessorManager backupProcessorManager;
+    @Autowired
     private BackupLoadManager backupLoadManager;
+    @Autowired
     private BackupPropertiesManager backupPropertiesManager;
+    @Autowired
     private StorageSettingsManager storageSettingsManager;
+    @Autowired
     private DatabaseSettingsManager databaseSettingsManager;
     @Autowired
     private List<StorageSettings> allStorageSettings;
     @Autowired
     private List<DatabaseSettings> allDatabaseSettings;
 
-    @Autowired
-    void setStorageSettingsManager(StorageSettingsManager storageSettingsManager) {
-        this.storageSettingsManager = storageSettingsManager;
-    }
-
-    @Autowired
-    void setDatabaseSettingsManager(DatabaseSettingsManager databaseSettingsManager) {
-        this.databaseSettingsManager = databaseSettingsManager;
-    }
-
-    @Autowired
-    void setTestUtils(TestUtils testUtils) {
-        this.testUtils = testUtils;
-    }
-
-    @Autowired
-    void setJdbcPostgresMasterTemplate(JdbcTemplate jdbcPostgresMasterTemplate) {
-        this.jdbcPostgresMasterTemplate = jdbcPostgresMasterTemplate;
-    }
-
-    @Autowired
-    void setJdbcPostgresSlaveTemplate(JdbcTemplate jdbcPostgresSlaveTemplate) {
-        this.jdbcPostgresSlaveTemplate = jdbcPostgresSlaveTemplate;
-    }
-
-    @Autowired
-    void setMasterPostgresDatabaseSettings(DatabaseSettings masterPostgresDatabaseSettings) {
-        this.masterPostgresDatabaseSettings = masterPostgresDatabaseSettings;
-    }
-
-    @Autowired
-    void setSlavePostgresDatabaseSettings(DatabaseSettings slavePostgresDatabaseSettings) {
-        this.slavePostgresDatabaseSettings = slavePostgresDatabaseSettings;
-    }
-
-    @Autowired
-    public void setBackupPropertiesManager(BackupPropertiesManager backupPropertiesManager) {
-        this.backupPropertiesManager = backupPropertiesManager;
-    }
-
-    @Autowired
-    public void setStorageSettingsNameMap(HashMap<StorageType, String> storageSettingsNameMap) {
-        this.storageSettingsNameMap = storageSettingsNameMap;
-    }
-
-    @Autowired
-    void setDatabaseBackupManager(DatabaseBackupManager databaseBackupManager) {
-        this.databaseBackupManager = databaseBackupManager;
-    }
-
-    @Autowired
-    void setBackupProcessorManager(BackupProcessorManager backupProcessorManager) {
-        this.backupProcessorManager = backupProcessorManager;
-    }
-
-    @Autowired
-    void setBackupLoadManager(BackupLoadManager backupLoadManager) {
-        this.backupLoadManager = backupLoadManager;
-    }
-
     @BeforeEach
     void init() {
-        testUtils.clearDatabase(jdbcPostgresMasterTemplate);
-        testUtils.clearDatabase(jdbcPostgresSlaveTemplate);
+        clearDatabase(jdbcPostgresMasterTemplate);
+        clearDatabase(jdbcPostgresSlaveTemplate);
         storageSettingsManager.saveAll(allStorageSettings);
         databaseSettingsManager.saveAll(allDatabaseSettings);
         addTables(jdbcPostgresMasterTemplate);
@@ -123,15 +78,14 @@ class PostgresDatabaseBackupTests extends ApplicationTests {
     }
 
     @Test
-    void whenCreatePostgresBackupAndUploadToLocalFileSystemAndRestore_databasesIsEqual() throws IOException {
-        List<String> processors = new ArrayList<>();
+    void whenCreatePostgresBackupAndUploadToLocalFileSystemAndRestoreIntoSeparateDatabase_databasesAreEqual() throws IOException {
         String storageSettingsName = storageSettingsNameMap.get(StorageType.LOCAL_FILE_SYSTEM);
 
         try (
                 InputStream backupStream = databaseBackupManager.createBackup(masterPostgresDatabaseSettings, testTaskID)
         ) {
             BackupProperties backupProperties = backupPropertiesManager.initNewBackupProperties(
-                    Collections.singletonList(storageSettingsName), processors, masterPostgresDatabaseSettings.getName());
+                    storageSettingsName, null, masterPostgresDatabaseSettings.getName());
             backupLoadManager.uploadBackup(backupStream, backupProperties, testTaskID);
             try (
                     InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties.getBackupName(),
@@ -141,19 +95,18 @@ class PostgresDatabaseBackupTests extends ApplicationTests {
             }
         }
 
-        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresSlaveTemplate);
+        assertThat(jdbcPostgresMasterTemplate, equalToMasterDatabase(jdbcPostgresSlaveTemplate, tableNames));
     }
 
     @Test
-    void whenCreatePostgresBackupAndUploadToDropboxAndRestore_databasesIsEqual() throws IOException {
-        List<String> processors = new ArrayList<>();
+    void whenCreatePostgresBackupAndUploadToDropboxAndRestoreIntoSeparateDatabase_databasesAreEqual() throws IOException {
         String storageSettingsName = storageSettingsNameMap.get(StorageType.DROPBOX);
 
         try (
                 InputStream backupStream = databaseBackupManager.createBackup(masterPostgresDatabaseSettings, testTaskID)
         ) {
             BackupProperties backupProperties = backupPropertiesManager.initNewBackupProperties(
-                    Collections.singletonList(storageSettingsName), processors, masterPostgresDatabaseSettings.getName());
+                    storageSettingsName, null, masterPostgresDatabaseSettings.getName());
             backupLoadManager.uploadBackup(backupStream, backupProperties, testTaskID);
             try (
                     InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties.getBackupName(), storageSettingsName,
@@ -163,13 +116,14 @@ class PostgresDatabaseBackupTests extends ApplicationTests {
             }
         }
 
-        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresSlaveTemplate);
+        assertThat(jdbcPostgresMasterTemplate, equalToMasterDatabase(jdbcPostgresSlaveTemplate, tableNames));
     }
 
     @Test
-    void whenCreatePostgresBackupAndCompressAndUploadToLocalFileSystemAndDecompressAndRestore_databasesIsEqual() throws IOException {
-        List<String> processors = new ArrayList<>();
-        processors.add("Compressor");
+    void whenCreatePostgresBackupAndCompressAndUploadToLocalFileSystemAndDecompressAndRestoreIntoSeparateDatabase_databasesAreEqual()
+            throws IOException {
+        List<ProcessorType> processors = new ArrayList<>();
+        processors.add(ProcessorType.COMPRESSOR);
         String storageSettingsName = storageSettingsNameMap.get(StorageType.LOCAL_FILE_SYSTEM);
 
         try (
@@ -177,7 +131,7 @@ class PostgresDatabaseBackupTests extends ApplicationTests {
                 InputStream compressedBackup = backupProcessorManager.process(backupStream, processors)
         ) {
             BackupProperties backupProperties = backupPropertiesManager.initNewBackupProperties(
-                    Collections.singletonList(storageSettingsName), processors, masterPostgresDatabaseSettings.getName());
+                    storageSettingsName, processors, masterPostgresDatabaseSettings.getName());
             backupLoadManager.uploadBackup(compressedBackup, backupProperties, testTaskID);
             try (
                     InputStream downloadedBackup = backupLoadManager.downloadBackup(backupProperties.getBackupName(), storageSettingsName, testTaskID);
@@ -187,13 +141,14 @@ class PostgresDatabaseBackupTests extends ApplicationTests {
             }
         }
 
-        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresSlaveTemplate);
+        assertThat(jdbcPostgresMasterTemplate, equalToMasterDatabase(jdbcPostgresSlaveTemplate, tableNames));
     }
 
     @Test
-    void whenCreatePostgresBackupAndCompressAndUploadToDropboxAndDecompressAndRestore_databasesIsEqual() throws IOException {
-        List<String> processors = new ArrayList<>();
-        processors.add("Compressor");
+    void whenCreatePostgresBackupAndCompressAndUploadToDropboxAndDecompressAndRestoreIntoSeparateDatabase_databasesAreEqual()
+            throws IOException {
+        List<ProcessorType> processors = new ArrayList<>();
+        processors.add(ProcessorType.COMPRESSOR);
         String storageSettingsName = storageSettingsNameMap.get(StorageType.DROPBOX);
 
         try (
@@ -201,7 +156,7 @@ class PostgresDatabaseBackupTests extends ApplicationTests {
                 InputStream compressedBackup = backupProcessorManager.process(backupStream, processors)
         ) {
             BackupProperties backupProperties = backupPropertiesManager.initNewBackupProperties(
-                    Collections.singletonList(storageSettingsName), processors, masterPostgresDatabaseSettings.getName());
+                    storageSettingsName, processors, masterPostgresDatabaseSettings.getName());
             backupLoadManager.uploadBackup(compressedBackup, backupProperties, testTaskID);
 
             try (
@@ -212,6 +167,6 @@ class PostgresDatabaseBackupTests extends ApplicationTests {
             }
         }
 
-        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresSlaveTemplate);
+        assertThat(jdbcPostgresMasterTemplate, equalToMasterDatabase(jdbcPostgresSlaveTemplate, tableNames));
     }
 }

@@ -1,7 +1,6 @@
 package com.blog.controllers.WebApi;
 
 import com.blog.ApplicationTests;
-import com.blog.TestUtils;
 import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.database.DatabaseType;
@@ -11,9 +10,7 @@ import com.blog.entities.task.PlannedTask;
 import com.blog.manager.*;
 import com.blog.repositories.PlannedTasksRepository;
 import com.blog.webUI.formTransfer.WebAddPlannedTaskRequest;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
@@ -22,19 +19,18 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.blog.TestUtils.clearDatabase;
+import static com.blog.TestUtils.initDatabase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class WebApiCreatePlannedTaskControllerTests extends ApplicationTests {
     @Autowired
     private TestRestTemplate restTemplate;
-
-    @Autowired
-    private TestUtils testUtils;
 
     @Autowired
     private JdbcTemplate jdbcPostgresMasterTemplate;
@@ -45,11 +41,9 @@ class WebApiCreatePlannedTaskControllerTests extends ApplicationTests {
     @Autowired
     private StorageSettingsManager storageSettingsManager;
 
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
     @Autowired
-    private HashMap<StorageType, String> storageSettingsNameMap;
-
-    @Autowired
-    private HashMap<DatabaseType, String> databaseSettingsNameMap;
+    private Map<StorageType, String> storageSettingsNameMap;
 
     @Autowired
     private DatabaseSettings masterPostgresDatabaseSettings;
@@ -75,21 +69,22 @@ class WebApiCreatePlannedTaskControllerTests extends ApplicationTests {
     @Autowired
     private PlannedTasksManager plannedTasksManager;
 
+
     @Autowired
     private PlannedTasksRepository plannedTasksRepository;
-
-    @BeforeAll
-    void setup() {
-        databaseSettingsManager.saveAll(allDatabaseSettings);
-        storageSettingsManager.saveAll(allStorageSettings);
-        webApiClient.setRestTemplate(restTemplate);
-        webApiClient.login();
-    }
+    @Autowired
+    private Map<DatabaseType, String> databaseSettingsNameMap;
 
     @BeforeEach
     void init() {
-        testUtils.clearDatabase(jdbcPostgresMasterTemplate);
-        testUtils.initDatabase(jdbcPostgresMasterTemplate);
+        if (initialized.compareAndSet(false, true)) {
+            databaseSettingsManager.saveAll(allDatabaseSettings);
+            storageSettingsManager.saveAll(allStorageSettings);
+            webApiClient.setTestRestTemplate(restTemplate);
+        }
+
+        clearDatabase(jdbcPostgresMasterTemplate);
+        initDatabase(jdbcPostgresMasterTemplate);
     }
 
     //    @Test

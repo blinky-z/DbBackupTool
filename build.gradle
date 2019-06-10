@@ -19,38 +19,34 @@ test {
 
 dependencies {
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-jdbc
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-jdbc', version: '2.1.5.RELEASE'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-jdbc', version: '2.1.5.RELEASE'
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-web
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.1.5.RELEASE'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.1.5.RELEASE'
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-jpa
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.1.5.RELEASE'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.1.5.RELEASE'
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-security
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '2.1.5.RELEASE'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '2.1.5.RELEASE'
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-test
-    testCompile(group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '2.1.5.RELEASE') {
+    testImplementation(group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '2.1.5.RELEASE') {
         exclude group: 'junit', module: 'junit'
     }
     // https://mvnrepository.com/artifact/org.postgresql/postgresql
-    compile group: 'org.postgresql', name: 'postgresql', version: '42.2.5'
+    implementation group: 'org.postgresql', name: 'postgresql', version: '42.2.5'
     // https://mvnrepository.com/artifact/io.zonky.test/embedded-database-spring-test
-    testCompile group: 'io.zonky.test', name: 'embedded-database-spring-test', version: '1.4.1'
+    testImplementation group: 'io.zonky.test', name: 'embedded-database-spring-test', version: '1.4.1'
     runtime('org.postgresql:postgresql')
-    testCompile 'org.junit.jupiter:junit-jupiter-api:5.3.2'
-    testCompile 'org.junit.jupiter:junit-jupiter-params:5.3.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.3.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.2'
     implementation enforcedPlatform('io.zonky.test.postgres:embedded-postgres-binaries-bom:9.6.12')
     // https://mvnrepository.com/artifact/com.dropbox.core/dropbox-core-sdk
-    compile group: 'com.dropbox.core', name: 'dropbox-core-sdk', version: '3.1.0'
+    implementation group: 'com.dropbox.core', name: 'dropbox-core-sdk', version: '3.1.0'
     // https://mvnrepository.com/artifact/org.thymeleaf/thymeleaf
-    compile group: 'org.thymeleaf', name: 'thymeleaf', version: '3.0.11.RELEASE'
+    implementation group: 'org.thymeleaf', name: 'thymeleaf', version: '3.0.11.RELEASE'
     // https://mvnrepository.com/artifact/org.thymeleaf/thymeleaf-spring5
-    compile group: 'org.thymeleaf', name: 'thymeleaf-spring5', version: '3.0.11.RELEASE'
+    implementation group: 'org.thymeleaf', name: 'thymeleaf-spring5', version: '3.0.11.RELEASE'
     // https://mvnrepository.com/artifact/org.jetbrains/annotations
-    compile group: 'org.jetbrains', name: 'annotations', version: '17.0.0'
+    implementation group: 'org.jetbrains', name: 'annotations', version: '17.0.0'
     // https://mvnrepository.com/artifact/org.flywaydb/flyway-core
-    compile group: 'org.flywaydb', name: 'flyway-core', version: '5.2.4'
-    // https://mvnrepository.com/artifact/net.javacrumbs.shedlock/shedlock-parent
-    compile group: 'net.javacrumbs.shedlock', name: 'shedlock-parent', version: '2.5.0', ext: 'pom'
-    // https://mvnrepository.com/artifact/net.javacrumbs.shedlock/shedlock-provider-jdbc-template
-    compile group: 'net.javacrumbs.shedlock', name: 'shedlock-provider-jdbc-template', version: '2.5.0'
+    implementation group: 'org.flywaydb', name: 'flyway-core', version: '5.2.4'
 }

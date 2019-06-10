@@ -1,7 +1,6 @@
 package com.blog.controllers.WebApi;
 
 import com.blog.ApplicationTests;
-import com.blog.TestUtils;
 import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.database.DatabaseType;
@@ -12,43 +11,34 @@ import com.blog.manager.DatabaseSettingsManager;
 import com.blog.manager.StorageSettingsManager;
 import com.blog.webUI.formTransfer.WebCreateBackupRequest;
 import com.blog.webUI.formTransfer.WebDeleteBackupRequest;
-import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.blog.TestUtils.clearDatabase;
+import static com.blog.TestUtils.initDatabase;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class WebApiDeleteBackupControllerTests extends ApplicationTests {
     @Autowired
     private TestRestTemplate restTemplate;
 
     @Autowired
-    private TestUtils testUtils;
-
-    @Autowired
     private WebApiClient webApiClient;
 
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
     @Autowired
-    private HashMap<StorageType, String> storageSettingsNameMap;
-
-    @Autowired
-    private HashMap<DatabaseType, String> databaseSettingsNameMap;
+    private Map<StorageType, String> storageSettingsNameMap;
 
     @Autowired
     private JdbcTemplate jdbcPostgresMasterTemplate;
-
-    @Autowired
-    private JdbcTemplateLockProvider jdbcTemplateLockProvider;
 
     @Autowired
     private BackupPropertiesManager backupPropertiesManager;
@@ -64,20 +54,19 @@ class WebApiDeleteBackupControllerTests extends ApplicationTests {
 
     @Autowired
     private List<StorageSettings> allStorageSettings;
-
-    @BeforeAll
-    void setup() {
-        databaseSettingsManager.saveAll(allDatabaseSettings);
-        storageSettingsManager.saveAll(allStorageSettings);
-        webApiClient.setRestTemplate(restTemplate);
-        webApiClient.login();
-        jdbcTemplateLockProvider.clearCache();
-    }
+    @Autowired
+    private Map<DatabaseType, String> databaseSettingsNameMap;
 
     @BeforeEach
     void init() {
-        testUtils.clearDatabase(jdbcPostgresMasterTemplate);
-        testUtils.initDatabase(jdbcPostgresMasterTemplate);
+        if (initialized.compareAndSet(false, true)) {
+            databaseSettingsManager.saveAll(allDatabaseSettings);
+            storageSettingsManager.saveAll(allStorageSettings);
+            webApiClient.setTestRestTemplate(restTemplate);
+        }
+
+        clearDatabase(jdbcPostgresMasterTemplate);
+        initDatabase(jdbcPostgresMasterTemplate);
     }
 
     @Test
@@ -87,7 +76,7 @@ class WebApiDeleteBackupControllerTests extends ApplicationTests {
                     databaseSettingsNameMap.get(DatabaseType.POSTGRES), storageSettingsNameMap.get(StorageType.LOCAL_FILE_SYSTEM));
             webApiClient.createBackup(request);
 
-            webApiClient.waitForLastOperationComplete();
+            webApiClient.waitForLatestTaskToComplete();
         }
 
         {
@@ -97,7 +86,7 @@ class WebApiDeleteBackupControllerTests extends ApplicationTests {
             WebDeleteBackupRequest request = webApiClient.buildDeleteBackupRequest(backupProperties.getId());
             webApiClient.deleteBackup(request);
 
-            webApiClient.waitForLastOperationComplete();
+            webApiClient.waitForLatestTaskToComplete();
 
             assertFalse(backupPropertiesManager.existsById(backupProperties.getId()));
         }
@@ -110,7 +99,7 @@ class WebApiDeleteBackupControllerTests extends ApplicationTests {
                     databaseSettingsNameMap.get(DatabaseType.POSTGRES), storageSettingsNameMap.get(StorageType.DROPBOX));
             webApiClient.createBackup(request);
 
-            webApiClient.waitForLastOperationComplete();
+            webApiClient.waitForLatestTaskToComplete();
         }
 
         {
@@ -120,7 +109,7 @@ class WebApiDeleteBackupControllerTests extends ApplicationTests {
             WebDeleteBackupRequest request = webApiClient.buildDeleteBackupRequest(backupProperties.getId());
             webApiClient.deleteBackup(request);
 
-            webApiClient.waitForLastOperationComplete();
+            webApiClient.waitForLatestTaskToComplete();
 
             assertFalse(backupPropertiesManager.existsById(backupProperties.getId()));
         }

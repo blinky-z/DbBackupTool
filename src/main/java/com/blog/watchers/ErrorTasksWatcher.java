@@ -4,9 +4,6 @@ import com.blog.entities.task.ErrorTask;
 import com.blog.entities.task.Task;
 import com.blog.manager.ErrorTasksManager;
 import com.blog.manager.TasksManager;
-import net.javacrumbs.shedlock.core.LockConfiguration;
-import net.javacrumbs.shedlock.core.SimpleLock;
-import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +13,6 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -32,8 +28,6 @@ class ErrorTasksWatcher {
 
     private ErrorTasksManager errorTasksManager;
 
-    private JdbcTemplateLockProvider jdbcTemplateLockProvider;
-
     @Autowired
     public void setTasksManager(TasksManager tasksManager) {
         this.tasksManager = tasksManager;
@@ -44,14 +38,9 @@ class ErrorTasksWatcher {
         this.errorTasksManager = errorTasksManager;
     }
 
-    @Autowired
-    public void setJdbcTemplateLockProvider(JdbcTemplateLockProvider jdbcTemplateLockProvider) {
-        this.jdbcTemplateLockProvider = jdbcTemplateLockProvider;
-    }
-
     /**
-     * This watcher wakes up every time 1 minute passed from the last completion, checks backup states periodically and handles erroneous tasks
-     * if such exists.
+     * This watcher wakes up every time 1 minute passed from the last completion, checks backup states periodically and handles erroneous
+     * tasks if any.
      * <p>
      * The watcher handles at most N tasks as described by {@link #nRows} constant and skips already locked tasks.
      * <p>
@@ -74,19 +63,7 @@ class ErrorTasksWatcher {
                     continue;
                 }
 
-                Task task = optionalTask.get();
-
-                // we can't revert task if the one is still executing
-                // so we check the corresponding lock of the current task trying to acquire it
-                // lock will be released immediately if it has been acquired successfully
-                // TODO: убрать лок, он нужен только для запланированных, т.к. ошибочные таски сразу прекращают работу
-                Optional<SimpleLock> lock = jdbcTemplateLockProvider.lock(
-                        new LockConfiguration("taskLock" + task.getId(), Instant.now()));
-                if (!lock.isPresent()) {
-                    continue;
-                }
-
-                tasksManager.revertTask(task);
+                tasksManager.revertTask(optionalTask.get());
 
                 errorTasksManager.setErrorHandled(backupTaskId);
             }

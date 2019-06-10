@@ -1,8 +1,11 @@
 package com.blog;
 
 import org.apache.commons.io.IOUtils;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeDiagnosingMatcher;
+import org.hamcrest.TypeSafeMatcher;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,55 +14,37 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-@Component
 public class TestUtils {
+    private TestUtils() {
+    }
+
     private static final Random random = new Random();
 
     /**
-     * Compares tables not loading all table data in memory.
-     * Table must contain 'id' column.
+     * Hamcrest matcher for comparing tables content of two databases.
+     * <p>
+     * This matcher is not loading all table data in memory, but retrieves pages.
+     * <p>
+     * Tables must have INTEGER (serial) primary key 'id' column.
+     * <p>
+     * Example of using:
+     * <code>
+     * import static com.blog.TestUtils.*;
+     * <p>
+     * assertThat(slaveDatabase, equalToMasterDatabase(masterDatabase, tableNames));
+     * </code>
      *
-     * @param tableNames         table names to compare
-     * @param jdbcMasterTemplate the master database
-     * @param jdbcCopyTemplate   the slave database
+     * @param tableNames names of tables to compare
+     * @param expected   the master database
      */
-    public void compareLargeTables(List<String> tableNames, JdbcTemplate jdbcMasterTemplate, JdbcTemplate jdbcCopyTemplate) {
-        long startRangeId;
-        final long rowsPerQuery = 10000;
-
-        for (String tableName : tableNames) {
-            startRangeId = 0;
-
-            Integer masterRowsAmount = Objects.requireNonNull(
-                    jdbcMasterTemplate.queryForObject("select COUNT(*) from " + tableName, Integer.class));
-            Integer copyRowsAmount = Objects.requireNonNull(
-                    jdbcCopyTemplate.queryForObject("select COUNT(*) from " + tableName, Integer.class));
-
-            assertEquals(masterRowsAmount, copyRowsAmount);
-
-            int rows = masterRowsAmount.intValue();
-            while (startRangeId < rows) {
-                long endRangeId = startRangeId + rowsPerQuery;
-                if (endRangeId > rows) {
-                    endRangeId = rows;
-                }
-                List<Map<String, Object>> dataMaster = jdbcMasterTemplate.queryForList(
-                        "SELECT * FROM " + tableName + " WHERE id BETWEEN ? AND ?",
-                        startRangeId, endRangeId);
-                List<Map<String, Object>> dataCopy = jdbcCopyTemplate.queryForList(
-                        "SELECT * FROM " + tableName + " WHERE id BETWEEN ? AND ?",
-                        startRangeId, endRangeId);
-                startRangeId = endRangeId;
-
-                assertEquals(dataMaster, dataCopy);
-            }
-        }
+    public static Matcher<JdbcTemplate> equalToMasterDatabase(JdbcTemplate expected, List<String> tableNames) {
+        return new equalsToMaster(expected, tableNames);
     }
 
     /**
      * Initializes database with some tables.
+     * <p>
+     * <p>
      * Use it only when you need database contain some data (e.g. for storage upload testing) but not the table itself.
      * You should not rely on realization of this function - table name, columns and other params can be changed.
      * <p>
@@ -67,7 +52,7 @@ public class TestUtils {
      *
      * @param jdbcTemplate jdbc template to perform initializing on
      */
-    public void initDatabase(JdbcTemplate jdbcTemplate) {
+    public static void initDatabase(JdbcTemplate jdbcTemplate) {
         jdbcTemplate.execute("CREATE TABLE __comments" +
                 "(" +
                 "ID        SERIAL PRIMARY KEY," +
@@ -86,22 +71,24 @@ public class TestUtils {
 
     /**
      * Drops all tables in 'public' scheme.
+     * <p>
      * Scheme will not be deleted.
      *
      * @param jdbcTemplate jdbc template to perform cleaning on
      */
-    public void clearDatabase(JdbcTemplate jdbcTemplate) {
+    public static void clearDatabase(JdbcTemplate jdbcTemplate) {
         jdbcTemplate.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
     }
 
     /**
      * Returns stream content as byte array.
-     * Passed input stream will not be available for reading anymore
+     * <p>
+     * Passed input stream will not be available for reading anymore.
      *
      * @param inputStream input stream of which to make a byte array copy
      * @return content of stream as byte array
      */
-    public byte[] getStreamCopyAsByteArray(InputStream inputStream) {
+    public static byte[] getStreamCopyAsByteArray(InputStream inputStream) {
         try {
             return IOUtils.toByteArray(inputStream);
         } catch (IOException ex) {
@@ -109,32 +96,113 @@ public class TestUtils {
         }
     }
 
-
     /**
-     * Generates byte array with random content
+     * Generates byte array of given length with random content.
      *
      * @param length length of byte array to create
      * @return byte array filled with random bytes
      */
-    public byte[] getRandomBytes(int length) {
+    public static byte[] getRandomBytes(int length) {
         byte[] bytes = new byte[length];
         random.nextBytes(bytes);
         return bytes;
     }
 
     /**
-     * Compares content of two streams
-     * Both passed input stream will not be available for reading anymore
+     * Hamcrest matcher for comparing content of two streams.
+     * <p>
+     * Example of using:
+     * <code>
+     * import static com.blog.TestUtils.*;
+     * <p>
+     * assertThat(actualInputStream, equalToSourceInputStream(sourceInputStream));
+     * </code>
+     * Both passed input stream will not be available for reading anymore.
      *
-     * @param in1 the first stream
-     * @param in2 the second stream
+     * @param expected expected stream content
      * @return true if content of both streams are equal, false otherwise
      */
-    public boolean streamsContentEquals(InputStream in1, InputStream in2) {
-        try {
-            return IOUtils.contentEquals(in1, in2);
-        } catch (IOException ex) {
-            throw new RuntimeException("Error occurred while comparing content of streams", ex);
+    public static Matcher<InputStream> equalToSourceInputStream(InputStream expected) {
+        return new equalsToSourceStream(expected);
+    }
+
+    private static final class equalsToMaster extends TypeSafeDiagnosingMatcher<JdbcTemplate> {
+        private JdbcTemplate slaveJdbcTemplate;
+        private List<String> tableNames;
+
+        equalsToMaster(JdbcTemplate slaveJdbcTemplate, List<String> tableNames) {
+            this.slaveJdbcTemplate = slaveJdbcTemplate;
+            this.tableNames = tableNames;
+        }
+
+        @Override
+        protected boolean matchesSafely(final JdbcTemplate masterJdbcTemplate, final Description mismatchDescription) {
+            long startRangeId;
+            final long rowsPerQuery = 10000;
+
+            for (String tableName : tableNames) {
+                startRangeId = 0;
+
+                Integer masterRowsAmount = Objects.requireNonNull(
+                        masterJdbcTemplate.queryForObject("select COUNT(*) from " + tableName, Integer.class));
+                Integer slaveRowsAmount = Objects.requireNonNull(
+                        slaveJdbcTemplate.queryForObject("select COUNT(*) from " + tableName, Integer.class));
+
+                if (!slaveRowsAmount.equals(masterRowsAmount)) {
+                    mismatchDescription.appendText(
+                            "Table [" + tableName + "]: slave database rows amount is not equal to master: " + slaveRowsAmount + " - " + masterJdbcTemplate);
+                    return false;
+                }
+
+                int rows = masterRowsAmount;
+                while (startRangeId < rows) {
+                    long endRangeId = startRangeId + rowsPerQuery;
+                    if (endRangeId > rows) {
+                        endRangeId = rows;
+                    }
+                    List<Map<String, Object>> dataMaster = masterJdbcTemplate.queryForList(
+                            "SELECT * FROM " + tableName + " WHERE id BETWEEN ? AND ?",
+                            startRangeId, endRangeId);
+                    List<Map<String, Object>> dataSlave = slaveJdbcTemplate.queryForList(
+                            "SELECT * FROM " + tableName + " WHERE id BETWEEN ? AND ?",
+                            startRangeId, endRangeId);
+                    startRangeId = endRangeId;
+
+                    if (!dataSlave.equals(dataMaster)) {
+                        mismatchDescription.appendText(
+                                "Table [" + tableName + "]: content was not equal");
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendText("Database tables content must be equal");
+        }
+    }
+
+    private static final class equalsToSourceStream extends TypeSafeMatcher<InputStream> {
+        private InputStream expected;
+
+        equalsToSourceStream(InputStream expected) {
+            this.expected = expected;
+        }
+
+        @Override
+        protected boolean matchesSafely(InputStream actual) {
+            try {
+                return IOUtils.contentEquals(expected, actual);
+            } catch (IOException ex) {
+                throw new RuntimeException("Error occurred while comparing content of streams", ex);
+            }
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendText("Streams content are not equal");
         }
     }
 }

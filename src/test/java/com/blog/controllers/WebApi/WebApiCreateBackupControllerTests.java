@@ -1,7 +1,6 @@
 package com.blog.controllers.WebApi;
 
 import com.blog.ApplicationTests;
-import com.blog.TestUtils;
 import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.database.DatabaseType;
@@ -9,11 +8,8 @@ import com.blog.entities.storage.StorageSettings;
 import com.blog.entities.storage.StorageType;
 import com.blog.manager.*;
 import com.blog.webUI.formTransfer.WebCreateBackupRequest;
-import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
@@ -23,23 +19,19 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.blog.TestUtils.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class WebApiCreateBackupControllerTests extends ApplicationTests {
     private static final Integer testTaskID = 0;
 
     @Autowired
     private TestRestTemplate restTemplate;
-    @Autowired
-    private JdbcTemplateLockProvider jdbcTemplateLockProvider;
-
-    @Autowired
-    private TestUtils testUtils;
 
     @Autowired
     private JdbcTemplate jdbcPostgresMasterTemplate;
@@ -50,11 +42,9 @@ class WebApiCreateBackupControllerTests extends ApplicationTests {
     @Autowired
     private StorageSettingsManager storageSettingsManager;
 
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
     @Autowired
-    private HashMap<StorageType, String> storageSettingsNameMap;
-
-    @Autowired
-    private HashMap<DatabaseType, String> databaseSettingsNameMap;
+    private Map<StorageType, String> storageSettingsNameMap;
 
     @Autowired
     private DatabaseSettings masterPostgresDatabaseSettings;
@@ -76,20 +66,19 @@ class WebApiCreateBackupControllerTests extends ApplicationTests {
 
     @Autowired
     private List<StorageSettings> allStorageSettings;
-
-    @BeforeAll
-    void setup() {
-        databaseSettingsManager.saveAll(allDatabaseSettings);
-        storageSettingsManager.saveAll(allStorageSettings);
-        webApiClient.setRestTemplate(restTemplate);
-        webApiClient.login();
-        jdbcTemplateLockProvider.clearCache();
-    }
+    @Autowired
+    private Map<DatabaseType, String> databaseSettingsNameMap;
 
     @BeforeEach
     void init() {
-        testUtils.clearDatabase(jdbcPostgresMasterTemplate);
-        testUtils.initDatabase(jdbcPostgresMasterTemplate);
+        if (initialized.compareAndSet(false, true)) {
+            databaseSettingsManager.saveAll(allDatabaseSettings);
+            storageSettingsManager.saveAll(allStorageSettings);
+            webApiClient.setTestRestTemplate(restTemplate);
+        }
+
+        clearDatabase(jdbcPostgresMasterTemplate);
+        initDatabase(jdbcPostgresMasterTemplate);
     }
 
     @Test
@@ -103,7 +92,7 @@ class WebApiCreateBackupControllerTests extends ApplicationTests {
 
         assertEquals(HttpStatus.FOUND, resp.getStatusCode());
 
-        webApiClient.waitForLastOperationComplete();
+        webApiClient.waitForLatestTaskToComplete();
 
         Collection<BackupProperties> backupPropertiesCollection = backupPropertiesManager.findAllByOrderByIdDesc();
         BackupProperties backupProperties = backupPropertiesCollection.iterator().next();
@@ -113,7 +102,7 @@ class WebApiCreateBackupControllerTests extends ApplicationTests {
                 InputStream downloadedBackup = backupLoadManager.downloadBackup(
                         backupProperties.getBackupName(), storageSettingsName, testTaskID)
         ) {
-            assertTrue(testUtils.streamsContentEquals(in, downloadedBackup));
+            assertThat(downloadedBackup, equalToSourceInputStream(in));
         }
     }
 
@@ -127,7 +116,7 @@ class WebApiCreateBackupControllerTests extends ApplicationTests {
 
         assertEquals(HttpStatus.FOUND, resp.getStatusCode());
 
-        webApiClient.waitForLastOperationComplete();
+        webApiClient.waitForLatestTaskToComplete();
 
         Collection<BackupProperties> backupPropertiesCollection = backupPropertiesManager.findAllByOrderByIdDesc();
         BackupProperties backupProperties = backupPropertiesCollection.iterator().next();
@@ -137,7 +126,7 @@ class WebApiCreateBackupControllerTests extends ApplicationTests {
                 InputStream downloadedBackup = backupLoadManager.downloadBackup(
                         backupProperties.getBackupName(), storageSettingsName, testTaskID)
         ) {
-            assertTrue(testUtils.streamsContentEquals(in, downloadedBackup));
+            assertThat(downloadedBackup, equalToSourceInputStream(in));
         }
     }
 }

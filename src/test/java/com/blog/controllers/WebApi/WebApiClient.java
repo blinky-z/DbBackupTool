@@ -7,7 +7,7 @@ import com.blog.entities.storage.StorageType;
 import com.blog.entities.task.Task;
 import com.blog.manager.ErrorTasksManager;
 import com.blog.manager.TasksManager;
-import com.blog.service.processor.Processor;
+import com.blog.service.processor.ProcessorType;
 import com.blog.settings.UserSettings;
 import com.blog.webUI.formTransfer.*;
 import com.blog.webUI.formTransfer.database.WebPostgresSettings;
@@ -19,17 +19,23 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
+import org.springframework.http.client.ClientHttpRequestExecution;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
 class WebApiClient {
-    private TestRestTemplate restTemplate;
+    private static final Logger logger = LoggerFactory.getLogger(WebApiClient.class);
+
+    private TestRestTemplate testRestTemplate;
 
     @Autowired
     private StorageSettings localFileSystemStorageSettings;
@@ -51,7 +57,7 @@ class WebApiClient {
 
     private String jsessionId = null;
 
-    void login() {
+    private void login() {
         if (jsessionId == null) {
             String jsessionCookie;
             HttpHeaders headers = new HttpHeaders();
@@ -63,7 +69,7 @@ class WebApiClient {
 
             HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
 
-            ResponseEntity<String> resp = restTemplate.exchange(
+            ResponseEntity<String> resp = testRestTemplate.exchange(
                     "/api/login", HttpMethod.POST, entity, String.class);
 
             jsessionCookie = Objects.requireNonNull(resp.getHeaders().getFirst(HttpHeaders.SET_COOKIE));
@@ -72,23 +78,33 @@ class WebApiClient {
         }
     }
 
-    void setRestTemplate(TestRestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
+    void setTestRestTemplate(TestRestTemplate testRestTemplate) {
+        this.testRestTemplate = testRestTemplate;
+        login();
+
+        testRestTemplate.getRestTemplate().getInterceptors().add(new ClientHttpRequestInterceptor() {
+            @Override
+            public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution) throws IOException {
+                request.getHeaders().add("Cookie", jsessionId);
+                logger.debug("Client request: {URL: {}, Method: {}, Headers: {}}", request.getURI(), request.getMethod(), request.getHeaders());
+                return execution.execute(request, body);
+            }
+        });
+
+        this.testRestTemplate = testRestTemplate;
     }
 
-    void waitForLastOperationComplete() throws InterruptedException {
+    void waitForLatestTaskToComplete() throws InterruptedException {
         Iterable<Task> backupTaskCollection = tasksManager.findAllByOrderByDateDesc();
         Task task = backupTaskCollection.iterator().next();
         Integer id = task.getId();
 
-        System.out.println("waiting...");
         while (tasksManager.findById(id).get().getState() != Task.State.COMPLETED) {
             if (errorTasksManager.isError(id)) {
                 throw new RuntimeException("Error occurred while executing task");
             }
-            Thread.yield();
+            Thread.sleep(1000);
         }
-        System.out.println("completed");
     }
 
     WebDeleteBackupRequest buildDeleteBackupRequest(Integer backupId) {
@@ -131,12 +147,12 @@ class WebApiClient {
     }
 
     WebAddPlannedTaskRequest buildAddPlannedTaskRequest(String databaseSettingsName, Collection<String> storageSettingsNameList,
-                                                        @Nullable List<Processor> processors, Duration interval) {
+                                                        @Nullable List<ProcessorType> processors, Duration interval) {
         WebAddPlannedTaskRequest webAddPlannedTaskRequest = new WebAddPlannedTaskRequest();
         webAddPlannedTaskRequest.setDatabaseSettingsName(databaseSettingsName);
         webAddPlannedTaskRequest.setStorageSettingsNameList(new ArrayList<>(storageSettingsNameList));
         if (processors != null) {
-            webAddPlannedTaskRequest.setProcessors(processors.stream().map(Processor::getName).collect(Collectors.toList()));
+            webAddPlannedTaskRequest.setProcessors(processors.stream().map(ProcessorType::getProcessorAsString).collect(Collectors.toList()));
         }
         webAddPlannedTaskRequest.setInterval(String.valueOf(interval.getSeconds()));
 
@@ -238,7 +254,7 @@ class WebApiClient {
 
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(body, httpHeaders);
 
-        return restTemplate.exchange("/database", HttpMethod.POST, entity, String.class);
+        return testRestTemplate.exchange("/database", HttpMethod.POST, entity, String.class);
     }
 
     ResponseEntity<String> deleteDatabase(@Nullable String settingsName) {
@@ -251,7 +267,7 @@ class WebApiClient {
 
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(body, httpHeaders);
 
-        return restTemplate.exchange("/database", HttpMethod.DELETE, entity, String.class);
+        return testRestTemplate.exchange("/database", HttpMethod.DELETE, entity, String.class);
     }
 
     ResponseEntity<String> addStorage(WebAddStorageRequest request) {
@@ -284,7 +300,7 @@ class WebApiClient {
 
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(body, httpHeaders);
 
-        return restTemplate.exchange("/storage", HttpMethod.POST, entity, String.class);
+        return testRestTemplate.exchange("/storage", HttpMethod.POST, entity, String.class);
     }
 
     ResponseEntity<String> deleteStorage(@Nullable String settingsName) {
@@ -297,7 +313,7 @@ class WebApiClient {
 
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(body, httpHeaders);
 
-        return restTemplate.exchange("/storage", HttpMethod.DELETE, entity, String.class);
+        return testRestTemplate.exchange("/storage", HttpMethod.DELETE, entity, String.class);
     }
 
     ResponseEntity<String> createBackup(WebCreateBackupRequest request) {
@@ -312,7 +328,7 @@ class WebApiClient {
 
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(body, httpHeaders);
 
-        return restTemplate.postForEntity("/create-backup", entity, String.class);
+        return testRestTemplate.postForEntity("/create-backup", entity, String.class);
     }
 
     ResponseEntity<String> deleteBackup(WebDeleteBackupRequest request) {
@@ -325,7 +341,7 @@ class WebApiClient {
 
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(body, httpHeaders);
 
-        return restTemplate.exchange("/delete-backup", HttpMethod.DELETE, entity, String.class);
+        return testRestTemplate.exchange("/delete-backup", HttpMethod.DELETE, entity, String.class);
     }
 
     ResponseEntity<String> restoreBackup(WebRestoreBackupRequest request) {
@@ -340,7 +356,7 @@ class WebApiClient {
 
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(body, httpHeaders);
 
-        return restTemplate.exchange("/restore-backup", HttpMethod.POST, entity, String.class);
+        return testRestTemplate.exchange("/restore-backup", HttpMethod.POST, entity, String.class);
     }
 
     ResponseEntity<String> addPlannedTask(WebAddPlannedTaskRequest request) {
@@ -356,6 +372,6 @@ class WebApiClient {
 
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(body, httpHeaders);
 
-        return restTemplate.exchange("/add-planned-task", HttpMethod.POST, entity, String.class);
+        return testRestTemplate.exchange("/add-planned-task", HttpMethod.POST, entity, String.class);
     }
 }

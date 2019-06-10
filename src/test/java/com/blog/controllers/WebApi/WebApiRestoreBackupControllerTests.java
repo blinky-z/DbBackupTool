@@ -1,7 +1,6 @@
 package com.blog.controllers.WebApi;
 
 import com.blog.ApplicationTests;
-import com.blog.TestUtils;
 import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.database.DatabaseType;
@@ -12,44 +11,38 @@ import com.blog.manager.DatabaseSettingsManager;
 import com.blog.manager.StorageSettingsManager;
 import com.blog.webUI.formTransfer.WebCreateBackupRequest;
 import com.blog.webUI.formTransfer.WebRestoreBackupRequest;
-import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+import static com.blog.TestUtils.clearDatabase;
+import static com.blog.TestUtils.equalToMasterDatabase;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 class WebApiRestoreBackupControllerTests extends ApplicationTests {
     private static final java.util.List<String> tableNames = new ArrayList<>(Arrays.asList("comments"));
 
     @Autowired
     private TestRestTemplate restTemplate;
     @Autowired
-    private TestUtils testUtils;
-    @Autowired
     private JdbcTemplate jdbcPostgresMasterTemplate;
     @Autowired
     private JdbcTemplate jdbcPostgresSlaveTemplate;
-    @Autowired
-    private JdbcTemplateLockProvider jdbcTemplateLockProvider;
     @Autowired
     private BackupPropertiesManager backupPropertiesManager;
     @Autowired
     private WebApiClient webApiClient;
 
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
     @Autowired
-    private HashMap<StorageType, String> storageSettingsNameMap;
-
+    private Map<StorageType, String> storageSettingsNameMap;
     @Autowired
-    private HashMap<DatabaseType, String> databaseSettingsNameMap;
-
-    @Autowired
-    private HashMap<DatabaseType, String> slaveDatabaseSettingsNameMap;
+    private Map<DatabaseType, String> databaseSettingsNameMap;
 
     @Autowired
     private DatabaseSettingsManager databaseSettingsManager;
@@ -62,6 +55,8 @@ class WebApiRestoreBackupControllerTests extends ApplicationTests {
 
     @Autowired
     private List<StorageSettings> allStorageSettings;
+    @Autowired
+    private Map<DatabaseType, String> slaveDatabaseSettingsNameMap;
 
     private void addTables(JdbcTemplate jdbcTemplate) {
         jdbcTemplate.execute("CREATE TABLE comments" +
@@ -80,19 +75,16 @@ class WebApiRestoreBackupControllerTests extends ApplicationTests {
                 "from generate_series(0, ?) s(i)", rowsToInsert);
     }
 
-    @BeforeAll
-    void setup() {
-        databaseSettingsManager.saveAll(allDatabaseSettings);
-        storageSettingsManager.saveAll(allStorageSettings);
-        webApiClient.setRestTemplate(restTemplate);
-        webApiClient.login();
-        jdbcTemplateLockProvider.clearCache();
-    }
-
     @BeforeEach
     void init() {
-        testUtils.clearDatabase(jdbcPostgresMasterTemplate);
-        testUtils.clearDatabase(jdbcPostgresSlaveTemplate);
+        if (initialized.compareAndSet(false, true)) {
+            databaseSettingsManager.saveAll(allDatabaseSettings);
+            storageSettingsManager.saveAll(allStorageSettings);
+            webApiClient.setTestRestTemplate(restTemplate);
+        }
+
+        clearDatabase(jdbcPostgresMasterTemplate);
+        clearDatabase(jdbcPostgresSlaveTemplate);
         addTables(jdbcPostgresMasterTemplate);
     }
 
@@ -104,7 +96,7 @@ class WebApiRestoreBackupControllerTests extends ApplicationTests {
                     databaseSettingsNameMap.get(DatabaseType.POSTGRES), storageSettingsName);
             webApiClient.createBackup(request);
 
-            webApiClient.waitForLastOperationComplete();
+            webApiClient.waitForLatestTaskToComplete();
         }
 
         {
@@ -115,11 +107,10 @@ class WebApiRestoreBackupControllerTests extends ApplicationTests {
                     backupProperties.getId(), storageSettingsName, slaveDatabaseSettingsNameMap.get(DatabaseType.POSTGRES));
             webApiClient.restoreBackup(request);
 
-            webApiClient.waitForLastOperationComplete();
+            webApiClient.waitForLatestTaskToComplete();
         }
 
-        // assert successful restoration
-        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresSlaveTemplate);
+        assertThat(jdbcPostgresMasterTemplate, equalToMasterDatabase(jdbcPostgresSlaveTemplate, tableNames));
     }
 
     @Test
@@ -130,7 +121,7 @@ class WebApiRestoreBackupControllerTests extends ApplicationTests {
                     databaseSettingsNameMap.get(DatabaseType.POSTGRES), storageSettingsName);
             webApiClient.createBackup(request);
 
-            webApiClient.waitForLastOperationComplete();
+            webApiClient.waitForLatestTaskToComplete();
         }
 
         {
@@ -141,10 +132,9 @@ class WebApiRestoreBackupControllerTests extends ApplicationTests {
                     backupProperties.getId(), storageSettingsName, slaveDatabaseSettingsNameMap.get(DatabaseType.POSTGRES));
             webApiClient.restoreBackup(request);
 
-            webApiClient.waitForLastOperationComplete();
+            webApiClient.waitForLatestTaskToComplete();
         }
 
-        // assert successful restoration
-        testUtils.compareLargeTables(tableNames, jdbcPostgresMasterTemplate, jdbcPostgresSlaveTemplate);
+        assertThat(jdbcPostgresMasterTemplate, equalToMasterDatabase(jdbcPostgresSlaveTemplate, tableNames));
     }
 }

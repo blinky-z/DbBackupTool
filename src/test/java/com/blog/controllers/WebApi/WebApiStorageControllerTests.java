@@ -10,20 +10,19 @@ import com.blog.webUI.formTransfer.WebAddStorageRequest;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class WebApiStorageControllerTests extends ApplicationTests {
     @Autowired
     private TestRestTemplate restTemplate;
@@ -33,14 +32,10 @@ class WebApiStorageControllerTests extends ApplicationTests {
     @Autowired
     private WebApiClient webApiClient;
 
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
+
     private static Matcher<StorageSettings> isEqualToDto(WebAddStorageRequest dto) {
         return new equalsToDto(dto);
-    }
-
-    @BeforeAll
-    void setup() {
-        webApiClient.setRestTemplate(restTemplate);
-        webApiClient.login();
     }
 
     @Test
@@ -113,6 +108,13 @@ class WebApiStorageControllerTests extends ApplicationTests {
         assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
     }
 
+    @BeforeEach
+    void init() {
+        if (initialized.compareAndSet(false, true)) {
+            webApiClient.setTestRestTemplate(restTemplate);
+        }
+    }
+
     private static final class equalsToDto extends TypeSafeMatcher<StorageSettings> {
         private WebAddStorageRequest dto;
 
@@ -156,7 +158,12 @@ class WebApiStorageControllerTests extends ApplicationTests {
 
         @Override
         public void describeTo(Description description) {
-            description.appendText("Entity should be equal to DTO: " + dto.toString());
+            description.appendText("Entity should be equal to DTO").appendValue(dto);
+        }
+
+        @Override
+        protected void describeMismatchSafely(StorageSettings item, Description mismatchDescription) {
+            mismatchDescription.appendText("was").appendValue(item);
         }
     }
 }
