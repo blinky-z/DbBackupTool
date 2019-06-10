@@ -6,38 +6,32 @@ import org.jetbrains.annotations.Nullable;
 import java.io.InputStream;
 
 /**
- * This interface provides API to work with backup on storages.
- * <p>
- * All storage services implementing this interface should obey the following rules:
+ * This interface provides API to manage backup on storage.
+ *
+ * @implSpec All classes implementing this interface should obey the following rules:
  * <ul>
  * <li>Upload/download/delete strategy is based on backup name - backup name is an identifier of the backup.
  * It is not mandatory to use backup name in internal representation, but passing backup name to any of the interface methods should have
  * proper effect.</li>
- * <li>If any of the interface methods run additional threads they should notify about occurred exception using
- * {@link com.blog.service.ErrorCallbackService} and properly release all resources. Main thread can throw an exception directly.</li>
+ * <li>If any of the interface methods run additional threads these threads should notify about occurred exception using
+ * {@link com.blog.service.ErrorCallbackService} and properly release all resources.</li>
+ * <li>Main thread should throw an exception directly (wrapped in {@link RuntimeException})</li>
  * </ul>
- *
- * @implSpec Handling of {@link InterruptedException} and {@link java.io.InterruptedIOException}.
- * <ul>
- * <li>
- * Method {@link #uploadBackup(InputStream, StorageSettings, String, Integer)}: this method always run in separate thread.
- * When backup related task is canceled, thread will be interrupted and the output stream on the other side will be closed.
- * So, if you are blocked on {@link InputStream#read()} operation, it will immediately return and throw
- * {@link java.io.InterruptedIOException}. This exception will be thrown even if interrupt occurred before calling of read operation.
- * </li>
- * <li>
- * Method {@link #downloadBackup(StorageSettings, String, Integer)}: this method is not run in separate thread, but in the main thread.
- * If an any exception occurs while executing this method, you can safely return {@literal null}. Also, if {@link InterruptedException}
- * occurs you don't need to re-throw it, but just return {@literal null}.
- * If backup related task is canceled, returned input stream will be closed. That is, if you have a thread that writes to this stream,
- * it will get an {@link java.io.IOException} on next call of {@link java.io.OutputStream#write(int)}.
- * </li>
- * <li>
- * Method {@link #deleteBackup(StorageSettings, String, Integer)}: this method always run in separate thread.
- * If backup related task is canceled, thread will be interrupted.
- * It is not mandatory to check the interrupt flag, so backup can be fully deleted from storage.
- * </li>
- * </ul>
+ * <p>
+ * <b>Handling of {@link InterruptedException} and {@link java.io.InterruptedIOException}:</b>
+ * <p>
+ * The thread where any of the interface functions is executing may be interrupted.
+ * <p>
+ * Usually you don't want to check the interrupt flag manually, because if you <b>attempt to call</b> or already called any operation that
+ * can throw {@link InterruptedException} or any blocking I/O operation and thread was interrupted (either before calling or while thread
+ * was blocked on the call) {@link InterruptedException} or {@link java.io.InterruptedIOException} exception will be thrown.
+ * <p>
+ * But if you do (e.g in the {@link #deleteBackup(StorageSettings, String, Integer)} where may be no blocking I/O calls),
+ * remember that {@link Thread#interrupted()} clears the interrupt flag.
+ * <p>
+ * If an interrupt occurs, you should properly stop the work and make all the additional threads stop the work too (if any run).
+ * You don't need to report (throwing an exception or using {@link com.blog.service.ErrorCallbackService}) about occurred interrupt neither
+ * from the main thread nor additional threads.
  * @see com.blog.service.TasksStarterService
  * @see com.blog.manager.BackupLoadManager
  * @see StorageConstants
@@ -49,7 +43,7 @@ public interface Storage {
      * @param in              the input stream to read backup from
      * @param storageSettings storage settings to access storage where backup stored
      * @param backupName      backup name
-     * @param id              backup upload task ID
+     * @param id              backup uploading task ID
      */
     void uploadBackup(InputStream in, StorageSettings storageSettings, String backupName, Integer id);
 
@@ -58,8 +52,9 @@ public interface Storage {
      *
      * @param storageSettings storage settings to access storage where backup stored
      * @param backupName      backup name
-     * @param id              backup download task ID
+     * @param id              backup downloading task ID
      * @return input stream, from which backup can be read after download complete
+     * @implSpec if an interrupt occurs, you can safely return {@literal null}.
      */
     @Nullable
     InputStream downloadBackup(StorageSettings storageSettings, String backupName, Integer id);
