@@ -135,7 +135,7 @@ public class WebFrontController {
         {
             List<WebDatabaseItem> databaseList = new ArrayList<>();
 
-            for (DatabaseSettings databaseSettings : databaseSettingsManager.getAllByType(DatabaseType.POSTGRES)) {
+            for (DatabaseSettings databaseSettings : databaseSettingsManager.findAllByType(DatabaseType.POSTGRES)) {
                 HashMap<String, String> webDatabaseProperties = new HashMap<>();
                 webDatabaseProperties.put("Settings name", databaseSettings.getSettingsName());
                 webDatabaseProperties.put("Host", databaseSettings.getHost());
@@ -187,6 +187,7 @@ public class WebFrontController {
                         .withId(task.getId())
                         .withType(task.getType().toString())
                         .withState(task.getState().toString())
+                        .withInterrupted(task.getInterrupted())
                         .withTime(webDateFormatter.format(task.getDate()))
                         .build();
 

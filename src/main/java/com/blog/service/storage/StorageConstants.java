@@ -4,7 +4,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
- * This utility class contains various default constants that can be useful at implementing {@link Storage} interface.
+ * This is utility class that contains various default constants that can be useful at implementing {@link Storage} interface.
  * <p>
  * Using of these constant is optional, but desirable to keep uniform style of backups on all storages.
  */

@@ -7,8 +7,8 @@
     <meta content="" name="description">
     <title>Dashboard - Database Backup Tool</title>
 
-    <link href="css/bootstrap.css" rel="stylesheet">
-    <link href="css/dashboard.css" rel="stylesheet">
+    <link href="/static/css/bootstrap.css" rel="stylesheet" th:href="@{css/bootstrap.css}">
+    <link href="/static/css/dashboard.css" rel="stylesheet" th:href="@{css/dashboard.css}">
 </head>
 <body>
 <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
@@ -29,42 +29,48 @@
                     <li class="nav-item">
                         <a aria-controls="dashboard" aria-selected="true" class="nav-link active" data-toggle="tab" href="#dashboard"
                            id="dashboard-tab" role="tab">
-                            <img alt="" height="20px" src="/images/home-tab-icon.png" width="20px">
+                            <img alt="" height="20px" src="/static/images/home-tab-icon.png" th:src="@{images/home-tab-icon.png}"
+                                 width="20px">
                             Home <span class="sr-only">(current)</span>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a aria-controls="storage" aria-selected="false" class="nav-link" data-toggle="tab" href="#storage"
                            id="storage-tab" role="tab">
-                            <img alt="" height="20px" src="/images/storage-tab-icon.png" width="20px">
+                            <img alt="" height="20px" src="/static/images/storage-tab-icon.png" th:src="@{images/storage-tab-icon.png}"
+                                 width="20px">
                             Manage storages
                         </a>
                     </li>
                     <li class="nav-item">
                         <a aria-controls="database" aria-selected="false" class="nav-link" data-toggle="tab" href="#database"
                            id="database-tab" role="tab">
-                            <img alt="" height="20px" src="/images/database-tab-icon.png" width="20px">
+                            <img alt="" height="20px" src="/static/images/database-tab-icon.png" th:src="@{images/database-tab-icon.png}"
+                                 width="20px">
                             Manage databases
                         </a>
                     </li>
                     <li class="nav-item">
                         <a aria-controls="backups" aria-selected="false" class="nav-link" data-toggle="tab" href="#backups"
                            id="backupts-tab" role="tab">
-                            <img alt="" height="20px" src="/images/manage-backups-icon.png" width="20px">
+                            <img alt="" height="20px" src="/static/images/manage-backups-icon.png"
+                                 th:src="@{images/manage-backups-icon.png}" width="20px">
                             Manage backups
                         </a>
                     </li>
                     <li class="nav-item">
                         <a aria-controls="create-backup" aria-selected="false" class="nav-link" data-toggle="tab" href="#create-backup"
                            id="create-backup-tab" role="tab">
-                            <img alt="" height="20px" src="/images/createBackup-tab-icon.png" width="20px">
+                            <img alt="" height="20px" src="/static/images/createBackup-tab-icon.png"
+                                 th:src="@{images/createBackup-tab-icon.png}" width="20px">
                             Create Backup
                         </a>
                     </li>
                     <li class="nav-item">
                         <a aria-controls="restore-backup" aria-selected="false" class="nav-link" data-toggle="tab" href="#restore-backup"
                            id="restore-backup-tab" role="tab">
-                            <img alt="" height="20px" src="/images/restoreBackup-tab-icon.png" width="20px">
+                            <img alt="" height="20px" src="/static/images/restoreBackup-tab-icon.png"
+                                 th:src="@{images/restoreBackup-tab-icon.png}" width="20px">
                             Restore Backup
                         </a>
                     </li>
@@ -72,7 +78,8 @@
                         <a aria-controls="add-planned-task" aria-selected="false" class="nav-link" data-toggle="tab"
                            href="#add-planned-task"
                            id="add-planned-task-tab" role="tab">
-                            <img alt="" height="20px" src="/images/add-planned-task-tab-icon.png" width="20px">
+                            <img alt="" height="20px" src="/static/images/add-planned-task-tab-icon.png"
+                                 th:src="@{images/add-planned-task-tab-icon.png}" width="20px">
                             Add planned task
                         </a>
                     </li>
@@ -93,7 +100,8 @@
                             <thead class="thead-dark">
                             <tr>
                                 <th class="col-md-2" scope="col">Task</th>
-                                <th class="col-md-6" scope="col">State</th>
+                                <th class="col-md-4" scope="col">State</th>
+                                <th class="col-md-4" scope="col">State</th>
                                 <th class="col-md-3" scope="col">Creation time</th>
                             </tr>
                             </thead>
@@ -101,6 +109,7 @@
                             <tr th:each="backupTask: ${backupTasks}" th:object="${backupTask}">
                                 <th scope="row" th:text="*{type}"></th>
                                 <td th:text="*{state}"></td>
+                                <td th:text="*{interrupted}"></td>
                                 <td th:text="*{time}"></td>
                             </tr>
                             </tbody>
@@ -456,9 +465,15 @@
 
                         <p>Apply Processors:</p>
                         <div class="form-group form-check custom-checkbox custom-control mb-3" id="createBackup-selectProcessors">
-                            <input class="custom-control-input" id="createBackup-selectProcessors-compressor" th:field="*{processors}"
-                                   th:value="Compressor" type="checkbox">
-                            <label class="custom-control-label" for="createBackup-selectProcessors-compressor">Compressor</label>
+                            <div class="custom-control custom-control-inline custom-checkbox"
+                                 th:each="processor : ${T(com.blog.service.processor.ProcessorType).values()}">
+                                <input class="custom-control-input" th:field="*{processors}"
+                                       th:id="'createBackup-selectProcessors-'+${processor.processorAsString}"
+                                       th:value="${processor.processorAsString}" type="checkbox">
+                                <label class="custom-control-label"
+                                       th:for="'createBackup-selectProcessors-'+${processor.processorAsString}"
+                                       th:text="${processor.toString()}"></label>
+                            </div>
                         </div>
 
                         <button class="btn btn-primary" type="submit">Backup</button>
@@ -584,10 +599,17 @@
                         </table>
 
                         <p>Apply Processors:</p>
-                        <div class="form-group form-check" id="addPlannedTask-selectProcessors">
-                            <input class="form-check-input" id="addPlannedTask-selectProcessors-compressor" th:field="*{processors}"
-                                   th:value="Compressor" type="checkbox">
-                            <label class="form-check-label" for="addPlannedTask-selectProcessors-compressor">Compressor</label>
+                        <div class="form-group form-check custom-checkbox custom-control mb-3" id="addPlannedTask-selectProcessors">
+                            <div class="custom-control custom-control-inline custom-checkbox"
+                                 th:each="processor : ${T(com.blog.service.processor.ProcessorType).values()}">
+                                <input class="custom-control-input"
+                                       th:field="*{processors}"
+                                       th:id="'addPlannedTask-selectProcessors-'+${processor.processorAsString}"
+                                       th:value="${processor.processorAsString}" type="checkbox">
+                                <label class="custom-control-label"
+                                       th:for="'addPlannedTask-selectProcessors-'+${processor.processorAsString}"
+                                       th:text="${processor.toString()}"></label>
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -608,9 +630,9 @@
         </main>
     </div>
 </div>
-<script src="/js/jquery-3.3.1.min.js"></script>
-<script src="/js/bootstrap.js"></script>
-<script src="/js/selectContentShow.js"></script>
-<script src="/js/dashboard.js"></script>
+<script src="/static/js/jquery-3.3.1.min.js" th:src="@{js/jquery-3.3.1.min.js}"></script>
+<script src="/static/js/bootstrap.js" th:src="@{js/bootstrap.js}"></script>
+<script src="/static/js/selectContentShow.js" th:src="@{js/selectContentShow.js}"></script>
+<script src="/static/js/dashboard.js" th:src="@{js/dashboard.js}"></script>
 </body>
 </html>

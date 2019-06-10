@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang=en xmlns="http://www.w3.org/1999/html" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta content="text/html; charset=UTF-8" http-equiv="content-type">
     <meta charset="utf-8">
@@ -7,12 +7,12 @@
     <meta content="" name="description">
     <title>Sign in - Database Backup Tool</title>
 
-    <link href="/css/bootstrap.css" rel="stylesheet">
-    <link href="/css/signin.css" rel="stylesheet">
+    <link href="/static/css/bootstrap.css" rel="stylesheet" th:href="@{css/bootstrap.css}">
+    <link href="/static/css/signin.css" rel="stylesheet" th:href="@{css/signin.css}">
 </head>
 <body class="text-center">
 <form action="/api/login" class="form-signin" method="post">
-    <img alt="" class="mb-4" height="72" src="/images/appIcon.png" width="72">
+    <img alt="" class="mb-4" height="72" src="/static/images/appIcon.png" th:src="@{images/appIcon.png}" width="72">
     <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
     <label class="sr-only" for="inputLogin">Login</label>
     <input autofocus="" class="form-control" id="inputLogin" name="username" placeholder="Login" required="" type="text">
@@ -25,10 +25,10 @@
     <button class="btn btn-lg btn-primary btn-block" id="signInButton" type="submit">Sign in</button>
     <p class="mt-5 mb-3 text-muted">&copy; 2019</p>
 </form>
-<script src="js/jquery-3.3.1.min.js"></script>
+<script src="/static/js/jquery-3.3.1.min.js" th:src="@{js/jquery-3.3.1.min.js}"></script>
 <script crossorigin="anonymous"
         integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
         src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-<script src="js/bootstrap.js"></script>
+<script src="/static/js/bootstrap.js" th:src="@{js/bootstrap.js}"></script>
 </body>
 </html>

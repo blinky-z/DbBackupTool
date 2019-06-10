@@ -1,6 +1,7 @@
 package com.blog.manager;
 
 import com.blog.service.processor.Processor;
+import com.blog.service.processor.ProcessorType;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,20 +33,20 @@ public class BackupProcessorManager {
      *
      * @param in            InputStream from which backup can be read.
      * @param processorList processor names to apply
-     * @return a processed backup
+     * @return processed backup
      */
     @NotNull
-    public InputStream process(@NotNull InputStream in, @NotNull List<String> processorList) {
+    public InputStream process(@NotNull InputStream in, @NotNull List<ProcessorType> processorList) {
         Objects.requireNonNull(in);
         Objects.requireNonNull(processorList);
 
         logger.info("Processing backup... Processors: {}", processorList);
         int processorsAmount = processorList.size();
         for (int currentProcessor = 0; currentProcessor < processorsAmount; currentProcessor++) {
-            String processorName = processorList.get(currentProcessor);
-            logger.info("Applying processor [{}/{}]: {}", currentProcessor + 1, processorsAmount, processorName);
+            ProcessorType processorType = processorList.get(currentProcessor);
+            logger.info("Applying processor [{}/{}]: {}", currentProcessor + 1, processorsAmount, processorType);
             for (Processor processor : processors) {
-                if (processor.getName().equals(processorName)) {
+                if (processor.getType().equals(processorType)) {
                     in = processor.process(in);
                 }
             }
@@ -59,37 +60,25 @@ public class BackupProcessorManager {
      *
      * @param in              InputStream from which backup can be read.
      * @param deprocessorList deprocessor names to apply
-     * @return a deprocessed backup
+     * @return deprocessed backup
      */
     @NotNull
-    public InputStream deprocess(@NotNull InputStream in, @NotNull List<String> deprocessorList) {
+    public InputStream deprocess(@NotNull InputStream in, @NotNull List<ProcessorType> deprocessorList) {
         Objects.requireNonNull(in);
         Objects.requireNonNull(deprocessorList);
 
         logger.info("Deprocessing backup... Processors: {}", deprocessorList);
         int processorsAmount = deprocessorList.size();
         for (int currentProcessor = 0; currentProcessor < processorsAmount; currentProcessor++) {
-            String processorName = deprocessorList.get(currentProcessor);
-            logger.info("Applying deprocessor [{}/{}]: {}", currentProcessor + 1, processorsAmount, processorName);
+            ProcessorType processorType = deprocessorList.get(currentProcessor);
+            logger.info("Applying deprocessor [{}/{}]: {}", currentProcessor + 1, processorsAmount, processorType);
             for (Processor processor : processors) {
-                if (processor.getName().equals(processorName)) {
+                if (processor.getType().equals(processorType)) {
                     in = processor.deprocess(in);
                 }
             }
         }
 
         return in;
-    }
-
-    public boolean existsByName(@NotNull String processorName) {
-        Objects.requireNonNull(processorName);
-
-        for (Processor processor : processors) {
-            if (processorName.equals(processor.getName())) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

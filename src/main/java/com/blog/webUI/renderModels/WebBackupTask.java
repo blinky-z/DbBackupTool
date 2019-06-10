@@ -18,12 +18,15 @@ public class WebBackupTask {
 
     private final String state;
 
+    private final Boolean interrupted;
+
     private final String time;
 
-    private WebBackupTask(@NotNull Integer id, @NotNull String type, @NotNull String state, @NotNull String time) {
+    private WebBackupTask(@NotNull Integer id, @NotNull String type, @NotNull String state, @NotNull Boolean interrupted, @NotNull String time) {
         this.id = id;
         this.type = type;
         this.state = state;
+        this.interrupted = interrupted;
         this.time = time;
     }
 
@@ -37,6 +40,10 @@ public class WebBackupTask {
 
     public String getState() {
         return state;
+    }
+
+    public Boolean getInterrupted() {
+        return interrupted;
     }
 
     public String getTime() {
@@ -58,6 +65,7 @@ public class WebBackupTask {
         private Integer id;
         private String type;
         private String state;
+        private Boolean interrupted;
         private String time;
 
         public Builder() {
@@ -78,13 +86,18 @@ public class WebBackupTask {
             return this;
         }
 
+        public Builder withInterrupted(Boolean interrupted) {
+            this.interrupted = interrupted;
+            return this;
+        }
+
         public Builder withTime(String time) {
             this.time = time;
             return this;
         }
 
         public WebBackupTask build() {
-            return new WebBackupTask(id, type, state, time);
+            return new WebBackupTask(id, type, state, interrupted, time);
         }
     }
 }

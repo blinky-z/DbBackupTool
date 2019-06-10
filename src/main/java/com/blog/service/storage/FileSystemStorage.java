@@ -25,9 +25,6 @@ public class FileSystemStorage implements Storage {
         return backupFolderPath + File.separator + filename + StorageConstants.DEFAULT_FILE_EXTENSION;
     }
 
-    /**
-     * Uploads backup to Local File System
-     */
     @Override
     public void uploadBackup(InputStream in, StorageSettings storageSettings, String backupName, Integer id) {
         LocalFileSystemSettings localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(() ->
@@ -76,9 +73,6 @@ public class FileSystemStorage implements Storage {
         }
     }
 
-    /**
-     * Downloads backup from Local File System
-     */
     @Nullable
     @Override
     public InputStream downloadBackup(StorageSettings storageSettings, String backupName, Integer id) {

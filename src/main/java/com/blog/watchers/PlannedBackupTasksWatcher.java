@@ -34,7 +34,6 @@ class PlannedBackupTasksWatcher {
     private ErrorTasksManager errorTasksManager;
     private PlannedTasksManager plannedTasksManager;
     private DatabaseSettingsManager databaseSettingsManager;
-    private StorageSettingsManager storageSettingsManager;
     private BackupPropertiesManager backupPropertiesManager;
     private TasksStarterService tasksStarterService;
 
@@ -59,11 +58,6 @@ class PlannedBackupTasksWatcher {
     }
 
     @Autowired
-    public void setStorageSettingsManager(StorageSettingsManager storageSettingsManager) {
-        this.storageSettingsManager = storageSettingsManager;
-    }
-
-    @Autowired
     public void setBackupPropertiesManager(BackupPropertiesManager backupPropertiesManager) {
         this.backupPropertiesManager = backupPropertiesManager;
     }
@@ -81,12 +75,16 @@ class PlannedBackupTasksWatcher {
     private void revertPlannedBackupTask(@NotNull PlannedTask plannedTask) {
         Objects.requireNonNull(plannedTask);
 
-        Integer plannedTaskId = plannedTask.getId();
         Integer handlerTaskId = plannedTask.getHandlerTaskId();
+
+        if (handlerTaskId == null) {
+            logger.error("Can't revert planned task: null handler task. Planned task info: {}", plannedTask);
+            return;
+        }
 
         Optional<Task> optionalHandlerTask = tasksManager.findById(handlerTaskId);
         if (!optionalHandlerTask.isPresent()) {
-            logger.error("Can't revert planned task: no such handler task with ID {}. Planned task info: {}", handlerTaskId, plannedTaskId);
+            logger.error("Can't revert planned task: no such handler task with ID {}. Planned task info: {}", handlerTaskId, plannedTask);
             return;
         }
 
@@ -200,7 +198,7 @@ class PlannedBackupTasksWatcher {
             plannedTasksManager.updateState(plannedBackupTaskId, PlannedTask.State.EXECUTING);
 
             String databaseSettingsName = plannedTask.getDatabaseSettingsName();
-            Optional<DatabaseSettings> optionalDatabaseSettings = databaseSettingsManager.getById(databaseSettingsName);
+            Optional<DatabaseSettings> optionalDatabaseSettings = databaseSettingsManager.findById(databaseSettingsName);
             if (!optionalDatabaseSettings.isPresent()) {
                 logger.error("Can't handle planned task: no database settings with name {}. Planned task info: {}",
                         databaseSettingsName, plannedTask);

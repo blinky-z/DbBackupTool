@@ -3,6 +3,7 @@ package com.blog.manager;
 import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.entities.storage.StorageType;
+import com.blog.service.ErrorCallbackService;
 import com.blog.service.storage.DropboxStorage;
 import com.blog.service.storage.FileSystemStorage;
 import org.jetbrains.annotations.NotNull;
@@ -16,14 +17,12 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
- * This class provides API to upload and download backups.
+ * This class provides API to upload, download and delete backups.
  */
 @Component
 public class BackupLoadManager {
@@ -36,6 +35,8 @@ public class BackupLoadManager {
     private DropboxStorage dropboxStorage;
 
     private FileSystemStorage fileSystemStorage;
+
+    private ErrorCallbackService errorCallbackService;
 
     @Autowired
     public void setBackupLoadManagerExecutorService(ExecutorService backupLoadManagerExecutorService) {
@@ -57,12 +58,26 @@ public class BackupLoadManager {
         this.fileSystemStorage = fileSystemStorage;
     }
 
+    @Autowired
+    public void setErrorCallbackService(ErrorCallbackService errorCallbackService) {
+        this.errorCallbackService = errorCallbackService;
+    }
+
     /**
      * Uploads backup.
+     * <p>
+     * Uploading to multiple storages is performing in parallel.
      *
      * @param backupStream     InputStream from which backup can be read
      * @param backupProperties pre-created BackupProperties of backup that should be uploaded to storage
      * @param id               backup upload task ID
+     * @implNote When uploading a backup, each storage uploading is performing in its own thread.
+     * <p>
+     * If any upload task reports about exception (either throwing it from the main thread or using {@link ErrorCallbackService}), all
+     * tasks will be canceled.
+     * <p>
+     * If task reports about error using {@link ErrorCallbackService}, this task also will be canceled to let main thread of this task
+     * stop the work.
      */
     public void uploadBackup(@NotNull InputStream backupStream, @NotNull BackupProperties backupProperties, @NotNull Integer id) {
         Objects.requireNonNull(backupStream);
@@ -74,76 +89,97 @@ public class BackupLoadManager {
 
         for (String storageSettingsName : storageSettingsNameList) {
             storageSettingsList.add(storageSettingsManager.findById(storageSettingsName).orElseThrow(() ->
-                    new RuntimeException(String.format("Can't upload backup. Missing storage settings with name %s", storageSettingsName))));
+                    new RuntimeException("Can't upload backup: no such storage settings with name " + storageSettingsName)));
         }
 
         String backupName = backupProperties.getBackupName();
 
-        List<Future> backupLoadTasks = new ArrayList<>();
+        List<Runnable> runnableList = new ArrayList<>();
         List<PipedOutputStream> pipedOutputStreamList = new ArrayList<>();
         for (StorageSettings storageSettings : storageSettingsList) {
-            StorageType storageType = storageSettings.getType();
-            logger.info("Uploading backup to {}. Backup name: {}", storageType, backupName);
 
             PipedInputStream pipedInputStream = new PipedInputStream();
             PipedOutputStream pipedOutputStream = new PipedOutputStream();
             try {
                 pipedOutputStream.connect(pipedInputStream);
             } catch (IOException ex) {
-                throw new RuntimeException("Error initializing backup loading", ex);
+                throw new RuntimeException("Error initializing backup uploading", ex);
             }
 
             pipedOutputStreamList.add(pipedOutputStream);
 
+            StorageType storageType = storageSettings.getType();
             switch (storageType) {
                 case LOCAL_FILE_SYSTEM: {
-                    backupLoadTasks.add(backupLoadManagerExecutorService.submit(() ->
-                            fileSystemStorage.uploadBackup(pipedInputStream, storageSettings, backupName, id)));
+                    runnableList.add(() -> fileSystemStorage.uploadBackup(pipedInputStream, storageSettings, backupName, id));
                     break;
                 }
                 case DROPBOX: {
-                    backupLoadTasks.add(backupLoadManagerExecutorService.submit(() ->
-                            dropboxStorage.uploadBackup(pipedInputStream, storageSettings, backupName, id)));
+                    runnableList.add(() -> dropboxStorage.uploadBackup(pipedInputStream, storageSettings, backupName, id));
                     break;
                 }
                 default: {
-                    throw new RuntimeException(String.format("Can't upload backup. Unknown storage type: %s", storageType));
+                    throw new RuntimeException("Can't upload backup: unknown storage type: " + storageType);
                 }
             }
         }
 
-        try (BufferedInputStream bufferedInputStream = new BufferedInputStream(backupStream);
-             BackupLoadSplitter backupLoadSplitter = new BackupLoadSplitter(pipedOutputStreamList)) {
-            final byte[] buffer = new byte[4096];
-            int bytesRead;
-            try {
-                while ((bytesRead = bufferedInputStream.read(buffer)) != -1) {
-                    backupLoadSplitter.writeChunk(buffer, bytesRead);
+        // we need this variable to know if IO exception occurred because of interrupt or not
+        // it is not enough just to check of InterruptedIOException, because exception might occur when writing to the closed stream, which
+        // was closed by upload task after interruption
+        AtomicBoolean wasInterrupted = new AtomicBoolean(false);
+        Future uploadTask = backupLoadManagerExecutorService.submit(() -> {
+                    try (BackupUploadSplitter backupUploadSplitter = new BackupUploadSplitter(backupStream, pipedOutputStreamList)) {
+                        try {
+                            backupUploadSplitter.upload();
+                        } catch (IOException ex) {
+                            if (!wasInterrupted.get()) {
+                                errorCallbackService.onError(new RuntimeException("Error uploading backup", ex), id);
+                            }
+                        }
+                    } catch (IOException ex) {
+                        logger.error("Error releasing stream resources. Backup info: {}", backupProperties, ex);
+                    }
                 }
-            } catch (IOException ex) {
-                logger.error("Error uploading backup. Cancelling all tasks", ex);
-                // backup can't be uploaded fully, so notify all upload tasks about error
-                backupLoadTasks.forEach(task_ -> task_.cancel(true));
+        );
 
-                throw new RuntimeException("Error uploading backup", ex);
-            }
-        } catch (IOException ex) {
-            logger.error("Error closing streams", ex);
+        List<Future> futures = new ArrayList<>();
+        for (Runnable runnable : runnableList) {
+            Future submit = backupLoadManagerExecutorService.submit(runnable);
+            futures.add(submit);
         }
-
-        for (Future task : backupLoadTasks) {
-            try {
-                task.get();
-            } catch (InterruptedException ignore) {
-                // we cancel all tasks to notify them that general backup loading task was canceled
-                // interrupt flag is not cleared
-                backupLoadTasks.forEach(task_ -> task_.cancel(true));
-                break;
-            } catch (ExecutionException ex) {
-                // we cancel all tasks because backup can not be fully uploaded to all storages
-                backupLoadTasks.forEach(task_ -> task_.cancel(true));
-                throw new RuntimeException("Error uploading backup. One of the storages returned an exception", ex);
+        try {
+            while (true) {
+                // we don't use invokeAll() method because we want to know that task completed with exception as fast as possible
+                // checking a result periodically, we are able to cancel tasks without waiting them to complete
+                boolean allCompleted = true;
+                for (Future task : futures) {
+                    try {
+                        // if we will be interrupted while waiting, we fall in the InterruptedException clause of the upper try-catch block
+                        // we may be interrupted by upload splitter task or by storage upload task
+                        task.get(5, TimeUnit.SECONDS);
+                    } catch (ExecutionException ex) {
+                        // we should set flag before canceling the task to avoid situation when context switched right after canceling
+                        // without setting the flag
+                        wasInterrupted.set(true);
+                        uploadTask.cancel(true);
+                        futures.forEach(future -> future.cancel(true));
+                        throw new RuntimeException("Error uploading backup: one of the storages returned an exception", ex);
+                    } catch (TimeoutException e) {
+                        allCompleted = false;
+                    }
+                }
+                if (allCompleted) {
+                    break;
+                }
             }
+            logger.info("Backup successfully uploaded. Backup info: {}", backupProperties);
+        } catch (InterruptedException ex) {
+            wasInterrupted.set(true);
+            uploadTask.cancel(true);
+            futures.forEach(future -> future.cancel(true));
+            logger.error("Error uploading backup: upload was canceled. Backup info: {}", backupProperties);
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -183,6 +219,9 @@ public class BackupLoadManager {
         }
         logger.info("Backup successfully downloaded from {}. Backup name: {}", storageType, backupName);
 
+        if (downloadedBackup == null) {
+            Thread.currentThread().interrupt();
+        }
         return downloadedBackup;
     }
 
@@ -195,11 +234,11 @@ public class BackupLoadManager {
     public void deleteBackup(@NotNull BackupProperties backupProperties, @NotNull Integer id) {
         Objects.requireNonNull(backupProperties);
 
-        logger.info("Deleting backup... Backup properties: {}", backupProperties);
+        logger.info("Deleting backup... Backup info: {}", backupProperties);
 
         List<String> storageSettingsNameList = backupProperties.getStorageSettingsNameList();
 
-        List<Runnable> backupDeletionRunnableList = new ArrayList<>();
+        List<Runnable> runnableList = new ArrayList<>();
         for (String storageSettingsName : storageSettingsNameList) {
             StorageSettings storageSettings = storageSettingsManager.findById(storageSettingsName).orElseThrow(
                     () -> new RuntimeException("Can't delete backup: no such storage settings with name " + storageSettingsName));
@@ -209,50 +248,80 @@ public class BackupLoadManager {
 
             switch (storageType) {
                 case LOCAL_FILE_SYSTEM: {
-                    backupDeletionRunnableList.add(() -> fileSystemStorage.deleteBackup(storageSettings, backupName, id));
+                    runnableList.add(() -> fileSystemStorage.deleteBackup(storageSettings, backupName, id));
                     break;
                 }
                 case DROPBOX: {
-                    backupDeletionRunnableList.add(() -> dropboxStorage.deleteBackup(storageSettings, backupName, id));
+                    runnableList.add(() -> dropboxStorage.deleteBackup(storageSettings, backupName, id));
                     break;
                 }
                 default: {
-                    throw new RuntimeException(String.format("Can't delete backup. Unknown storage type: %s", storageType));
+                    throw new RuntimeException(String.format("Can't delete backup: unknown storage type: %s", storageType));
                 }
             }
         }
 
         try {
-            backupLoadManagerExecutorService.invokeAll(
-                    backupDeletionRunnableList.stream().map(Executors::callable).collect(Collectors.toList()));
+            backupLoadManagerExecutorService.invokeAll(runnableList.stream().map(Executors::callable).collect(Collectors.toList()));
+            logger.info("Backup successfully deleted. Backup info: {}", backupProperties);
         } catch (InterruptedException ex) {
-            // unfinished deletion tasks automatically canceled here by executor service
-            // interrupt flag is not cleared
+            // unfinished tasks automatically canceled here by executor service
+            Thread.currentThread().interrupt();
         }
     }
 
-    private class BackupLoadSplitter implements AutoCloseable {
+    /**
+     * Uploads backup to multiple storages in parallel.
+     */
+    private static final class BackupUploadSplitter implements AutoCloseable {
+        private BufferedInputStream source;
         List<BufferedOutputStream> outputStreamList;
 
-        BackupLoadSplitter(List<PipedOutputStream> outputStreamList) {
-            List<BufferedOutputStream> list = new ArrayList<>();
+        BackupUploadSplitter(InputStream source, List<PipedOutputStream> outputStreamList) {
+            if (!(source instanceof BufferedInputStream)) {
+                source = new BufferedInputStream(source);
+            }
+            this.source = (BufferedInputStream) source;
+            List<BufferedOutputStream> bufferedOutputStreamList = new ArrayList<>();
             for (OutputStream outputStream : outputStreamList) {
                 BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
-                list.add(bufferedOutputStream);
+                bufferedOutputStreamList.add(bufferedOutputStream);
             }
-            this.outputStreamList = list;
+            this.outputStreamList = bufferedOutputStreamList;
         }
 
-        void writeChunk(byte[] buffer, int bytesToWrite) throws IOException {
-            for (BufferedOutputStream outputStream : outputStreamList) {
-                outputStream.write(buffer, 0, bytesToWrite);
+        void upload() throws IOException {
+            final byte[] buffer = new byte[8096];
+            int bytesRead;
+            while ((bytesRead = source.read(buffer)) != -1) {
+                for (BufferedOutputStream outputStream : outputStreamList) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
             }
         }
 
         @Override
         public void close() throws IOException {
-            int streamsClosed = 0;
+            boolean inputStreamIsClosed = true;
+            int outputStreamsClosed = 0;
             boolean exceptionOccurred = false;
+
+            try {
+                source.close();
+            } catch (IOException ignored) {
+                inputStreamIsClosed = false;
+            }
+
+            // we wait before closing output streams to let all upload tasks handle interrupt and to not get EOF, but get
+            // InterruptedIOException while trying to call blocking I/O operation
+            // even if there is no interrupt occurred, it is not harmful to wait before releasing resources
+            try {
+                Thread.sleep(30000);
+            } catch (InterruptedException ignored) {
+                // should not happen usually
+                // but if so (e.g. backup was fully written to all input streams, but some task got exception), all the input streams
+                // already closed, and they will not be reading input stream
+            }
 
             for (BufferedOutputStream outputStream : outputStreamList) {
                 try {
@@ -261,12 +330,12 @@ public class BackupLoadManager {
                     exceptionOccurred = true;
                     continue;
                 }
-                streamsClosed++;
+                outputStreamsClosed++;
             }
 
             if (exceptionOccurred) {
-                throw new IOException(
-                        String.format("Error closing streams. Streams closed: [%s/%s]", streamsClosed, outputStreamList.size()));
+                throw new IOException(String.format("Error closing streams. Input stream is closed: %s. Output streams closed: [%s/%s]",
+                        inputStreamIsClosed, outputStreamsClosed, outputStreamList.size()));
             }
         }
     }

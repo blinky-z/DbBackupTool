@@ -29,7 +29,7 @@ public class ErrorTasksManager {
      * Returns first N rows and sets pessimistic lock on them. Skips already locked rows.
      *
      * @param size how many rows to retrieve
-     * @return first N entities
+     * @return first N not locked entities
      */
     public Iterable<ErrorTask> findFirstN(@NotNull Integer size) {
         return errorTasksRepository.findFirstN(size);
@@ -58,6 +58,11 @@ public class ErrorTasksManager {
         return errorTasksRepository.existsByTaskId(taskId);
     }
 
+    /**
+     * Mark erroneous {@link Task} as handled.
+     *
+     * @param taskId {@link Task} id
+     */
     public void setErrorHandled(@NotNull Integer taskId) {
         errorTasksRepository.findByTaskId(taskId).ifPresent(
                 backupTask -> backupTask.setErrorHandled(Boolean.TRUE));

@@ -38,7 +38,7 @@ public class DatabaseBackupManager {
         Objects.requireNonNull(databaseSettings);
         Objects.requireNonNull(id);
 
-        logger.info("Creating backup of database {}... Database Settings: {}", databaseSettings.getName(), databaseSettings);
+        logger.info("Creating backup... Database info: {}", databaseSettings);
 
         InputStream backupStream;
 
@@ -49,11 +49,11 @@ public class DatabaseBackupManager {
                 break;
             }
             default: {
-                throw new RuntimeException(String.format("Can't create backup. Unknown database type: %s", databaseType));
+                throw new RuntimeException("Can't create backup: unknown database type " + databaseType);
             }
         }
 
-        logger.info("Backup creation started. Database name: {}", databaseSettings.getName());
+        logger.info("Backup creation started. Database info: {}", databaseSettings);
 
         return backupStream;
     }
@@ -70,7 +70,7 @@ public class DatabaseBackupManager {
         Objects.requireNonNull(databaseSettings);
         Objects.requireNonNull(id);
 
-        logger.info("Restoring backup to database {}... Database Settings: {}", databaseSettings.getName(), databaseSettings);
+        logger.info("Restoring backup... Database info: {}", databaseSettings);
 
         DatabaseType databaseType = databaseSettings.getType();
         switch (databaseType) {
@@ -79,10 +79,10 @@ public class DatabaseBackupManager {
                 break;
             }
             default: {
-                throw new RuntimeException(String.format("Can't restore backup. Unknown database type: %s", databaseType));
+                throw new RuntimeException("Can't restore backup: unknown database type: " + databaseType);
             }
         }
 
-        logger.info("Backup successfully restored. Database name: {}", databaseSettings.getName());
+        logger.info("Backup successfully restored. Database info: {}", databaseSettings);
     }
 }

@@ -28,26 +28,60 @@ public class StorageSettingsManager {
         this.storageSettingsRepository = storageSettingsRepository;
     }
 
-    public StorageSettings save(@NotNull StorageSettings storageSettings) {
-        return storageSettingsRepository.save(storageSettings);
+    /**
+     * Saves a given entity.
+     *
+     * @param entity entity
+     * @return the saved entity
+     */
+    public StorageSettings save(@NotNull StorageSettings entity) {
+        return storageSettingsRepository.save(entity);
     }
 
-    public Iterable<StorageSettings> saveAll(@NotNull List<StorageSettings> storageSettings) {
-        return storageSettingsRepository.saveAll(storageSettings);
+    /**
+     * Saves all given entities.
+     *
+     * @param entities entities to save
+     * @return the saved entities
+     */
+    public Iterable<StorageSettings> saveAll(@NotNull List<StorageSettings> entities) {
+        return storageSettingsRepository.saveAll(entities);
     }
 
+    /**
+     * Attempts to delete the entity with the given id if the one exists.
+     *
+     * @param id entity ID
+     */
     public void deleteById(@NotNull String id) {
         storageSettingsRepository.findById(id).ifPresent(storageSettings -> storageSettingsRepository.delete(storageSettings));
     }
 
+    /**
+     * Returns whether an entity with the given id exists.
+     *
+     * @param id entity ID
+     * @return {@literal true} if an entity with the given id exists, {@literal false} otherwise.
+     */
     public boolean existsById(@NotNull String id) {
         return storageSettingsRepository.existsById(id);
     }
 
+    /**
+     * Retrieves an entity by its id.
+     *
+     * @param id entity ID
+     * @return the entity with the given id or {@literal Optional#empty()} if none found
+     */
     public Optional<StorageSettings> findById(@NotNull String id) {
         return storageSettingsRepository.findById(id);
     }
 
+    /**
+     * Returns all instances of the type of the given {@link StorageType}.
+     *
+     * @return all entities of the given {@link StorageType}
+     */
     public Iterable<StorageSettings> findAllByType(@NotNull StorageType type) {
         return storageSettingsRepository.getAllByType(type);
     }

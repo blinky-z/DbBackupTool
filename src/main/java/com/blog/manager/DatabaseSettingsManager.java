@@ -28,27 +28,61 @@ public class DatabaseSettingsManager {
         this.databaseSettingsRepository = databaseSettingsRepository;
     }
 
-    public DatabaseSettings save(@NotNull DatabaseSettings databaseSettings) {
-        return databaseSettingsRepository.save(databaseSettings);
+    /**
+     * Saves a given entity.
+     *
+     * @param entity entity
+     * @return the saved entity
+     */
+    public DatabaseSettings save(@NotNull DatabaseSettings entity) {
+        return databaseSettingsRepository.save(entity);
     }
 
-    public Iterable<DatabaseSettings> saveAll(@NotNull List<DatabaseSettings> databaseSettings) {
-        return databaseSettingsRepository.saveAll(databaseSettings);
+    /**
+     * Saves all given entities.
+     *
+     * @param entities entities to save
+     * @return the saved entities
+     */
+    public Iterable<DatabaseSettings> saveAll(@NotNull List<DatabaseSettings> entities) {
+        return databaseSettingsRepository.saveAll(entities);
     }
 
+    /**
+     * Attempts to delete the entity with the given id if the one exists.
+     *
+     * @param id entity ID
+     */
     public void deleteById(@NotNull String id) {
         databaseSettingsRepository.findById(id).ifPresent(databaseSettings -> databaseSettingsRepository.delete(databaseSettings));
     }
 
+    /**
+     * Returns whether an entity with the given id exists.
+     *
+     * @param id entity ID
+     * @return {@literal true} if an entity with the given id exists, {@literal false} otherwise.
+     */
     public boolean existsById(@NotNull String id) {
         return databaseSettingsRepository.existsById(id);
     }
 
-    public Optional<DatabaseSettings> getById(@NotNull String id) {
+    /**
+     * Retrieves an entity by its id.
+     *
+     * @param id entity ID
+     * @return the entity with the given id or {@literal Optional#empty()} if none found
+     */
+    public Optional<DatabaseSettings> findById(@NotNull String id) {
         return databaseSettingsRepository.findById(id);
     }
 
-    public Iterable<DatabaseSettings> getAllByType(@NotNull DatabaseType type) {
+    /**
+     * Returns all instances of the type of the given {@link DatabaseType}.
+     *
+     * @return all entities of the given {@link DatabaseType}
+     */
+    public Iterable<DatabaseSettings> findAllByType(@NotNull DatabaseType type) {
         return databaseSettingsRepository.getAllByType(type);
     }
 }
