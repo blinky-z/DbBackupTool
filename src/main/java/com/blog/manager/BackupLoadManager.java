@@ -127,9 +127,12 @@ public class BackupLoadManager {
         // we need this variable to know if IO exception occurred because of interrupt or not
         // it is not enough just to check of InterruptedIOException, because exception might occur when writing to the closed stream, which
         // was closed by upload task after interruption
+        // also we can wait some time before closing output streams, to make all tasks get InterruptedIOException instead of EOF while
+        // calling any blocking I/O method on related PipedInputStream
         AtomicBoolean wasInterrupted = new AtomicBoolean(false);
         Future uploadTask = backupLoadManagerExecutorService.submit(() -> {
-                    try (BackupUploadSplitter backupUploadSplitter = new BackupUploadSplitter(backupStream, pipedOutputStreamList)) {
+            try (BackupUploadSplitter backupUploadSplitter =
+                         new BackupUploadSplitter(backupStream, pipedOutputStreamList, wasInterrupted)) {
                         try {
                             backupUploadSplitter.upload();
                         } catch (IOException ex) {
@@ -149,36 +152,39 @@ public class BackupLoadManager {
             futures.add(submit);
         }
         try {
-            while (true) {
+            boolean allCompleted;
+            do {
                 // we don't use invokeAll() method because we want to know that task completed with exception as fast as possible
                 // checking a result periodically, we are able to cancel tasks without waiting them to complete
-                boolean allCompleted = true;
+                allCompleted = true;
                 for (Future task : futures) {
                     try {
                         // if we will be interrupted while waiting, we fall in the InterruptedException clause of the upper try-catch block
-                        // we may be interrupted by upload splitter task or by storage upload task
+                        // we may be interrupted by upload splitter task or by storage related upload task
                         task.get(5, TimeUnit.SECONDS);
                     } catch (ExecutionException ex) {
                         // we should set flag before canceling the task to avoid situation when context switched right after canceling
                         // without setting the flag
                         wasInterrupted.set(true);
+                        // if upload already completed, canceling will not have any effect
                         uploadTask.cancel(true);
                         futures.forEach(future -> future.cancel(true));
+
                         throw new RuntimeException("Error uploading backup: one of the storages returned an exception", ex);
                     } catch (TimeoutException e) {
                         allCompleted = false;
                     }
                 }
-                if (allCompleted) {
-                    break;
-                }
-            }
+            } while (!allCompleted);
+
             logger.info("Backup successfully uploaded. Backup info: {}", backupProperties);
         } catch (InterruptedException ex) {
             wasInterrupted.set(true);
             uploadTask.cancel(true);
             futures.forEach(future -> future.cancel(true));
+
             logger.error("Error uploading backup: upload was canceled. Backup info: {}", backupProperties);
+
             Thread.currentThread().interrupt();
         }
     }
@@ -276,8 +282,9 @@ public class BackupLoadManager {
     private static final class BackupUploadSplitter implements AutoCloseable {
         private BufferedInputStream source;
         List<BufferedOutputStream> outputStreamList;
+        AtomicBoolean wasInterrupted;
 
-        BackupUploadSplitter(InputStream source, List<PipedOutputStream> outputStreamList) {
+        BackupUploadSplitter(InputStream source, List<PipedOutputStream> outputStreamList, AtomicBoolean wasInterrupted) {
             if (!(source instanceof BufferedInputStream)) {
                 source = new BufferedInputStream(source);
             }
@@ -288,6 +295,7 @@ public class BackupLoadManager {
                 bufferedOutputStreamList.add(bufferedOutputStream);
             }
             this.outputStreamList = bufferedOutputStreamList;
+            this.wasInterrupted = wasInterrupted;
         }
 
         void upload() throws IOException {
@@ -312,15 +320,14 @@ public class BackupLoadManager {
                 inputStreamIsClosed = false;
             }
 
-            // we wait before closing output streams to let all upload tasks handle interrupt and to not get EOF, but get
-            // InterruptedIOException while trying to call blocking I/O operation
-            // even if there is no interrupt occurred, it is not harmful to wait before releasing resources
-            try {
-                Thread.sleep(30000);
-            } catch (InterruptedException ignored) {
-                // should not happen usually
-                // but if so (e.g. backup was fully written to all input streams, but some task got exception), all the input streams
-                // already closed, and they will not be reading input stream
+            if (wasInterrupted.get()) {
+                // we wait before closing output streams to let all upload tasks handle interrupt and to not get EOF, but get
+                // InterruptedIOException while trying to call blocking I/O operation on related PipedInputStream
+                try {
+                    Thread.sleep(30000);
+                } catch (InterruptedException ignored) {
+                    // should not happen
+                }
             }
 
             for (BufferedOutputStream outputStream : outputStreamList) {
