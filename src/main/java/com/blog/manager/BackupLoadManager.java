@@ -94,7 +94,7 @@ public class BackupLoadManager {
 
         String backupName = backupProperties.getBackupName();
 
-        List<Runnable> runnableList = new ArrayList<>();
+        List<Runnable> runnables = new ArrayList<>();
         List<PipedOutputStream> pipedOutputStreamList = new ArrayList<>();
         for (StorageSettings storageSettings : storageSettingsList) {
 
@@ -111,11 +111,11 @@ public class BackupLoadManager {
             StorageType storageType = storageSettings.getType();
             switch (storageType) {
                 case LOCAL_FILE_SYSTEM: {
-                    runnableList.add(() -> fileSystemStorage.uploadBackup(pipedInputStream, storageSettings, backupName, id));
+                    runnables.add(() -> fileSystemStorage.uploadBackup(pipedInputStream, storageSettings, backupName, id));
                     break;
                 }
                 case DROPBOX: {
-                    runnableList.add(() -> dropboxStorage.uploadBackup(pipedInputStream, storageSettings, backupName, id));
+                    runnables.add(() -> dropboxStorage.uploadBackup(pipedInputStream, storageSettings, backupName, id));
                     break;
                 }
                 default: {
@@ -129,14 +129,14 @@ public class BackupLoadManager {
         // was closed by upload task after interruption
         // also we can wait some time before closing output streams, to make all tasks get InterruptedIOException instead of EOF while
         // calling any blocking I/O method on related PipedInputStream
-        AtomicBoolean wasInterrupted = new AtomicBoolean(false);
+        AtomicBoolean uploadInterrupted = new AtomicBoolean(false);
         Future uploadTask = backupLoadManagerExecutorService.submit(() -> {
             try (BackupUploadSplitter backupUploadSplitter =
-                         new BackupUploadSplitter(backupStream, pipedOutputStreamList, wasInterrupted)) {
+                         new BackupUploadSplitter(backupStream, pipedOutputStreamList, uploadInterrupted)) {
                         try {
                             backupUploadSplitter.upload();
                         } catch (IOException ex) {
-                            if (!wasInterrupted.get()) {
+                            if (!uploadInterrupted.get()) {
                                 errorCallbackService.onError(new RuntimeException("Error uploading backup", ex), id);
                             }
                         }
@@ -147,7 +147,7 @@ public class BackupLoadManager {
         );
 
         List<Future> futures = new ArrayList<>();
-        for (Runnable runnable : runnableList) {
+        for (Runnable runnable : runnables) {
             Future submit = backupLoadManagerExecutorService.submit(runnable);
             futures.add(submit);
         }
@@ -160,12 +160,12 @@ public class BackupLoadManager {
                 for (Future task : futures) {
                     try {
                         // if we will be interrupted while waiting, we fall in the InterruptedException clause of the upper try-catch block
-                        // we may be interrupted by upload splitter task or by storage related upload task
+                        // we may be interrupted by upload thread, by storage related thread, by backup creation thread
                         task.get(5, TimeUnit.SECONDS);
                     } catch (ExecutionException ex) {
                         // we should set flag before canceling the task to avoid situation when context switched right after canceling
                         // without setting the flag
-                        wasInterrupted.set(true);
+                        uploadInterrupted.set(true);
                         // if upload already completed, canceling will not have any effect
                         uploadTask.cancel(true);
                         futures.forEach(future -> future.cancel(true));
@@ -179,7 +179,7 @@ public class BackupLoadManager {
 
             logger.info("Backup successfully uploaded. Backup info: {}", backupProperties);
         } catch (InterruptedException ex) {
-            wasInterrupted.set(true);
+            uploadInterrupted.set(true);
             uploadTask.cancel(true);
             futures.forEach(future -> future.cancel(true));
 
