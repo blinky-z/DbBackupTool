@@ -14,7 +14,6 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Implementation of {@link DatabaseBackup} interface for PostgreSQL.
@@ -118,6 +117,10 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
             throw new RuntimeException("Error starting PostgreSQL database backup process", ex);
         }
 
+        // in case server will be shutdown while restoring backup
+        // if process was already destroyed, then it does nothing
+        Runtime.getRuntime().addShutdownHook(new Thread(process::destroyForcibly));
+
         postgresExecutorService.submit(new ProcessStderrStreamReadWorker(process.getErrorStream(), JobType.BACKUP));
 
         // we should wait for backup process terminating in separate thread, otherwise
@@ -127,52 +130,38 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
                 InputStream inputStream = process.getInputStream();
 
                 logger.info("Waiting for PostgreSQL backup process termination...");
-
-                boolean exited;
-                while (true) {
-                    exited = process.waitFor(10, TimeUnit.MINUTES);
-                    if (!exited) {
-                        // check if main thread was interrupted and according stream closed
-                        // if so, then we destroy process immediately
-                        try {
-                            // the input stream is the instance of BufferedInputStream on Windows and the instance of ProcessPipeInputStream
-                            // which extends BufferedInputStream on Linux
-                            // both implementations throw IOException with message "Stream closed" when calling available() on closed stream
-                            inputStream.available();
-                        } catch (IOException ex) {
-                            if (ex.getMessage().equals("Stream closed")) {
-                                logger.error("Stream was closed, but PostgreSQL backup process has not exited yet. Destroying process immediately");
-                                process.destroyForcibly();
-                                return;
-                            }
-                        }
-                    } else {
-                        break;
-                    }
-                }
-
-                // method call will return immediately
                 int exitVal = process.waitFor();
                 if (exitVal != 0) {
+                    try {
+                        // the input stream is the instance of BufferedInputStream on Windows and the instance of ProcessPipeInputStream
+                        // which extends BufferedInputStream on Linux
+                        // both implementations throws IOException with message "Stream closed" when calling available() on the closed stream
+                        inputStream.available();
+                    } catch (IOException ex) {
+                        // pg_dump process's output stream was closed, that is backup creating was interruptet, so it is not an error
+                        if (ex.getMessage().equals("Stream closed")) {
+                            process.destroy();
+                            return;
+                        }
+                    }
+
                     errorCallbackService.onError(new InternalPostgresToolError(
                             "PostgreSQL backup process terminated with error. See process's stderr log for details"), id);
                 }
 
-                logger.info("PostgreSQL backup process terminated. Waiting for complete reading of output stream buffer...");
-
                 try {
+                    // we should not close input stream until all data left in stdout buffer will be read
                     while (inputStream.available() != 0) {
                         Thread.yield();
                     }
-                } catch (IOException ex) {
-                    logger.error("Error checking process's output stream for data to be read. Probably stream was closed");
+                } catch (IOException ignore) {
+                    // can happen only if stream was closed, which means that all data already has been read
                 }
 
                 process.destroy();
-
-                logger.info("PostgreSQL backup process destroyed");
             } catch (InterruptedException ex) {
-                logger.error("Error terminating PostgreSQL backup process", ex);
+                // this thread might be interrupted only by the shutdown() method on executor service destroying
+                // process is destroyed by shutdown hook, so do nothing
             }
         });
 
@@ -183,10 +172,13 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
 
     /**
      * Restores PostgreSQL database plain-text backup.
-     * Backup is restored by <i>psql</i> tool.
      * <p>
-     * If psql reports about error while executing, InternalPostgresToolError will be thrown
-     * In such case, you can find process's stderr messages in the log of this class.
+     * Backup is restored by <i>psql</i> tool.
+     * Restoration is performing in single transaction. If connection times out, then transaction will be canceled and no data will be
+     * restored.
+     * <p>
+     * If psql reports about error while executing, InternalPostgresToolError will be thrown. In such case, you can find process's stderr
+     * messages in the log of this class.
      *
      * @param backupSource the input stream to read backup from
      */
@@ -206,13 +198,38 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
         postgresExecutorService.submit(new ProcessStderrStreamReadWorker(process.getErrorStream(), JobType.RESTORE));
         postgresExecutorService.submit(new ProcessStdoutStreamReadWorker(process.getInputStream(), JobType.RESTORE));
 
+        // in case server will be shutdown while restoring backup, than we need to discard transaction
+        // if process was already normally destroyed, then it does nothing
+        Runtime.getRuntime().addShutdownHook(new Thread(process::destroyForcibly));
+
         try (
                 BufferedReader backupReader = new BufferedReader(new InputStreamReader(backupSource));
                 BufferedWriter processOutputWriter = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()))
         ) {
             String currentLine;
-            while ((currentLine = backupReader.readLine()) != null) {
-                processOutputWriter.write(currentLine + System.lineSeparator());
+            try {
+                processOutputWriter.write("BEGIN;");
+                while ((currentLine = backupReader.readLine()) != null) {
+                    processOutputWriter.write(currentLine + System.lineSeparator());
+                }
+                processOutputWriter.write("COMMIT;");
+            } catch (InterruptedIOException ex) {
+                logger.error("PostgreSQL backup restoration was interrupted. Rolling back... Database: {}", databaseSettings);
+
+                try {
+                    processOutputWriter.write("ROLLBACK;");
+                    // quit from psql
+                    processOutputWriter.write("\\q" + System.lineSeparator());
+                    processOutputWriter.flush();
+
+                    process.destroy();
+                } catch (IOException ex_) {
+                    logger.error("I/O error rolling back changes. Database: {}", databaseSettings, ex_);
+                    // initiate connection timeout and rollback destroying process
+                    process.destroyForcibly();
+                }
+
+                return;
             }
             // quit from psql
             processOutputWriter.write("\\q" + System.lineSeparator());
@@ -223,16 +240,19 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
 
         try {
             logger.info("Waiting for PostgreSQL restore process termination...");
+            // should return immediately as we quited from psql
             int exitVal = process.waitFor();
             if (exitVal != 0) {
                 throw new InternalPostgresToolError(
                         "PostgreSQL restore process terminated with error. See process's stderr log for details");
             }
-        } catch (InterruptedException ex) {
-            logger.error("Error terminating PostgreSQL restore process", ex);
+        } catch (InterruptedException ignore) {
+            // should not happen usually
+            // can happen if interrupted too late, when backup was already restored. Ignore in such case
+        } finally {
+            process.destroy();
         }
 
-        process.destroy();
         logger.info("PostgreSQL restore process destroyed");
 
         logger.info("PostgreSQL database backup successfully restored. Database: {}", databaseSettings.getName());
