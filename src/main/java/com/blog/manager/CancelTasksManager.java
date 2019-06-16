@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Collection;
 
 @Component
 @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
@@ -37,5 +38,9 @@ public class CancelTasksManager {
         cancelTask.setTaskId(taskId);
         cancelTask.setPutTime(LocalDateTime.now(ZoneOffset.UTC));
         cancelTasksRepository.save(cancelTask);
+    }
+
+    public void deleteByTaskIdIn(@NotNull Collection<Integer> taskId) {
+        cancelTasksRepository.deleteByTaskIdIn(taskId);
     }
 }

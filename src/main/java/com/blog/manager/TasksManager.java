@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -174,6 +175,10 @@ public class TasksManager {
      */
     public Optional<Task> findById(@NotNull Integer id) {
         return tasksRepository.findById(id);
+    }
+
+    public Iterable<Task> findAllById(@NotNull Collection<Integer> ids) {
+        return tasksRepository.findAllById(ids);
     }
 
     /**
