@@ -101,8 +101,9 @@
                             <tr>
                                 <th class="col-md-2" scope="col">Task</th>
                                 <th class="col-md-4" scope="col">State</th>
-                                <th class="col-md-4" scope="col">State</th>
+                                <th class="col-md-4" scope="col">Canceled</th>
                                 <th class="col-md-3" scope="col">Creation time</th>
+                                <th class="col-md-2" scope="col">Cancel</th>
                             </tr>
                             </thead>
                             <tbody id="backupTasksTableBody">
@@ -111,6 +112,16 @@
                                 <td th:text="*{state}"></td>
                                 <td th:text="*{interrupted}"></td>
                                 <td th:text="*{time}"></td>
+                                <td>
+                                    <div class="d-flex flex-row-reverse bd-highlight">
+                                        <form th:action="@{/cancel-task}" th:method="post">
+                                            <input hidden th:name="taskId" th:value="*{id}">
+                                            <button class="btn btn-secondary" type="submit">
+                                                Cancel
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
                             </tr>
                             </tbody>
                         </table>
