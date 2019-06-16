@@ -99,12 +99,14 @@ public class DropboxStorage implements Storage {
             if (currentChunkSize != 0) {
                 bufferedOutputStream.flush();
                 String currentFilePath = getCurrentFilePartAsAbsolutePath(backupFolderPath, backupName, currentBackupPart);
+
                 dbxClient.files().uploadBuilder(currentFilePath).uploadAndFinish(
                         new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
+
                 byteArrayOutputStream.reset();
             }
         } catch (InterruptedIOException ex) {
-            logger.error("Uploading was interrupted. Backup folder: {}", backupFolderPath);
+            logger.error("Uploading to Dropbox was interrupted. Backup folder: {}", backupFolderPath);
         } catch (DbxException | IOException ex) {
             throw new RuntimeException("Error occurred while uploading backup to Dropbox", ex);
         }
@@ -141,7 +143,7 @@ public class DropboxStorage implements Storage {
 
             return in;
         } catch (IOException ex) {
-            throw new RuntimeException("Error occurred while initializing backup downloading from Dropbox", ex);
+            throw new RuntimeException("Error initializing backup downloading from Dropbox", ex);
         }
     }
 
@@ -177,7 +179,7 @@ public class DropboxStorage implements Storage {
 
         private Integer id;
 
-        BackupDownloader(OutputStream out, DbxClientV2 dbxClient, String backupFolderPath,
+        BackupDownloader(PipedOutputStream out, DbxClientV2 dbxClient, String backupFolderPath,
                          String backupName, int filesCount, Integer id) {
             this.out = out;
             this.dbxClient = dbxClient;
@@ -196,8 +198,11 @@ public class DropboxStorage implements Storage {
                     dbxClient.files().downloadBuilder(currentFile).download(out);
                 }
             } catch (DbxException | IOException ex) {
-                errorCallbackService.onError(new RuntimeException("Error occurred while downloading backup from Dropbox. Backup folder: " +
-                        backupFolderPath, ex), id);
+                // if stream is closed, that means work was interrupted, so it is not an error
+                if (!ex.getMessage().equals("Pipe closed")) {
+                    errorCallbackService.onError(new RuntimeException("Error occurred while downloading backup from Dropbox. Backup folder: " +
+                            backupFolderPath, ex), id);
+                }
             } finally {
                 try {
                     out.close();

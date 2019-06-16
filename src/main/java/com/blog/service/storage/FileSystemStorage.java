@@ -42,9 +42,9 @@ public class FileSystemStorage implements Storage {
 
             File backupFolder = new File(backupFolderPath);
             if (!backupFolder.mkdir()) {
-                throw new RuntimeException(String.format(
-                        "Can't upload backup to Local File System storage: error creating backup folder to save backup to. " +
-                                "Backup folder: %s", backupFolderPath));
+                throw new RuntimeException(
+                        "Can't upload backup to Local File System storage: error creating backup folder to save backup to. Backup folder: "
+                                + backupFolderPath);
             }
 
             while (bytesRead != -1) {
@@ -68,8 +68,11 @@ public class FileSystemStorage implements Storage {
                     }
                 }
             }
+        } catch (InterruptedIOException ex) {
+            logger.error("Backup uploading to Local File System was interrupted. Backup folder: {}", backupFolderPath);
         } catch (IOException ex) {
-            throw new RuntimeException("Error occurred while uploading backup to the Local File System", ex);
+            throw new RuntimeException(
+                    "Error occurred while uploading backup to the Local File System. Backup folder: " + backupFolderPath, ex);
         }
     }
 
@@ -96,7 +99,7 @@ public class FileSystemStorage implements Storage {
             }
 
             return new SequenceInputStream(Collections.enumeration(backupFileStreamList));
-        } catch (IOException ex) {
+        } catch (FileNotFoundException ex) {
             throw new RuntimeException("Error occurred while downloading backup from Local File System", ex);
         }
     }
@@ -114,19 +117,15 @@ public class FileSystemStorage implements Storage {
 
         logger.info("Total files in backup folder on Local File System: {}. Backup folder: {}", filesCount, backupFolderPath);
 
-        boolean deleted;
         for (long currentBackupPart = 0; currentBackupPart < filesCount; currentBackupPart++) {
             File backupFile = new File(getCurrentFilePartAsAbsolutePath(backupFolderPath, backupName, currentBackupPart));
-            deleted = backupFile.delete();
-            if (!deleted) {
+            if (!backupFile.delete()) {
                 throw new RuntimeException(String.format("Error deleting backup. Backup folder: %s. Can't delete file: %s",
                         backupFolderPath, backupFile.getName()));
             }
         }
-        deleted = backupFolder.delete();
-        if (!deleted) {
-            throw new RuntimeException(String.format("Error deleting backup. Backup folder: %s. Can't delete folder",
-                    backupFolderPath));
+        if (!backupFolder.delete()) {
+            throw new RuntimeException(String.format("Error deleting backup. Backup folder: %s. Can't delete folder", backupFolderPath));
         }
     }
 }
