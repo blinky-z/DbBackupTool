@@ -27,7 +27,7 @@ class BackupProcessorManagerTests extends ApplicationTests {
     private List<Processor> allProcessors;
 
     @Test
-    void getProcessorsToApplySorted_shouldPropelySortProcessorsInDescendingOrderByPrecedence() {
+    void getProcessorsToApplySorted_shouldProperlySortProcessorsInDescendingOrderByPrecedence() {
         List<ProcessorType> processorTypes = Arrays.asList(ProcessorType.values());
 
         List<Processor> managerProcessorsSorted = backupProcessorManager.getProcessorsToApplySorted(processorTypes);

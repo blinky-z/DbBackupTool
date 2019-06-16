@@ -57,3 +57,10 @@ create table if not exists error_tasks
     TASK_ID       INTEGER UNIQUE,
     ERROR_HANDLED BOOLEAN default false
 );
+
+create table if not exists cancel_tasks
+(
+    ID       SERIAL PRIMARY KEY,
+    TASK_ID  INTEGER UNIQUE,
+    PUT_TIME timestamp not null
+)

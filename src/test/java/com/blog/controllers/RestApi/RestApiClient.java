@@ -74,7 +74,7 @@ public class RestApiClient {
     List<WebBackupTask> getTaskStates() {
         logger.debug("Performing GET task states request...");
 
-        WebBackupTask[] taskStateArray = testRestTemplate.getForObject("/api/get-states", WebBackupTask[].class);
+        WebBackupTask[] taskStateArray = testRestTemplate.getForObject("/api/get-tasks", WebBackupTask[].class);
         List<WebBackupTask> taskStateList = Arrays.asList(Objects.requireNonNull(taskStateArray));
 
         logger.debug("GET task states request is done. Task states: {}", taskStateList);

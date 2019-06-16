@@ -6,7 +6,6 @@ import com.blog.entities.task.PlannedTask;
 import com.blog.entities.task.Task;
 import com.blog.manager.*;
 import com.blog.service.TasksStarterService;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -36,6 +34,7 @@ class PlannedBackupTasksWatcher {
     private DatabaseSettingsManager databaseSettingsManager;
     private BackupPropertiesManager backupPropertiesManager;
     private TasksStarterService tasksStarterService;
+    private CancelTasksManager cancelTasksManager;
 
     @Autowired
     public void setTasksManager(TasksManager tasksManager) {
@@ -67,28 +66,9 @@ class PlannedBackupTasksWatcher {
         this.tasksStarterService = tasksStarterService;
     }
 
-    /**
-     * This function reverts planned task turning related handler task into error state.
-     *
-     * @param plannedTask planned task entity
-     */
-    private void revertPlannedBackupTask(@NotNull PlannedTask plannedTask) {
-        Objects.requireNonNull(plannedTask);
-
-        Integer handlerTaskId = plannedTask.getHandlerTaskId();
-
-        if (handlerTaskId == null) {
-            logger.error("Can't revert planned task: null handler task. Planned task info: {}", plannedTask);
-            return;
-        }
-
-        Optional<Task> optionalHandlerTask = tasksManager.findById(handlerTaskId);
-        if (!optionalHandlerTask.isPresent()) {
-            logger.error("Can't revert planned task: no such handler task with ID {}. Planned task info: {}", handlerTaskId, plannedTask);
-            return;
-        }
-
-        errorTasksManager.setError(handlerTaskId);
+    @Autowired
+    public void setCancelTasksManager(CancelTasksManager cancelTasksManager) {
+        this.cancelTasksManager = cancelTasksManager;
     }
 
     /**
@@ -117,7 +97,7 @@ class PlannedBackupTasksWatcher {
     @Scheduled(fixedDelay = 30 * 1000)
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
     void watchExecutingPlannedTasks() {
-        for (PlannedTask plannedTask : plannedTasksManager.findFirstNByState(nRows, PlannedTask.State.EXECUTING)) {
+        for (PlannedTask plannedTask : plannedTasksManager.findFirstNByStateAndLock(nRows, PlannedTask.State.EXECUTING)) {
             if (plannedTask.getState() != PlannedTask.State.EXECUTING) {
                 continue;
             }
@@ -126,7 +106,7 @@ class PlannedBackupTasksWatcher {
 
             Integer handlerTaskId = plannedTask.getHandlerTaskId();
             if (handlerTaskId == null) {
-                logger.error("ILLEGAL STATE: planned task fired, but no handler task. Planned task info: {}. Starting the planned task again...",
+                logger.error("ILLEGAL STATE: planned task is executing, but no handler task. Planned task info: {}. Starting the planned task again...",
                         plannedTask);
                 plannedTasksManager.updateState(plannedTaskId, PlannedTask.State.WAITING);
                 continue;
@@ -141,8 +121,7 @@ class PlannedBackupTasksWatcher {
             }
 
             if (errorTasksManager.isError(handlerTaskId)) {
-                revertPlannedBackupTask(plannedTask);
-                plannedTask.setHandlerTaskId(null);
+                cancelTasksManager.addTaskToCancel(handlerTaskId);
                 plannedTasksManager.updateState(plannedTaskId, PlannedTask.State.WAITING);
                 continue;
             }
@@ -180,7 +159,7 @@ class PlannedBackupTasksWatcher {
     @Scheduled(fixedDelay = 60 * 1000)
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
     void watchPlannedTasks() {
-        for (PlannedTask plannedTask : plannedTasksManager.findFirstNByState(nRows, PlannedTask.State.WAITING)) {
+        for (PlannedTask plannedTask : plannedTasksManager.findFirstNByStateAndLock(nRows, PlannedTask.State.WAITING)) {
             LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
             LocalDateTime nextTaskTimeFireTime = plannedTask.getLastStartedTime().plus(plannedTask.getInterval());
 

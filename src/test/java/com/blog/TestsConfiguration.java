@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @TestConfiguration
@@ -63,7 +64,7 @@ public class TestsConfiguration {
 
     @Bean
     public Map<ProcessorType, Processor> processorMap() {
-        return processors.stream().collect(Collectors.toMap(Processor::getType, processor -> processor));
+        return processors.stream().collect(Collectors.toMap(Processor::getType, Function.identity()));
     }
 
     @Bean

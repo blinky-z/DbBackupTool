@@ -21,6 +21,6 @@ public class WatchersConfiguration implements SchedulingConfigurer {
 
     @Bean(destroyMethod = "shutdown")
     public Executor watchersExecutor() {
-        return Executors.newScheduledThreadPool(3);
+        return Executors.newScheduledThreadPool(4);
     }
 }
