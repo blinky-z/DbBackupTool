@@ -56,7 +56,7 @@ public interface Storage {
      * @return input stream, from which backup can be read
      * @implSpec This method may return while backup is still downloading (e.g. downloading is streaming).
      * <p>
-     * if an interrupt occurs, you should return {@literal null}, otherwise throw an occurred exception.
+     * if an interrupt occurs, you can safely return {@literal null}.
      * <p>
      * if any exception occurs while working with the returned input stream, it is guaranteed that this input stream will be closed.
      * So if you have a thread that writes to this stream, the thread will get an {@link java.io.IOException} when attempts to write to the
@@ -71,7 +71,7 @@ public interface Storage {
      * @param storageSettings storage settings to access storage where backup stored
      * @param backupName      backup name
      * @param id              backup deletion task ID
-     * @implSpec This method should not return until backup will be fully deleted or exception occurs.
+     * @implSpec This method should not return until backup will be fully deleted or exception occurred.
      * <p>
      * You can ignore interrupts and delete backup fully.
      */

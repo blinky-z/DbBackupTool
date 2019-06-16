@@ -22,5 +22,5 @@ public interface PlannedTasksRepository extends CrudRepository<PlannedTask, Inte
      * @return first N entities
      */
     @Query(value = "select * from planned_backup_tasks where state = :#{#state.name()} limit :#{#size} FOR UPDATE skip locked", nativeQuery = true)
-    Iterable<PlannedTask> findFirstNByState(@Param(value = "size") Integer size, @Param(value = "state") PlannedTask.State state);
+    Iterable<PlannedTask> findFirstNByStateAndLock(@Param(value = "size") Integer size, @Param(value = "state") PlannedTask.State state);
 }

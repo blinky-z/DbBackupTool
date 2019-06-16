@@ -58,13 +58,15 @@ public class Task {
      * <p>
      * Default is {@literal false}.
      */
-    private Boolean interrupted;
+    @Column(insertable = false)
+    private boolean interrupted;
 
     /**
      * Identifier of {@link BackupProperties}.
      * <p>
      * We should know backup ID to be able to handle occurred errors while executing task.
      */
+    @Column(updatable = false)
     private Integer backupPropertiesId;
 
     /**
@@ -118,11 +120,11 @@ public class Task {
         this.state = state;
     }
 
-    public Boolean getInterrupted() {
+    public boolean getInterrupted() {
         return interrupted;
     }
 
-    public void setInterrupted(Boolean interrupted) {
+    public void setInterrupted(boolean interrupted) {
         this.interrupted = interrupted;
     }
 

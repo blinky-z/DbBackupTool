@@ -3,13 +3,13 @@ package com.blog.entities.task;
 import javax.persistence.*;
 
 /**
- * This entity represents erroneous backup task.
+ * This entity represents erroneous backup task. It maps to the corresponding erroneous {@link Task}.
  */
 @Entity
 @Table(name = "error_tasks")
 public class ErrorTask {
     /**
-     * Identifier of each error backup task. This identifier is equal to backup task identifier.
+     * Identifier of this entity. It is not equal to the corresponding task ID.
      */
     @Id
     @Column(insertable = false, updatable = false)
@@ -22,6 +22,9 @@ public class ErrorTask {
     @Column(updatable = false)
     private Integer taskId;
 
+    /**
+     * Has error been handled or not.
+     */
     @Column(insertable = false)
     private Boolean errorHandled;
 

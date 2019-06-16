@@ -1,18 +1,18 @@
 package com.blog.controllers.WebApi;
 
 import com.blog.controllers.Errors.ValidationException;
-import com.blog.controllers.WebApi.Validator.WebAddPlannedTaskRequestValidator;
 import com.blog.controllers.WebApi.Validator.WebCreateBackupRequestValidator;
 import com.blog.controllers.WebApi.Validator.WebRestoreBackupRequestValidator;
 import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.storage.StorageSettings;
-import com.blog.entities.task.PlannedTask;
 import com.blog.entities.task.Task;
-import com.blog.manager.*;
+import com.blog.manager.BackupPropertiesManager;
+import com.blog.manager.DatabaseSettingsManager;
+import com.blog.manager.StorageSettingsManager;
+import com.blog.manager.TasksManager;
 import com.blog.service.TasksStarterService;
 import com.blog.service.processor.ProcessorType;
-import com.blog.webUI.formTransfer.WebAddPlannedTaskRequest;
 import com.blog.webUI.formTransfer.WebCreateBackupRequest;
 import com.blog.webUI.formTransfer.WebDeleteBackupRequest;
 import com.blog.webUI.formTransfer.WebRestoreBackupRequest;
@@ -45,11 +45,7 @@ public class WebApiBackupController {
 
     private WebRestoreBackupRequestValidator webRestoreBackupRequestValidator;
 
-    private WebAddPlannedTaskRequestValidator webAddPlannedTaskRequestValidator;
-
     private TasksManager tasksManager;
-
-    private PlannedTasksManager plannedTasksManager;
 
     private BackupPropertiesManager backupPropertiesManager;
 
@@ -76,18 +72,8 @@ public class WebApiBackupController {
     }
 
     @Autowired
-    public void setWebAddPlannedTaskRequestValidator(WebAddPlannedTaskRequestValidator webAddPlannedTaskRequestValidator) {
-        this.webAddPlannedTaskRequestValidator = webAddPlannedTaskRequestValidator;
-    }
-
-    @Autowired
     public void setTasksManager(TasksManager tasksManager) {
         this.tasksManager = tasksManager;
-    }
-
-    @Autowired
-    public void setPlannedTasksManager(PlannedTasksManager plannedTasksManager) {
-        this.plannedTasksManager = plannedTasksManager;
     }
 
     @Autowired
@@ -211,49 +197,6 @@ public class WebApiBackupController {
 
         backupPropertiesManager.deleteById(backupId);
         tasksStarterService.startDeleteTask(taskId, backupProperties, logger);
-
-        return "redirect:/dashboard";
-    }
-
-    @PostMapping(path = "/add-planned-task")
-    public String addPlannedTask(WebAddPlannedTaskRequest webAddPlannedTaskRequest, BindingResult bindingResult) {
-        logger.info("addPlannedTask(): Got planned task creation request");
-
-        webAddPlannedTaskRequestValidator.validate(webAddPlannedTaskRequest, bindingResult);
-        if (bindingResult.hasErrors()) {
-            logger.error("Invalid planned task creation request. Error: {}", bindingResult.getAllErrors());
-
-            return "dashboard";
-        }
-
-        String databaseSettingsName = webAddPlannedTaskRequest.getDatabaseSettingsName();
-        if (!databaseSettingsManager.existsById(databaseSettingsName)) {
-            throw new ValidationException(
-                    String.format("Can't create planned task: Non-existing database: [%s]", databaseSettingsName));
-        }
-
-        List<String> storageSettingsNameList = webAddPlannedTaskRequest.getStorageSettingsNameList();
-        for (String storageSettingsName : storageSettingsNameList) {
-            if (!storageSettingsManager.existsById(storageSettingsName)) {
-                throw new ValidationException(String.format("Can't create planned task: Non-existing storage: [%s]", storageSettingsName));
-            }
-        }
-
-        List<ProcessorType> processors = new ArrayList<>();
-        for (String processorName : webAddPlannedTaskRequest.getProcessors()) {
-            Optional<ProcessorType> optionalProcessorType = ProcessorType.of(processorName);
-            if (!optionalProcessorType.isPresent()) {
-                throw new ValidationException(String.format("Can't create planned task: Non-existing processor: [%s]", processorName));
-            }
-            processors.add(optionalProcessorType.get());
-        }
-
-        PlannedTask savedPlannedTask = plannedTasksManager.addNewTask(
-                webAddPlannedTaskRequest.getDatabaseSettingsName(),
-                webAddPlannedTaskRequest.getStorageSettingsNameList(), processors,
-                Long.valueOf(webAddPlannedTaskRequest.getInterval()));
-
-        logger.info("Planned backup task saved into database. Saved task: {}", savedPlannedTask);
 
         return "redirect:/dashboard";
     }

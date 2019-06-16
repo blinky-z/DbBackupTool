@@ -34,7 +34,7 @@ public class RestApiBackupTaskMonitor {
         this.tasksManager = tasksManager;
     }
 
-    @GetMapping(path = "/api/get-states")
+    @GetMapping(path = "/api/get-tasks")
     public List<WebBackupTask> getStates() {
         List<WebBackupTask> webBackupTasks = new ArrayList<>();
 
@@ -43,6 +43,7 @@ public class RestApiBackupTaskMonitor {
                     .withId(task.getId())
                     .withType(task.getType().toString())
                     .withState(task.getState().toString())
+                    .withInterrupted(task.getInterrupted())
                     .withTime(webDateFormatter.format(task.getDate()))
                     .build();
 

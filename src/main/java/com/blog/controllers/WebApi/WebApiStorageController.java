@@ -107,7 +107,7 @@ public class WebApiStorageController {
 
     @Nullable
     private String validateDeleteStorageRequest(@Nullable String settingsName) {
-        if (settingsName == null || settingsName.isEmpty() || settingsName.trim().isEmpty()) {
+        if (settingsName == null || settingsName.trim().isEmpty()) {
             return "Please, provide storage settings name to delete";
         }
 

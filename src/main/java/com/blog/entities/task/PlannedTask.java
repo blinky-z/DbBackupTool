@@ -174,7 +174,7 @@ public class PlannedTask {
 
     public enum State {
         WAITING,
-        EXECUTING,
+        EXECUTING
     }
 
 

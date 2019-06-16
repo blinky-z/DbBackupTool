@@ -39,8 +39,8 @@ public class PlannedTasksManager {
      * @param state entity state
      * @return first N not locked entities
      */
-    public Iterable<PlannedTask> findFirstNByState(@NotNull Integer size, @NotNull PlannedTask.State state) {
-        return plannedTasksRepository.findFirstNByState(size, state);
+    public Iterable<PlannedTask> findFirstNByStateAndLock(@NotNull Integer size, @NotNull PlannedTask.State state) {
+        return plannedTasksRepository.findFirstNByStateAndLock(size, state);
     }
 
     /**

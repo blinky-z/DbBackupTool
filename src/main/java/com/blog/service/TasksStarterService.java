@@ -99,7 +99,6 @@ public class TasksStarterService {
 
             try (InputStream backupStream = databaseBackupManager.createBackup(databaseSettings, taskId)) {
                 if (Thread.interrupted()) {
-                    tasksManager.setInterrupted(taskId);
                     throw new InterruptedException();
                 }
 
@@ -109,7 +108,6 @@ public class TasksStarterService {
 
                 try (InputStream processedBackupStream = backupProcessorManager.process(backupStream, processors)) {
                     if (Thread.interrupted()) {
-                        tasksManager.setInterrupted(taskId);
                         throw new InterruptedException();
                     }
 
@@ -118,7 +116,6 @@ public class TasksStarterService {
 
                     backupLoadManager.uploadBackup(processedBackupStream, backupProperties, taskId);
                     if (Thread.interrupted()) {
-                        tasksManager.setInterrupted(taskId);
                         throw new InterruptedException();
                     }
 
@@ -131,6 +128,7 @@ public class TasksStarterService {
                 logger.error("Error occurred while creating backup. Backup properties: {}", backupProperties, ex);
                 errorTasksManager.setError(taskId);
             } catch (InterruptedException ex) {
+                tasksManager.setInterrupted(taskId);
                 logger.error("Backup creating task was interrupted. Task ID: {}", taskId);
             } finally {
                 futures.remove(taskId);
@@ -166,7 +164,6 @@ public class TasksStarterService {
             try (InputStream downloadedBackup =
                          backupLoadManager.downloadBackup(backupProperties.getBackupName(), storageSettingsName, taskId)) {
                 if (Thread.interrupted() || downloadedBackup == null) {
-                    tasksManager.setInterrupted(taskId);
                     throw new InterruptedException();
                 }
 
@@ -175,7 +172,6 @@ public class TasksStarterService {
 
                 try (InputStream deprocessedBackup = backupProcessorManager.deprocess(downloadedBackup, backupProperties.getProcessors())) {
                     if (Thread.interrupted()) {
-                        tasksManager.setInterrupted(taskId);
                         throw new InterruptedException();
                     }
 
@@ -184,7 +180,6 @@ public class TasksStarterService {
 
                     databaseBackupManager.restoreBackup(deprocessedBackup, databaseSettings, taskId);
                     if (Thread.interrupted()) {
-                        tasksManager.setInterrupted(taskId);
                         throw new InterruptedException();
                     }
 
@@ -197,6 +192,7 @@ public class TasksStarterService {
                 logger.info("Error occurred while restoring backup. Backup properties: {}", backupProperties, ex);
                 errorTasksManager.setError(taskId);
             } catch (InterruptedException ex) {
+                tasksManager.setInterrupted(taskId);
                 logger.error("Task was interrupted. Task ID: {}", taskId);
             } finally {
                 futures.remove(taskId);
@@ -227,7 +223,6 @@ public class TasksStarterService {
 
                 backupLoadManager.deleteBackup(backupProperties, taskId);
                 if (Thread.interrupted()) {
-                    tasksManager.setInterrupted(taskId);
                     throw new InterruptedException();
                 }
 
@@ -237,6 +232,7 @@ public class TasksStarterService {
                 logger.error("Error occurred while deleting backup. Backup properties: {}", backupProperties, ex);
                 errorTasksManager.setError(taskId);
             } catch (InterruptedException ex) {
+                tasksManager.setInterrupted(taskId);
                 logger.error("Task was interrupted. Task ID: {}", taskId);
             } finally {
                 futures.remove(taskId);

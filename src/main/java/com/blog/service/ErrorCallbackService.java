@@ -57,9 +57,8 @@ public class ErrorCallbackService {
                 return;
             } else {
                 logger.info("Task canceled. Task ID: {}", taskId);
+                errorTasksManager.setError(taskId);
             }
         }
-
-        errorTasksManager.setError(taskId);
     }
 }
