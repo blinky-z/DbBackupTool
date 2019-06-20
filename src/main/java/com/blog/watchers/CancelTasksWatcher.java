@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 /**
- * This class scans for tasks to cancel and cancels them.
+ * This class scans for tasks to cancel and tried to cancel them.
  */
 @Component
 public class CancelTasksWatcher {
@@ -50,6 +50,22 @@ public class CancelTasksWatcher {
         this.tasksManager = tasksManager;
     }
 
+    /**
+     * This watcher wakes up every time 10 seconds passed from the last completion, checks if there are any tasks to cancel and tries to
+     * cancel each task.
+     * <p>
+     * Since there are can be working more that one instance of the program, {@literal Future} instance of task can belong to different
+     * servers. We can't get access to {@literal Future} if it's not in memory of the server where task cancellation request was accepted.
+     * So the purpose of this watcher is to be able cancel tasks that works in the other instance of program. Each server has this watcher
+     * checking for available cancellation requests and if any, the watcher tries to cancel corresponding {@literal Future}.
+     * If cancellation is successful task will be also reverted.
+     * <p>
+     * If task cancellation request timeout exceeded, then it means a server that had requested {@literal Future} instances has been
+     * shutdown, so all {@literal Future} instances lost and task can't be canceled. In such case task cancellation request will be ignored.
+     *
+     * @see TasksStarterService#getFuture(Integer)
+     * @see TasksManager#revertTask(Task)
+     */
     @Scheduled(fixedDelay = 10 * 1000)
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
     void watchTasksToCancel() {
@@ -67,7 +83,7 @@ public class CancelTasksWatcher {
 
             Task task = tasksAsMap.get(taskId);
             if (task == null) {
-                logger.error("Can't cancel task: no such task with ID {}", taskId);
+                logger.error("Can't cancel task: no such entity with ID {}", taskId);
                 taskIdsForDeleting.add(taskId);
                 continue;
             }
