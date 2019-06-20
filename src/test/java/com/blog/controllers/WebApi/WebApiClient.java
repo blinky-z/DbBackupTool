@@ -86,7 +86,7 @@ class WebApiClient {
             @Override
             public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution) throws IOException {
                 request.getHeaders().add("Cookie", jsessionId);
-                logger.debug("Client request: {URL: {}, Method: {}, Headers: {}}", request.getURI(), request.getMethod(), request.getHeaders());
+                logger.trace("Client request: {URL: {}, Method: {}, Headers: {}}", request.getURI(), request.getMethod(), request.getHeaders());
                 return execution.execute(request, body);
             }
         });

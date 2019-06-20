@@ -129,16 +129,18 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
             try {
                 InputStream inputStream = process.getInputStream();
 
-                logger.info("Waiting for PostgreSQL backup process termination...");
                 int exitVal = process.waitFor();
                 if (exitVal != 0) {
+                    // check if pg_dump exited with error due to its output stream closing
+                    // in such case in means that error or interrupt occurred while handling backup and the according backup stream
+                    // was closed. This backup stream is a pg_dump's output stream
                     try {
+                        inputStream.available();
+                    } catch (IOException ex) {
                         // the input stream is the instance of BufferedInputStream on Windows and the instance of ProcessPipeInputStream
                         // which extends BufferedInputStream on Linux
                         // both implementations throws IOException with message "Stream closed" when calling available() on the closed stream
-                        inputStream.available();
-                    } catch (IOException ex) {
-                        // pg_dump process's output stream was closed, that is backup creating was interruptet, so it is not an error
+                        // pg_dump process's output stream was closed, that is backup creating was interrupted, so it is not an error
                         if (ex.getMessage().equals("Stream closed")) {
                             process.destroy();
                             return;
@@ -155,7 +157,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
                         Thread.yield();
                     }
                 } catch (IOException ignore) {
-                    // can happen only if stream was closed, which means that all data already has been read
+                    // can happen only if stream was closed, which means that all data already has been read and stream closed
                 }
 
                 process.destroy();
@@ -253,8 +255,6 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
             process.destroy();
         }
 
-        logger.info("PostgreSQL restore process destroyed");
-
         logger.info("PostgreSQL database backup successfully restored. Database: {}", databaseSettings.getName());
     }
 
@@ -288,7 +288,6 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
 
         @Override
         public void run() {
-            logger.info("Reading process standard error stream...");
             try (
                     BufferedReader errorStreamReader = new BufferedReader(new InputStreamReader(in))
             ) {
@@ -314,7 +313,6 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
 
         @Override
         public void run() {
-            logger.info("Reading process standard output stream...");
             try (
                     BufferedReader outputStreamReader = new BufferedReader(new InputStreamReader(out))
             ) {

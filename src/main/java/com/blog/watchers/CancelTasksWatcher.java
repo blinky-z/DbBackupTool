@@ -28,7 +28,7 @@ import java.util.stream.StreamSupport;
  * This class scans for tasks to cancel and tried to cancel them.
  */
 @Component
-public class CancelTasksWatcher {
+class CancelTasksWatcher {
     private static final Logger logger = LoggerFactory.getLogger(CancelTasksWatcher.class);
     private static final Duration cancelTimeout = Duration.ofMinutes(10);
     private CancelTasksManager cancelTasksManager;

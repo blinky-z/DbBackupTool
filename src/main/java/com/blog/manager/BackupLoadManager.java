@@ -317,6 +317,7 @@ public class BackupLoadManager {
             try {
                 source.close();
             } catch (IOException ignored) {
+                exceptionOccurred = true;
                 inputStreamIsClosed = false;
             }
 
