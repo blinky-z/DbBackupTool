@@ -1,0 +1,40 @@
+kind: pipeline
+name: default
+
+#workspace:
+#  base: /usr/app
+#  path:
+
+steps:
+  - name: test
+    image: gradle:5.4.1-jre11
+    commands:
+      - su-
+      - echo 'deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main' > /etc/apt/sources.list.d/pgdg.list
+      - wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+      - apt-get update && apt-get install -y --no-install-recommends postgresql-client-10
+      - chown -R gradle .
+      - su - gradle
+      - gradle test
+
+  - name: build
+    image: gradle:5.4.1-jre11
+    commands:
+      - su-
+      - echo 'deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main' > /etc/apt/sources.list.d/pgdg.list
+      - wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+      - apt-get update && apt-get install -y --no-install-recommends postgresql-client-10
+      - chown -R gradle .
+      - su - gradle
+      - gradle build
+
+  - name: build
+    image: gradle:5.4.1-jre11
+    commands:
+      - su-
+      - echo 'deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main' > /etc/apt/sources.list.d/pgdg.list
+      - wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+      - apt-get update && apt-get install -y --no-install-recommends postgresql-client-10
+      - chown -R gradle .
+      - su - gradle
+      - gradle bootRun
