@@ -93,15 +93,19 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
     /**
      * Creates PostgreSQL database plan-text backup.
      * <p>
-     * Backup is created by <i>pg_dump</i> tool.
+     * Backup is creating by <i>pg_dump</i> tool.
      * <p>
-     * If pg_dump exits with non-zero exit code, InternalPostgresToolError will be thrown. In such case, you can find process's stderr
+     * If pg_dump exits with non-zero exit code, {@link InternalPostgresToolError} will be thrown. In such case, you can find process's stderr
      * messages in the log.
      * <p>
-     * Note, that this function returns directly process's stdin stream, that is you will not have to wait for full backup creation, but
-     * if buffer overflows, pg_dump process hangs until the stream's buffer will not be read.
+     * Note, that this function returns directly process's output stream, that is you will not have to wait for full backup creation and
+     * backup will be writing in real time. But if buffer overflows, pg_dump process hangs until there will be free space in output stream's
+     * buffer.
      *
      * @return input stream, connected to the output stream of the pg_dump process
+     * @implNote {@literal pg_dump} process wil be destroyed only if its output stream was closed to prevent situation when process exits
+     * but there are left some data in buffer which will not be available for retrieving after destroying of process. So always ensure that
+     * you close returned input stream after getting EOF or exception.
      */
     @NotNull
     public InputStream createBackup(@NotNull DatabaseSettings databaseSettings, @NotNull Integer id)
@@ -130,17 +134,18 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
                 InputStream inputStream = process.getInputStream();
 
                 int exitVal = process.waitFor();
+                logger.debug("PostgreSQL backup creation process exited with value {}", exitVal);
                 if (exitVal != 0) {
-                    // check if pg_dump exited with error due to its output stream closing
-                    // in such case in means that error or interrupt occurred while handling backup and the according backup stream
-                    // was closed. This backup stream is a pg_dump's output stream
+                    // check if pg_dump exited with error due to closing of its output stream
+                    // in such case it means that error or interrupt occurred while handling backup and the according backup stream
+                    // was closed, but in fact that stream is a pg_dump's output stream
+                    // we don't consider it as error
                     try {
                         inputStream.available();
                     } catch (IOException ex) {
                         // the input stream is the instance of BufferedInputStream on Windows and the instance of ProcessPipeInputStream
                         // which extends BufferedInputStream on Linux
                         // both implementations throws IOException with message "Stream closed" when calling available() on the closed stream
-                        // pg_dump process's output stream was closed, that is backup creating was interrupted, so it is not an error
                         if (ex.getMessage().equals("Stream closed")) {
                             process.destroy();
                             return;
@@ -151,19 +156,24 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
                             "PostgreSQL backup process terminated with error. See process's stderr log for details"), id);
                 }
 
+                logger.debug("PostgreSQL backup process terminated. Waiting for full reading of process's output stream buffer");
+
                 try {
                     // we should not close input stream until all data left in stdout buffer will be read
-                    while (inputStream.available() != 0) {
-                        Thread.yield();
+                    // not only we should wait until all data will be read, but also ensure that a reader got EOF and closed the stream
+                    // we can know that stream was closed getting an IOException
+                    while (true) {
+                        inputStream.available();
+                        Thread.sleep(5000);
                     }
-                } catch (IOException ignore) {
-                    // can happen only if stream was closed, which means that all data already has been read and stream closed
+                } catch (IOException ex) {
+                    // can and should happen in case of closing the stream, which means that all data has been read and we can destroy process
+                    process.destroy();
+                    logger.info("PostgreSQL backup creation process destroyed");
                 }
-
-                process.destroy();
             } catch (InterruptedException ex) {
                 // this thread might be interrupted only by the shutdown() method on executor service destroying
-                // process is destroyed by shutdown hook, so do nothing
+                // process will be destroyed by a shutdown hook, so do nothing
             }
         });
 

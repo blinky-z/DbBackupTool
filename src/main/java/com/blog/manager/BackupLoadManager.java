@@ -286,9 +286,10 @@ public class BackupLoadManager {
 
         BackupUploadSplitter(InputStream source, List<PipedOutputStream> outputStreamList, AtomicBoolean wasInterrupted) {
             if (!(source instanceof BufferedInputStream)) {
-                source = new BufferedInputStream(source);
+                this.source = new BufferedInputStream(source);
+            } else {
+                this.source = (BufferedInputStream) source;
             }
-            this.source = (BufferedInputStream) source;
             List<BufferedOutputStream> bufferedOutputStreamList = new ArrayList<>();
             for (OutputStream outputStream : outputStreamList) {
                 BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
