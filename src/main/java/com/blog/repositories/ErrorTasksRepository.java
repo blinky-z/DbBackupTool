@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.Optional;
 
 public interface ErrorTasksRepository extends CrudRepository<ErrorTask, Integer> {
@@ -21,7 +22,9 @@ public interface ErrorTasksRepository extends CrudRepository<ErrorTask, Integer>
      * @return first N entities
      */
     @Query(value = "select * from error_tasks limit :#{#size} FOR UPDATE skip locked", nativeQuery = true)
-    Iterable<ErrorTask> findFirstN(@Param(value = "size") Integer size);
+    Iterable<ErrorTask> findFirstNAndLock(@Param(value = "size") Integer size);
 
     boolean existsByTaskId(Integer taskId);
+
+    Iterable<ErrorTask> findAllByTaskIdIn(Collection<Integer> ids);
 }

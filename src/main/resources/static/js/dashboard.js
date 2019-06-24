@@ -14,6 +14,7 @@ window.setInterval(function () {
                     bodyHtml += '<tr>\n' +
                         '<th scope="row">' + backupTask.type + '</th>\n' +
                         '<td>' + backupTask.state + '</td>\n' +
+                        '<td>' + backupTask.error + '</td>\n' +
                         '<td>' + backupTask.interrupted + '</td>\n' +
                         '<td>' + backupTask.time + '</td>\n' +
                         '<td>\n' +

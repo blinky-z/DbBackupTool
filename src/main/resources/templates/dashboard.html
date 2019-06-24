@@ -100,16 +100,18 @@
                             <thead class="thead-dark">
                             <tr>
                                 <th class="col-md-2" scope="col">Task</th>
-                                <th class="col-md-4" scope="col">State</th>
-                                <th class="col-md-4" scope="col">Canceled</th>
+                                <th class="col-md-2" scope="col">State</th>
+                                <th class="col-md-1" scope="col">Error</th>
+                                <th class="col-md-1" scope="col">Canceled</th>
                                 <th class="col-md-3" scope="col">Creation time</th>
-                                <th class="col-md-2" scope="col">Cancel</th>
+                                <th class="col-md-1" scope="col">Cancel</th>
                             </tr>
                             </thead>
                             <tbody id="backupTasksTableBody">
                             <tr th:each="backupTask: ${backupTasks}" th:object="${backupTask}">
                                 <th scope="row" th:text="*{type}"></th>
                                 <td th:text="*{state}"></td>
+                                <td th:text="*{error}"></td>
                                 <td th:text="*{interrupted}"></td>
                                 <td th:text="*{time}"></td>
                                 <td>

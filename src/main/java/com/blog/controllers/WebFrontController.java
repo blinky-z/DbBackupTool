@@ -7,11 +7,9 @@ import com.blog.entities.storage.DropboxSettings;
 import com.blog.entities.storage.LocalFileSystemSettings;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.entities.storage.StorageType;
+import com.blog.entities.task.ErrorTask;
 import com.blog.entities.task.Task;
-import com.blog.manager.BackupPropertiesManager;
-import com.blog.manager.DatabaseSettingsManager;
-import com.blog.manager.StorageSettingsManager;
-import com.blog.manager.TasksManager;
+import com.blog.manager.*;
 import com.blog.webUI.formTransfer.*;
 import com.blog.webUI.renderModels.WebBackupItem;
 import com.blog.webUI.renderModels.WebBackupTask;
@@ -25,10 +23,9 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Controller
 @ControllerAdvice
@@ -42,6 +39,8 @@ public class WebFrontController {
     private BackupPropertiesManager backupPropertiesManager;
 
     private TasksManager tasksManager;
+
+    private ErrorTasksManager errorTasksManager;
 
     @Autowired
     public void setWebDateFormatter(DateTimeFormatter webDateFormatter) {
@@ -66,6 +65,11 @@ public class WebFrontController {
     @Autowired
     public void setTasksManager(TasksManager tasksManager) {
         this.tasksManager = tasksManager;
+    }
+
+    @Autowired
+    public void setErrorTasksManager(ErrorTasksManager errorTasksManager) {
+        this.errorTasksManager = errorTasksManager;
     }
 
     @RequestMapping("/")
@@ -182,12 +186,19 @@ public class WebFrontController {
         {
             List<WebBackupTask> backupTaskList = new ArrayList<>();
 
+            Iterable<Task> tasks = tasksManager.findAllByRunType(Task.RunType.USER);
+            List<Integer> taskIds = StreamSupport.stream(tasks.spliterator(), false).map(Task::getId).collect(Collectors.toList());
+            HashSet<Integer> errorTaskIds = StreamSupport.stream(errorTasksManager.findAllByTaskIdIn(taskIds).spliterator(), false)
+                    .map(ErrorTask::getTaskId)
+                    .collect(Collectors.toCollection(HashSet::new));
+
             for (Task task : tasksManager.findAllByRunType(Task.RunType.USER)) {
                 WebBackupTask webBackupTask = new WebBackupTask.Builder()
                         .withId(task.getId())
                         .withType(task.getType().toString())
                         .withState(task.getState().toString())
-                        .withInterrupted(task.getInterrupted())
+                        .withIsError(errorTaskIds.contains(task.getId()))
+                        .withIsInterrupted(task.getInterrupted())
                         .withTime(webDateFormatter.format(task.getDate()))
                         .build();
 

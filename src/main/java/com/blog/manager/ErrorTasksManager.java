@@ -10,6 +10,9 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.Objects;
+
 /**
  * This class provides API to manage error tasks.
  *
@@ -31,8 +34,8 @@ public class ErrorTasksManager {
      * @param size how many rows to retrieve
      * @return first N not locked entities
      */
-    public Iterable<ErrorTask> findFirstN(@NotNull Integer size) {
-        return errorTasksRepository.findFirstN(size);
+    public Iterable<ErrorTask> findFirstNAndLock(@NotNull Integer size) {
+        return errorTasksRepository.findFirstNAndLock(size);
     }
 
     /**
@@ -66,5 +69,18 @@ public class ErrorTasksManager {
     public void setErrorHandled(@NotNull Integer taskId) {
         errorTasksRepository.findByTaskId(taskId).ifPresent(
                 backupTask -> backupTask.setErrorHandled(Boolean.TRUE));
+    }
+
+    /**
+     * Returns all error tasks that maps to one of the task ids.
+     * <p>
+     * You can use this method to check which tasks from given collection are erroneous.
+     *
+     * @param ids task ids
+     * @return error task
+     */
+    public Iterable<ErrorTask> findAllByTaskIdIn(@NotNull Collection<Integer> ids) {
+        Objects.requireNonNull(ids);
+        return errorTasksRepository.findAllByTaskIdIn(ids);
     }
 }

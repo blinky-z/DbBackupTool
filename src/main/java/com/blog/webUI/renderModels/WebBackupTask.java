@@ -18,15 +18,19 @@ public class WebBackupTask {
 
     private final String state;
 
-    private final boolean interrupted;
+    private final Boolean isError;
+
+    private final Boolean isInterrupted;
 
     private final String time;
 
-    private WebBackupTask(@NotNull Integer id, @NotNull String type, @NotNull String state, boolean interrupted, @NotNull String time) {
+    private WebBackupTask(@NotNull Integer id, @NotNull String type, @NotNull String state, @NotNull Boolean isError,
+                          @NotNull Boolean isInterrupted, @NotNull String time) {
         this.id = id;
         this.type = type;
         this.state = state;
-        this.interrupted = interrupted;
+        this.isError = isError;
+        this.isInterrupted = isInterrupted;
         this.time = time;
     }
 
@@ -42,8 +46,12 @@ public class WebBackupTask {
         return state;
     }
 
-    public boolean getInterrupted() {
-        return interrupted;
+    public Boolean getError() {
+        return isError;
+    }
+
+    public Boolean getInterrupted() {
+        return isInterrupted;
     }
 
     public String getTime() {
@@ -56,6 +64,8 @@ public class WebBackupTask {
                 "id=" + id +
                 ", type='" + type + '\'' +
                 ", state='" + state + '\'' +
+                ", error=" + isError +
+                ", isInterrupted=" + isInterrupted +
                 ", time='" + time + '\'' +
                 '}';
     }
@@ -64,8 +74,9 @@ public class WebBackupTask {
     public static final class Builder {
         private Integer id;
         private String type;
+        private Boolean isError;
         private String state;
-        private boolean interrupted;
+        private Boolean isInterrupted;
         private String time;
 
         public Builder() {
@@ -86,8 +97,8 @@ public class WebBackupTask {
             return this;
         }
 
-        public Builder withInterrupted(boolean interrupted) {
-            this.interrupted = interrupted;
+        public Builder withIsInterrupted(Boolean isInterrupted) {
+            this.isInterrupted = isInterrupted;
             return this;
         }
 
@@ -96,8 +107,13 @@ public class WebBackupTask {
             return this;
         }
 
+        public Builder withIsError(boolean isError) {
+            this.isError = isError;
+            return this;
+        }
+
         public WebBackupTask build() {
-            return new WebBackupTask(id, type, state, interrupted, time);
+            return new WebBackupTask(id, type, state, isError, isInterrupted, time);
         }
     }
 }

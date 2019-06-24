@@ -1,6 +1,8 @@
 package com.blog.controllers.RestApi;
 
+import com.blog.entities.task.ErrorTask;
 import com.blog.entities.task.Task;
+import com.blog.manager.ErrorTasksManager;
 import com.blog.manager.TasksManager;
 import com.blog.webUI.renderModels.WebBackupTask;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 
 /**
@@ -24,6 +29,13 @@ public class RestApiBackupTaskMonitor {
 
     private TasksManager tasksManager;
 
+    private ErrorTasksManager errorTasksManager;
+
+    @Autowired
+    public void setErrorTasksManager(ErrorTasksManager errorTasksManager) {
+        this.errorTasksManager = errorTasksManager;
+    }
+
     @Autowired
     public void setWebDateFormatter(DateTimeFormatter webDateFormatter) {
         this.webDateFormatter = webDateFormatter;
@@ -36,20 +48,27 @@ public class RestApiBackupTaskMonitor {
 
     @GetMapping(path = "/api/get-tasks")
     public List<WebBackupTask> getStates() {
-        List<WebBackupTask> webBackupTasks = new ArrayList<>();
+        List<WebBackupTask> backupTaskList = new ArrayList<>();
+
+        Iterable<Task> tasks = tasksManager.findAllByRunType(Task.RunType.USER);
+        List<Integer> taskIds = StreamSupport.stream(tasks.spliterator(), false).map(Task::getId).collect(Collectors.toList());
+        HashSet<Integer> errorTaskIds = StreamSupport.stream(errorTasksManager.findAllByTaskIdIn(taskIds).spliterator(), false)
+                .map(ErrorTask::getTaskId)
+                .collect(Collectors.toCollection(HashSet::new));
 
         for (Task task : tasksManager.findAllByRunType(Task.RunType.USER)) {
             WebBackupTask webBackupTask = new WebBackupTask.Builder()
                     .withId(task.getId())
                     .withType(task.getType().toString())
                     .withState(task.getState().toString())
-                    .withInterrupted(task.getInterrupted())
+                    .withIsError(errorTaskIds.contains(task.getId()))
+                    .withIsInterrupted(task.getInterrupted())
                     .withTime(webDateFormatter.format(task.getDate()))
                     .build();
 
-            webBackupTasks.add(webBackupTask);
+            backupTaskList.add(webBackupTask);
         }
 
-        return webBackupTasks;
+        return backupTaskList;
     }
 }

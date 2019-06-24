@@ -52,7 +52,7 @@ class ErrorTasksWatcher {
     @Scheduled(fixedDelay = 60 * 1000)
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
     void watchErrorTasks() {
-        for (ErrorTask errorTask : errorTasksManager.findFirstN(nRows)) {
+        for (ErrorTask errorTask : errorTasksManager.findFirstNAndLock(nRows)) {
             if (!errorTask.isErrorHandled()) {
                 Integer backupTaskId = errorTask.getTaskId();
 
