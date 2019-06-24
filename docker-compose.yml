@@ -6,8 +6,8 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/postgres
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
-      - USER_CONFIG.WEB_UI_LOGIN=
-      - USER_CONFIG.WEB_UI_PASSWORD=
+      - USERCONFIG_WEBUILOGIN=
+      - USERCONFIG_WEBUIPASSWORD=
     ports:
       - 8080:8080
     network_mode: host
