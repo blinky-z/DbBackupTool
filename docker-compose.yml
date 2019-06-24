@@ -1,0 +1,13 @@
+version: '3'
+services:
+  db-backup-tool:
+    build: .
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/postgres
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - USER_CONFIG.WEB_UI_LOGIN=
+      - USER_CONFIG.WEB_UI_PASSWORD=
+    ports:
+      - 8080:8080
+    network_mode: host

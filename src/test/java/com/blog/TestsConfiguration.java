@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -42,7 +43,8 @@ import java.util.stream.Collectors;
 @TestConfiguration
 public class TestsConfiguration {
     private static final Logger logger = LoggerFactory.getLogger(TestsConfiguration.class);
-    private static final String dropboxAccessToken = "tzFnUqsYFXAAAAAAAAAAG-irDd6KaODXHm7TlYvPwBytOxGRTJz-F0u4grmndSg3";
+    @Value("${tests-dropbox-access-token}")
+    private String dropboxAccessToken;
     private static final String localFileSystemStorageSettingsName = "localFileSystemStorageSettings";
     private static final String dropboxStorageSettingsName = "dropboxStorageSettings";
     private static final String masterPostgresDatabaseSettingsName = "masterPostgresDatabaseSettings";

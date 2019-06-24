@@ -1,40 +1,17 @@
 kind: pipeline
 name: default
 
-#workspace:
-#  base: /usr/app
-#  path:
-
 steps:
+  - name: prepare
+    image: twite/db-backup-tool-base:0.0.1
+    user: root
+    commands:
+      - chown -R gradle:gradle /drone/src/
   - name: test
-    image: gradle:5.4.1-jre11
+    user: gradle
+    image: twite/db-backup-tool-base:0.0.1
     commands:
-      - su-
-      - echo 'deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main' > /etc/apt/sources.list.d/pgdg.list
-      - wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
-      - apt-get update && apt-get install -y --no-install-recommends postgresql-client-10
-      - chown -R gradle .
-      - su - gradle
-      - gradle test
-
-  - name: build
-    image: gradle:5.4.1-jre11
-    commands:
-      - su-
-      - echo 'deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main' > /etc/apt/sources.list.d/pgdg.list
-      - wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
-      - apt-get update && apt-get install -y --no-install-recommends postgresql-client-10
-      - chown -R gradle .
-      - su - gradle
-      - gradle build
-
-  - name: run
-    image: gradle:5.4.1-jre11
-    commands:
-      - su-
-      - echo 'deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main' > /etc/apt/sources.list.d/pgdg.list
-      - wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
-      - apt-get update && apt-get install -y --no-install-recommends postgresql-client-10
-      - chown -R gradle .
-      - su - gradle
-      - gradle bootRun
+      - gradle test --stacktrace
+    environment:
+      TESTS_DROPBOX_ACCESS_TOKEN:
+        from_secret: testsDropboxAccessToken
