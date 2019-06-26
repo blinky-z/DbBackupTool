@@ -1,5 +1,7 @@
 # Database Backup Tool
 
+[![Build Status](https://cloud.drone.io/api/badges/blinky-z/DbBackupTool/status.svg)](https://cloud.drone.io/blinky-z/DbBackupTool)
+
 ## Introduction
 The primary goal of this project is to make it easier to backup/restore various databases, upload/download backups
  and manage your backups using a single app.
