@@ -108,7 +108,7 @@ public class WebApiTaskController {
     }
 
     @Nullable
-    private String validateDeleteStorageRequest(@Nullable String taskId) {
+    private String validateCancelTaskRequest(@Nullable String taskId) {
         if (taskId == null || taskId.trim().isEmpty()) {
             return "Please, provide task ID to cancel";
         }
@@ -126,7 +126,7 @@ public class WebApiTaskController {
     public String cancelTask(@RequestParam(value = "taskId") Optional<String> taskId) {
         logger.info("cancelTask(): Got task cancellation request");
 
-        String error = validateDeleteStorageRequest(taskId.orElse(null));
+        String error = validateCancelTaskRequest(taskId.orElse(null));
         if (error != null) {
             throw new ValidationException(error);
         }
