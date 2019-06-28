@@ -7,6 +7,7 @@ import com.blog.manager.*;
 import com.blog.service.processor.ProcessorType;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -20,10 +21,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 /**
- * This class provides API to start tasks: creation, restoration of deletion of backup.
+ * This class provides API to start tasks: creation, restoration and deletion of backups.
  */
 @Component
 public class TasksStarterService {
+    private static final Logger logger = LoggerFactory.getLogger(TasksStarterService.class);
     private final ConcurrentHashMap<Integer, Future> futures = new ConcurrentHashMap<>();
 
     private ExecutorService tasksStarterExecutorService;
@@ -76,22 +78,20 @@ public class TasksStarterService {
     }
 
     /**
-     * Starts database backup creation task.
+     * Starts backup creation task.
      *
      * @param taskId           pre-created {@link Task} entity's ID
      * @param backupProperties pre-created backup properties
      * @param databaseSettings database settings
-     * @param logger           the logger
      * @return {@literal Future} of started task
      * @see BackupPropertiesManager#initNewBackupProperties(List, List, String)
      * @see TasksManager#initNewTask(Task.Type, Task.RunType, Integer)
      */
     public Future startBackupTask(@NotNull Integer taskId, @NotNull BackupProperties backupProperties,
-                                  @NotNull DatabaseSettings databaseSettings, @NotNull Logger logger) {
+                                  @NotNull DatabaseSettings databaseSettings) {
         Objects.requireNonNull(taskId);
         Objects.requireNonNull(backupProperties);
         Objects.requireNonNull(databaseSettings);
-        Objects.requireNonNull(logger);
 
         Future future = tasksStarterExecutorService.submit(() -> {
             tasksManager.updateTaskState(taskId, Task.State.CREATING);
@@ -146,16 +146,14 @@ public class TasksStarterService {
      * @param backupProperties    backup properties of backup saved on storage
      * @param storageSettingsName storage settings name
      * @param databaseSettings    database settings
-     * @param logger              the logger
      * @return {@literal Future} of started task
      */
     public Future startRestoreTask(@NotNull Integer taskId, @NotNull BackupProperties backupProperties, @NotNull String storageSettingsName,
-                                   @NotNull DatabaseSettings databaseSettings, @NotNull Logger logger) {
+                                   @NotNull DatabaseSettings databaseSettings) {
         Objects.requireNonNull(taskId);
         Objects.requireNonNull(backupProperties);
         Objects.requireNonNull(storageSettingsName);
         Objects.requireNonNull(databaseSettings);
-        Objects.requireNonNull(logger);
 
         Future future = tasksStarterExecutorService.submit(() -> {
             tasksManager.updateTaskState(taskId, Task.State.DOWNLOADING);
@@ -208,13 +206,11 @@ public class TasksStarterService {
      *
      * @param taskId           pre-created {@link Task} entity's ID
      * @param backupProperties backup properties of backup saved on storage
-     * @param logger           the logger
      * @return {@literal Future} of started task
      */
-    public Future startDeleteTask(@NotNull Integer taskId, @NotNull BackupProperties backupProperties, @NotNull Logger logger) {
+    public Future startDeleteTask(@NotNull Integer taskId, @NotNull BackupProperties backupProperties) {
         Objects.requireNonNull(taskId);
         Objects.requireNonNull(backupProperties);
-        Objects.requireNonNull(logger);
 
         Future future = tasksStarterExecutorService.submit(() -> {
             try {

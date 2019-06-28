@@ -125,7 +125,7 @@ public class WebApiBackupController {
                 storageSettingsNameList, processors, databaseSettings.getName());
 
         Integer taskId = tasksManager.initNewTask(Task.Type.CREATE_BACKUP, Task.RunType.USER, backupProperties.getId());
-        tasksStarterService.startBackupTask(taskId, backupProperties, databaseSettings, logger);
+        tasksStarterService.startBackupTask(taskId, backupProperties, databaseSettings);
 
         return "redirect:/dashboard";
     }
@@ -157,7 +157,7 @@ public class WebApiBackupController {
                 backupProperties, storageSettings, databaseSettings);
 
         Integer taskId = tasksManager.initNewTask(Task.Type.RESTORE_BACKUP, Task.RunType.USER, backupProperties.getId());
-        tasksStarterService.startRestoreTask(taskId, backupProperties, storageSettingsName, databaseSettings, logger);
+        tasksStarterService.startRestoreTask(taskId, backupProperties, storageSettingsName, databaseSettings);
 
         return "redirect:/dashboard";
     }
@@ -196,7 +196,7 @@ public class WebApiBackupController {
         Integer taskId = tasksManager.initNewTask(Task.Type.DELETE_BACKUP, Task.RunType.USER, backupProperties.getId());
 
         backupPropertiesManager.deleteById(backupId);
-        tasksStarterService.startDeleteTask(taskId, backupProperties, logger);
+        tasksStarterService.startDeleteTask(taskId, backupProperties);
 
         return "redirect:/dashboard";
     }

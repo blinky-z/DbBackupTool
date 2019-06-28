@@ -146,7 +146,7 @@ public class TasksManager {
                 BackupProperties backupProperties = optionalBackupProperties.get();
 
                 Integer deletionTaskId = initNewTask(Task.Type.DELETE_BACKUP, Task.RunType.INTERNAL, backupProperties.getId());
-                tasksStarterService.startDeleteTask(deletionTaskId, backupProperties, logger);
+                tasksStarterService.startDeleteTask(deletionTaskId, backupProperties);
 
                 backupPropertiesManager.deleteById(backupProperties.getId());
 

@@ -187,7 +187,7 @@ class PlannedBackupTasksWatcher {
                     plannedTask.getStorageSettingsNameList(), plannedTask.getProcessors(), databaseSettings.getName());
             Integer handlerTaskId = tasksManager.initNewTask(Task.Type.CREATE_BACKUP, Task.RunType.INTERNAL, backupProperties.getId());
 
-            tasksStarterService.startBackupTask(handlerTaskId, backupProperties, databaseSettings, logger);
+            tasksStarterService.startBackupTask(handlerTaskId, backupProperties, databaseSettings);
 
             plannedTask.setHandlerTaskId(handlerTaskId);
 
