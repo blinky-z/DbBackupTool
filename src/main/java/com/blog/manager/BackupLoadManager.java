@@ -70,7 +70,7 @@ public class BackupLoadManager {
      *
      * @param backupStream     InputStream from which backup can be read
      * @param backupProperties pre-created BackupProperties of backup that should be uploaded to storage
-     * @param id               backup upload task ID
+     * @param id               task ID
      * @implNote When uploading a backup, each storage uploading is performing in its own thread.
      * <p>
      * If any upload task reports about exception (either throwing it from the main thread or using {@link ErrorCallbackService}), all
@@ -96,17 +96,32 @@ public class BackupLoadManager {
 
         List<Runnable> runnables = new ArrayList<>();
         List<PipedOutputStream> pipedOutputStreamList = new ArrayList<>();
+        List<PipedInputStream> pipedInputStreamList = new ArrayList<>();
         for (StorageSettings storageSettings : storageSettingsList) {
-
             PipedInputStream pipedInputStream = new PipedInputStream();
             PipedOutputStream pipedOutputStream = new PipedOutputStream();
+
+            pipedInputStreamList.add(pipedInputStream);
+            pipedOutputStreamList.add(pipedOutputStream);
+
             try {
                 pipedOutputStream.connect(pipedInputStream);
             } catch (IOException ex) {
+                for (PipedInputStream pipedInputStream_ : pipedInputStreamList) {
+                    try {
+                        pipedInputStream_.close();
+                    } catch (IOException ignore) {
+                    }
+                }
+                for (PipedOutputStream pipedOutputStream_ : pipedOutputStreamList) {
+                    try {
+                        pipedOutputStream_.close();
+                    } catch (IOException ignore) {
+                    }
+                }
+
                 throw new RuntimeException("Error initializing backup uploading", ex);
             }
-
-            pipedOutputStreamList.add(pipedOutputStream);
 
             StorageType storageType = storageSettings.getType();
             switch (storageType) {
@@ -146,47 +161,62 @@ public class BackupLoadManager {
                 }
         );
 
+        // run upload tasks
         List<Future> futures = new ArrayList<>();
+        CountDownLatch countDownLatch = new CountDownLatch(runnables.size());
         for (Runnable runnable : runnables) {
-            Future submit = backupLoadManagerExecutorService.submit(runnable);
-            futures.add(submit);
+            CompletableFuture future = CompletableFuture
+                    .runAsync(runnable, backupLoadManagerExecutorService)
+                    .handle((r, ex) -> {
+                        // if more than one task completes with an exception, then this if statement has no effect, because tasks was already
+                        // canceled and the flag is set
+                        if (ex != null) {
+                            // we should set flag before canceling the task to avoid situation when context switched right after canceling
+                            // but without setting the flag
+                            uploadInterrupted.set(true);
+                            // if upload already completed, canceling will not have any effect
+                            uploadTask.cancel(true);
+                            futures.forEach(future_ -> future_.cancel(true));
+                        }
+                        countDownLatch.countDown();
+
+                        // return either null or an exception
+                        return ex;
+                    });
+
+            futures.add(future);
         }
+
+        // wait for tasks to complete
         try {
-            boolean allCompleted;
-            do {
-                // we don't use invokeAll() method because we want to know that task completed with exception as fast as possible
-                // checking a result periodically, we are able to cancel tasks without waiting them to complete
-                allCompleted = true;
-                for (Future task : futures) {
-                    try {
-                        // if we will be interrupted while waiting, we fall in the InterruptedException clause of the upper try-catch block
-                        // we may be interrupted by upload thread, by storage related thread, by backup creation thread
-                        task.get(5, TimeUnit.SECONDS);
-                    } catch (ExecutionException ex) {
-                        // we should set flag before canceling the task to avoid situation when context switched right after canceling
-                        // without setting the flag
-                        uploadInterrupted.set(true);
-                        // if upload already completed, canceling will not have any effect
-                        uploadTask.cancel(true);
-                        futures.forEach(future -> future.cancel(true));
-
-                        throw new RuntimeException("Error uploading backup: one of the storages returned an exception", ex);
-                    } catch (TimeoutException e) {
-                        allCompleted = false;
-                    }
-                }
-            } while (!allCompleted);
-
-            logger.info("Backup successfully uploaded. Backup info: {}", backupProperties);
-        } catch (InterruptedException ex) {
-            uploadInterrupted.set(true);
-            uploadTask.cancel(true);
-            futures.forEach(future -> future.cancel(true));
-
+            countDownLatch.await();
+        } catch (InterruptedException e) {
             logger.error("Error uploading backup: upload was canceled. Backup info: {}", backupProperties);
 
-            Thread.currentThread().interrupt();
+            // we should set flag before canceling the task to avoid situation when context switched right after canceling
+            // without setting the flag
+            uploadInterrupted.set(true);
+            // if upload already completed, canceling will not have any effect
+            uploadTask.cancel(true);
+            futures.forEach(future_ -> future_.cancel(true));
         }
+
+        // check for exceptions
+        for (Future future : futures) {
+            try {
+                future.get();
+            } catch (InterruptedException e) {
+                logger.error("Error uploading backup: upload was canceled. Backup info: {}", backupProperties);
+
+                // should not happen usually, because uploading already completed, but user still can interrupt the task
+                Thread.currentThread().interrupt();
+                return;
+            } catch (ExecutionException ex) {
+                throw new RuntimeException("Error uploading backup: one of the storages returned an exception", ex);
+            }
+        }
+
+        logger.info("Backup successfully uploaded. Backup info: {}", backupProperties);
     }
 
     /**
