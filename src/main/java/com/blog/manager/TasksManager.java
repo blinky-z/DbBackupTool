@@ -115,56 +115,42 @@ public class TasksManager {
             case RESTORING:
             case DELETING: {
                 logger.info("Handling broken operation. Operation: {}. No extra actions required", state.toString());
-
                 break;
             }
             case CREATING:
             case APPLYING_PROCESSORS: {
                 logger.info("Handling broken operation. Operation: {}. Delete backup properties...", state.toString());
 
-                Optional<BackupProperties> optionalBackupProperties = backupPropertiesManager.findById(task.getBackupPropertiesId());
-                if (!optionalBackupProperties.isPresent()) {
+                Integer backupPropertiesID = task.getBackupPropertiesId();
+
+                if (!backupPropertiesManager.existsById(backupPropertiesID)) {
                     logger.error("Can't revert task: no related backup properties. Task info: {}", task);
                     return;
                 }
 
-                BackupProperties backupProperties = optionalBackupProperties.get();
-
-                backupPropertiesManager.deleteById(backupProperties.getId());
-
+                backupPropertiesManager.deleteById(backupPropertiesID);
                 break;
             }
             case UPLOADING: {
                 logger.info("Handling broken operation. Operation: {}. Deleting backup from storage...", state);
 
-                Optional<BackupProperties> optionalBackupProperties = backupPropertiesManager.findById(task.getBackupPropertiesId());
+                Integer backupPropertiesId = task.getBackupPropertiesId();
+                Optional<BackupProperties> optionalBackupProperties = backupPropertiesManager.findById(backupPropertiesId);
                 if (!optionalBackupProperties.isPresent()) {
                     logger.error("Can't revert task: no related backup properties. Task info: {}", task);
                     return;
                 }
 
-                BackupProperties backupProperties = optionalBackupProperties.get();
+                Integer deletionTaskId = initNewTask(Task.Type.DELETE_BACKUP, Task.RunType.INTERNAL, backupPropertiesId);
+                tasksStarterService.startDeleteTask(deletionTaskId, optionalBackupProperties.get());
 
-                Integer deletionTaskId = initNewTask(Task.Type.DELETE_BACKUP, Task.RunType.INTERNAL, backupProperties.getId());
-                tasksStarterService.startDeleteTask(deletionTaskId, backupProperties);
-
-                backupPropertiesManager.deleteById(backupProperties.getId());
-
+                backupPropertiesManager.deleteById(backupPropertiesId);
                 break;
             }
             default: {
                 logger.error("Can't revert task: unknown state. Task info: {}", task);
             }
         }
-    }
-
-    /**
-     * Attempts to delete the entity with the given id if the one exists.
-     *
-     * @param id entity ID
-     */
-    public void deleteById(Integer id) {
-        tasksRepository.findById(id).ifPresent(backupTask -> tasksRepository.delete(backupTask));
     }
 
     /**
