@@ -132,7 +132,10 @@ public class WebApiTaskController {
         }
 
         Integer id = Integer.valueOf(taskId.get());
-        cancelTasksManager.addTaskToCancel(id);
+
+        if (!cancelTasksManager.existsByTaskId(id)) {
+            cancelTasksManager.addTaskToCancel(id);
+        }
 
         return "redirect:/dashboard";
     }

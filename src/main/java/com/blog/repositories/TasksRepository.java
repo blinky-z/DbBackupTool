@@ -6,5 +6,5 @@ import org.springframework.data.repository.CrudRepository;
 public interface TasksRepository extends CrudRepository<Task, Integer> {
     Iterable<Task> findAllByOrderByDateDesc();
 
-    Iterable<Task> findAllByRunType(Task.RunType runType);
+    Iterable<Task> findAllByRunTypeOrderByDateDesc(Task.RunType runType);
 }

@@ -33,6 +33,10 @@ public class CancelTasksManager {
         );
     }
 
+    public boolean existsByTaskId(@NotNull Integer taskId) {
+        return cancelTasksRepository.existsByTaskId(taskId);
+    }
+
     public void addTaskToCancel(@NotNull Integer taskId) {
         CancelTask cancelTask = new CancelTask();
         cancelTask.setTaskId(taskId);

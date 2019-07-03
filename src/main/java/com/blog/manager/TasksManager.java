@@ -173,8 +173,8 @@ public class TasksManager {
      * @param runType run type
      * @return all entities of the given {@link Task.RunType}
      */
-    public Iterable<Task> findAllByRunType(Task.RunType runType) {
-        return tasksRepository.findAllByRunType(runType);
+    public Iterable<Task> findAllByRunTypeOrderByDateDesc(Task.RunType runType) {
+        return tasksRepository.findAllByRunTypeOrderByDateDesc(runType);
     }
 
     /**

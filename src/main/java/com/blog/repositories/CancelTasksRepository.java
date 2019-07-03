@@ -10,4 +10,6 @@ public interface CancelTasksRepository extends CrudRepository<CancelTask, Intege
     Optional<CancelTask> findByTaskId(Integer taskId);
 
     void deleteByTaskIdIn(Collection<Integer> taskId);
+
+    boolean existsByTaskId(Integer taskId);
 }

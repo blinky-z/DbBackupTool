@@ -14,6 +14,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Implementation of {@link DatabaseBackup} interface for PostgreSQL.
@@ -83,9 +84,11 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
 
         command.add(psqlToolPath);
         command = addCommandParam(command, "-h", databaseSettings.getHost());
+        command = addCommandParam(command, "-v", "ON_ERROR_STOP=on");
         command = addCommandParam(command, "-U", databaseSettings.getLogin());
         command = addCommandParam(command, "-p", Integer.toString(databaseSettings.getPort()));
         command = addCommandParam(command, "-d", databaseSettings.getName());
+        command = addCommandParam(command, "--single-transaction", null);
 
         return command;
     }
@@ -200,7 +203,7 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
         logger.info("Restoring PostgreSQL backup to database {} hosted on address {}:{}", databaseSettings.getName(),
                 databaseSettings.getHost(), databaseSettings.getPort());
 
-        Process process;
+        final Process process;
         try {
             process = buildProcess(restoreCommand, databaseSettings).start();
         } catch (IOException ex) {
@@ -220,11 +223,12 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
         ) {
             String currentLine;
             try {
-                processOutputWriter.write("BEGIN;");
                 while ((currentLine = backupReader.readLine()) != null) {
+                    if (Thread.interrupted()) {
+                        throw new InterruptedIOException();
+                    }
                     processOutputWriter.write(currentLine + System.lineSeparator());
                 }
-                processOutputWriter.write("COMMIT;");
             } catch (InterruptedIOException ex) {
                 logger.error("PostgreSQL backup restoration was interrupted. Rolling back... Database: {}", databaseSettings);
 
@@ -235,32 +239,44 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
                     processOutputWriter.flush();
 
                     process.destroy();
-                } catch (IOException ex_) {
-                    logger.error("I/O error rolling back changes. Database: {}", databaseSettings, ex_);
-                    // initiate connection timeout and rollback destroying process
+                } catch (IOException ex1) {
+                    logger.error("I/O error rolling back changes. Database: {}", databaseSettings, ex1);
+                    // initiate connection timeout and rollback forcibly destroying process
                     process.destroyForcibly();
                 }
 
+                Thread.currentThread().interrupt();
                 return;
             }
-            // quit from psql
+
+//            quit from psql
             processOutputWriter.write("\\q" + System.lineSeparator());
             processOutputWriter.flush();
         } catch (IOException ex) {
-            throw new RuntimeException("Error occurred while restoring PostgreSQL backup", ex);
+            // check if exception occurred because of error in psql, i.e. process exited and its input stream was closed
+            try {
+                if (process.waitFor(0, TimeUnit.SECONDS)) {
+                    if (process.exitValue() != 0) {
+                        throw new InternalPostgresToolError(
+                                "PostgreSQL restore process terminated with error. See process's stderr log for details");
+                    }
+                }
+            } catch (InterruptedException e) {
+                // should not happen
+            }
+            throw new RuntimeException("I/O error occurred while restoring PostgreSQL backup", ex);
         }
 
         try {
-            logger.info("Waiting for PostgreSQL restore process termination...");
             // should return immediately as we quited from psql
             int exitVal = process.waitFor();
+            logger.debug("PostgreSQL backup restore process terminated with exit code: {}", exitVal);
             if (exitVal != 0) {
                 throw new InternalPostgresToolError(
                         "PostgreSQL restore process terminated with error. See process's stderr log for details");
             }
         } catch (InterruptedException ignore) {
-            // should not happen usually
-            // can happen if interrupted too late, when backup was already restored. Ignore in such case
+            // should not happen
         } finally {
             process.destroy();
         }

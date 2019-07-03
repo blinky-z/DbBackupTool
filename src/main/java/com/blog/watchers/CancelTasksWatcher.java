@@ -66,7 +66,7 @@ class CancelTasksWatcher {
      * @see TasksStarterService#getFuture(Integer)
      * @see TasksManager#revertTask(Task)
      */
-    @Scheduled(fixedDelay = 10 * 1000)
+    @Scheduled(fixedDelay = /*10 * */1000)
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
     void watchTasksToCancel() {
         Iterable<CancelTask> cancelTasks = cancelTasksManager.findAll();
@@ -98,12 +98,20 @@ class CancelTasksWatcher {
             tasksStarterService.getFuture(taskId).ifPresent(future -> {
                 logger.info("Canceling task with ID {}", taskId);
 
-                future.cancel(true);
-                tasksManager.revertTask(task);
+                boolean canceled = future.cancel(true);
+                if (canceled) {
+                    try {
+                        // give time to properly handle interrupt
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        // should not happen
+                    }
+                    tasksManager.revertTask(task);
+                }
 
                 taskIdsForDeleting.add(taskId);
 
-                logger.info("Task canceled. Task ID: {}", taskId);
+                logger.info("Task canceled: {}. Task ID: {}", canceled, taskId);
             });
         }
 

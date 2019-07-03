@@ -68,7 +68,7 @@ public class TasksStarterService {
     /**
      * Returns the {@literal Future} related to specified {@link Task}.
      * <p>
-     * Usually you want to get {@literal} Future to cancel task.
+     * Usually you want to get {@literal Future} to cancel task.
      *
      * @param taskId {@link Task} entity's ID
      * @return the Future or {@literal Optional#empty()} if none found

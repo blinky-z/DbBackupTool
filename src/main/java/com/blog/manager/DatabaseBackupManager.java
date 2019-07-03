@@ -83,6 +83,11 @@ public class DatabaseBackupManager {
             }
         }
 
+        if (Thread.currentThread().isInterrupted()) {
+            logger.info("Backup restoration interrupted. Database info: {}", databaseSettings);
+            return;
+        }
+
         logger.info("Backup successfully restored. Database info: {}", databaseSettings);
     }
 }
