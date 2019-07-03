@@ -137,3 +137,18 @@ body {
 #storageContainer {
     background-color: white;
 }
+
+.tableColumn-time {
+    position: relative;
+}
+
+.innerTableColumnButton {
+    line-height: 10px;
+    font-size: 8pt;
+    font-family: tahoma;
+    margin-top: 1px;
+    margin-right: 2px;
+    position: absolute;
+    top: 0;
+    right: 0;
+}

@@ -186,13 +186,13 @@ public class WebFrontController {
         {
             List<WebBackupTask> backupTaskList = new ArrayList<>();
 
-            Iterable<Task> tasks = tasksManager.findAllByRunType(Task.RunType.USER);
+            Iterable<Task> tasks = tasksManager.findAllByRunTypeOrderByDateDesc(Task.RunType.USER);
             List<Integer> taskIds = StreamSupport.stream(tasks.spliterator(), false).map(Task::getId).collect(Collectors.toList());
             HashSet<Integer> errorTaskIds = StreamSupport.stream(errorTasksManager.findAllByTaskIdIn(taskIds).spliterator(), false)
                     .map(ErrorTask::getTaskId)
                     .collect(Collectors.toCollection(HashSet::new));
 
-            for (Task task : tasksManager.findAllByRunType(Task.RunType.USER)) {
+            for (Task task : tasksManager.findAllByRunTypeOrderByDateDesc(Task.RunType.USER)) {
                 WebBackupTask webBackupTask = new WebBackupTask.Builder()
                         .withId(task.getId())
                         .withType(task.getType().toString())

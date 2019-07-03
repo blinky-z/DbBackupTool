@@ -13,7 +13,7 @@
 <body>
 <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
     <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="/dashboard">Database Backup Tool</a>
-    <input aria-label="Search" class="form-control form-control-dark w-100" placeholder="Search" type="text">
+    <div class="form-control form-control-dark w-100"></div>
     <ul class="navbar-nav px-3">
         <li class="nav-item text-nowrap">
             <a class="nav-link" href="/api/logout">Log out</a>
@@ -99,12 +99,11 @@
                         <table class="table table-hover table-bordered">
                             <thead class="thead-dark">
                             <tr>
-                                <th class="col-md-2" scope="col">Task</th>
-                                <th class="col-md-2" scope="col">State</th>
+                                <th class="col-md-3" scope="col">Task</th>
+                                <th class="col-md-3" scope="col">State</th>
                                 <th class="col-md-1" scope="col">Error</th>
                                 <th class="col-md-1" scope="col">Canceled</th>
-                                <th class="col-md-3" scope="col">Creation time</th>
-                                <th class="col-md-1" scope="col">Cancel</th>
+                                <th class="col-md-2" scope="col">Start time</th>
                             </tr>
                             </thead>
                             <tbody id="backupTasksTableBody">
@@ -113,12 +112,12 @@
                                 <td th:text="*{state}"></td>
                                 <td th:text="*{error}"></td>
                                 <td th:text="*{interrupted}"></td>
-                                <td th:text="*{time}"></td>
-                                <td>
+                                <td class="tableColumn-time">
+                                    <div th:text="*{time}"></div>
                                     <div class="d-flex flex-row-reverse bd-highlight">
                                         <form th:action="@{/cancel-task}" th:method="post">
                                             <input hidden th:name="taskId" th:value="*{id}">
-                                            <button class="btn btn-secondary" type="submit">
+                                            <button class="btn-sm btn-info innerTableColumnButton" type="submit">
                                                 Cancel
                                             </button>
                                         </form>
@@ -157,19 +156,18 @@
                                         <th class="col-md-2" scope="col">Storage</th>
                                         <th class="col-md-6" scope="col">Description</th>
                                         <th class="col-md-3" scope="col">Creation time</th>
-                                        <th scope="col"></th>
                                     </tr>
                                     </thead>
                                     <tbody>
                                     <tr th:each="storage: ${storageList}" th:object="${storage}">
                                         <th scope="row" th:text="*{type}">Type</th>
                                         <td th:text="*{desc}">Desc</td>
-                                        <td th:text="*{time}">Time</td>
-                                        <td>
+                                        <td class="tableColumn-time">
+                                            <div th:text="*{time}"></div>
                                             <div class="d-flex flex-row-reverse bd-highlight">
                                                 <form th:action="@{/storage}" th:method="delete">
                                                     <input hidden th:name="settingsName" th:value="*{settingsName}">
-                                                    <button class="btn btn-secondary" type="submit">
+                                                    <button class="btn-sm btn-info innerTableColumnButton" type="submit">
                                                         Remove
                                                     </button>
                                                 </form>
@@ -281,19 +279,18 @@
                                         <th class="col-md-2" scope="col">Database</th>
                                         <th class="col-md-6" scope="col">Description</th>
                                         <th class="col-md-3" scope="col">Creation time</th>
-                                        <th scope="col"></th>
                                     </tr>
                                     </thead>
                                     <tbody>
                                     <tr th:each="database: ${databaseList}" th:object="${database}">
                                         <th scope="row" th:text="*{type}">Type</th>
                                         <td th:text="*{desc}">Desc</td>
-                                        <td th:text="*{time}">Time</td>
-                                        <td>
+                                        <td class="tableColumn-time">
+                                            <div th:text="*{time}"></div>
                                             <div class="d-flex flex-row-reverse bd-highlight">
                                                 <form th:action="@{/database}" th:method="delete">
                                                     <input hidden th:name="settingsName" th:value="*{settingsName}" type="text">
-                                                    <button class="btn btn-secondary" type="submit">
+                                                    <button class="btn-sm btn-info innerTableColumnButton" type="submit">
                                                         Remove
                                                     </button>
                                                 </form>
@@ -402,7 +399,6 @@
                                 <th class="col-md-5" scope="col">Properties</th>
                                 <th class="col-md-3" scope="col">Storage List</th>
                                 <th class="col-md-3" scope="col">Creation time</th>
-                                <th scope="col"></th>
                             </tr>
                             </thead>
                             <tbody>
@@ -410,12 +406,12 @@
                                 <th scope="row" th:text="*{name}">Name</th>
                                 <td th:text="*{desc}">Desc</td>
                                 <td th:text="*{storageSettingsNames}">Storage List</td>
-                                <td th:text="*{time}">Time</td>
-                                <td>
+                                <td class="tableColumn-time">
+                                    <div th:text="*{time}"></div>
                                     <div class="d-flex flex-row-reverse bd-highlight">
                                         <form th:action="@{/delete-backup}" th:method="delete">
                                             <input hidden th:name="backupId" th:value="*{id}" type="text">
-                                            <button class="btn btn-secondary" type="submit">
+                                            <button class="btn-sm btn-info innerTableColumnButton" type="submit">
                                                 Delete
                                             </button>
                                         </form>
@@ -500,7 +496,8 @@
                     <form action="#" id="restoreBackupForm" th:action="@{/restore-backup}" th:method="post"
                           th:object="${webRestoreBackupRequest}">
 
-                        <label for="restoreBackup-selectBackup">Select backup and storage to restore from</label>
+                        <label for="restoreBackup-selectBackup">Select backup to restore. Backup will be downloaded from selected
+                            storage</label>
                         <div class="invalid-feedback" th:errors="*{backupId}"
                              th:if="${#fields.hasErrors('backupId')}"></div>
                         <div class="invalid-feedback d-inline" th:errors="*{storageSettingsName}"
@@ -511,7 +508,7 @@
                                 <th class="col-md-1" scope="col"></th>
                                 <th class="col-md-2" scope="col">Name</th>
                                 <th class="col-md-4" scope="col">Description</th>
-                                <th class="col-md-3" scope="col">Storages</th>
+                                <th class="col-md-3" scope="col">Download from</th>
                                 <th class="col-md-4" scope="col">Creation time</th>
                             </tr>
                             </thead>
@@ -577,7 +574,7 @@
                                 <option selected value="">Select Database</option>
                                 <option th:each="database: ${databaseList}" th:text="${'Database: ' + database.type +
                                         ' | Details: ' + database.desc +
-                                        ' | Creation time: ' + database.time}"
+                                        ' | Start time: ' + database.time}"
                                         th:value="${database.settingsName}">
                                 </option>
                             </select>
