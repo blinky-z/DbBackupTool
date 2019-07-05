@@ -222,7 +222,7 @@
                                                    th:errorclass="is-invalid"
                                                    th:field="*{localFileSystemSettings.backupPath}" type="text">
                                             <small class="form-text text-muted" id="localFileSystemStorageBackupPathHelp">
-                                                Absolute path to folder where backup should be saved into
+                                                Path to folder where backup should be saved into. Both forward and back slashes supported
                                             </small>
                                             <div class="invalid-feedback"
                                                  th:errors="*{localFileSystemSettings.backupPath}"
@@ -461,8 +461,10 @@
                                 <td>
                                     <div class="custom-checkbox custom-control mb-3">
                                         <input class="custom-control-input" th:field="*{storageSettingsNameList}"
-                                               th:id="'select'+${storage.settingsName}" th:value="${storage.settingsName}" type="checkbox">
-                                        <label class="custom-control-label" th:for="'select'+${storage.settingsName}"></label>
+                                               th:id="'createBackup-selectStorage-'+${storage.settingsName}"
+                                               th:value="${storage.settingsName}" type="checkbox">
+                                        <label class="custom-control-label"
+                                               th:for="'createBackup-selectStorage-'+${storage.settingsName}"></label>
                                     </div>
                                 </td>
                                 <th scope="row" th:text="${storage.type}"></th>
@@ -588,7 +590,7 @@
                         <table class="table table-hover table-bordered" id="addPlannedTask-selectStorage">
                             <thead class="thead-dark">
                             <tr>
-                                <th scope="col"></th>
+                                <th class="col-md-1" scope="col"></th>
                                 <th class="col-md-2" scope="col">Storage</th>
                                 <th class="col-md-5" scope="col">Description</th>
                                 <th class="col-md-3" scope="col">Creation time</th>
@@ -597,8 +599,12 @@
                             <tbody>
                             <tr th:each="storage: ${storageList}">
                                 <td>
-                                    <div class="input-group">
-                                        <input th:field="*{storageSettingsNameList}" th:value="${storage.settingsName}" type="checkbox">
+                                    <div class="custom-checkbox custom-control mb-3">
+                                        <input class="custom-control-input" th:field="*{storageSettingsNameList}"
+                                               th:id="'addPlannedTask-selectStorage-'+${storage.settingsName}"
+                                               th:value="${storage.settingsName}" type="checkbox">
+                                        <label class="custom-control-label"
+                                               th:for="'addPlannedTask-selectStorage-'+${storage.settingsName}"></label>
                                     </div>
                                 </td>
                                 <th scope="row" th:text="${storage.type}"></th>
