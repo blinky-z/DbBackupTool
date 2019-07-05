@@ -146,8 +146,8 @@ public class BackupLoadManager {
         // calling any blocking I/O method on related PipedInputStream
         AtomicBoolean uploadInterrupted = new AtomicBoolean(false);
         Future uploadTask = backupLoadManagerExecutorService.submit(() -> {
-            try (BackupUploadSplitter backupUploadSplitter =
-                         new BackupUploadSplitter(backupStream, pipedOutputStreamList, uploadInterrupted)) {
+                    try (BackupUploadSplitter backupUploadSplitter =
+                                 new BackupUploadSplitter(backupStream, pipedOutputStreamList, uploadInterrupted)) {
                         try {
                             backupUploadSplitter.upload();
                         } catch (IOException ex) {
@@ -219,6 +219,22 @@ public class BackupLoadManager {
         logger.info("Backup successfully uploaded. Backup info: {}", backupProperties);
     }
 
+    private final class InterruptDetectInputStream extends InputStream {
+        private InputStream in;
+
+        InterruptDetectInputStream(InputStream in) {
+            this.in = in;
+        }
+
+        @Override
+        public int read() throws IOException {
+            if (Thread.interrupted()) {
+                throw new InterruptedIOException();
+            }
+            return in.read();
+        }
+    }
+
     /**
      * Downloads backup.
      *
@@ -257,6 +273,8 @@ public class BackupLoadManager {
 
         if (downloadedBackup == null) {
             Thread.currentThread().interrupt();
+        } else {
+            downloadedBackup = new InterruptDetectInputStream(downloadedBackup);
         }
         return downloadedBackup;
     }

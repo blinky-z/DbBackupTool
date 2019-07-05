@@ -224,9 +224,6 @@ public class PostgresDatabaseBackup implements DatabaseBackup {
             String currentLine;
             try {
                 while ((currentLine = backupReader.readLine()) != null) {
-                    if (Thread.interrupted()) {
-                        throw new InterruptedIOException();
-                    }
                     processOutputWriter.write(currentLine + System.lineSeparator());
                 }
             } catch (InterruptedIOException ex) {
