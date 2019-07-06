@@ -1,6 +1,5 @@
 package com.blog.watchers;
 
-import com.blog.entities.backup.BackupProperties;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.task.PlannedTask;
 import com.blog.entities.task.Task;
@@ -183,11 +182,8 @@ class PlannedBackupTasksWatcher {
 
             DatabaseSettings databaseSettings = optionalDatabaseSettings.get();
 
-            BackupProperties backupProperties = backupPropertiesManager.initNewBackupProperties(
-                    plannedTask.getStorageSettingsNameList(), plannedTask.getProcessors(), databaseSettings.getName());
-            Integer handlerTaskId = tasksManager.initNewTask(Task.Type.CREATE_BACKUP, Task.RunType.INTERNAL, backupProperties.getId());
-
-            tasksStarterService.startBackupTask(handlerTaskId, backupProperties, databaseSettings);
+            Integer handlerTaskId = tasksStarterService.startBackupTask(
+                    Task.RunType.INTERNAL, plannedTask.getStorageSettingsNameList(), plannedTask.getProcessors(), databaseSettings).getId();
 
             plannedTask.setHandlerTaskId(handlerTaskId);
 

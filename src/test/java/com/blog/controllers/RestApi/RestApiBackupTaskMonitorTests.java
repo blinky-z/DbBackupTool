@@ -75,7 +75,7 @@ class RestApiBackupTaskMonitorTests extends ApplicationTests {
     void getStates_shouldProperlyFormatFieldsInDto(TestInfo testInfo) {
         BackupProperties backupProperties = backupPropertiesManager.initNewBackupProperties(
                 testInfo.getDisplayName(), null, testInfo.getDisplayName());
-        Integer taskId = tasksManager.initNewTask(Task.Type.CREATE_BACKUP, Task.RunType.USER, backupProperties.getId());
+        Integer taskId = tasksManager.initNewTask(Task.Type.CREATE_BACKUP, Task.RunType.USER, backupProperties.getId()).getId();
         Task task = tasksManager.findById(taskId).get();
 
         List<WebBackupTask> taskStates = restApiClient.getTaskStates();

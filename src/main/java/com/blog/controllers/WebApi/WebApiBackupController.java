@@ -10,7 +10,6 @@ import com.blog.entities.task.Task;
 import com.blog.manager.BackupPropertiesManager;
 import com.blog.manager.DatabaseSettingsManager;
 import com.blog.manager.StorageSettingsManager;
-import com.blog.manager.TasksManager;
 import com.blog.service.TasksStarterService;
 import com.blog.service.processor.ProcessorType;
 import com.blog.webUI.formTransfer.WebCreateBackupRequest;
@@ -45,8 +44,6 @@ public class WebApiBackupController {
 
     private WebRestoreBackupRequestValidator webRestoreBackupRequestValidator;
 
-    private TasksManager tasksManager;
-
     private BackupPropertiesManager backupPropertiesManager;
 
     private TasksStarterService tasksStarterService;
@@ -69,11 +66,6 @@ public class WebApiBackupController {
     @Autowired
     public void setWebRestoreBackupRequestValidator(WebRestoreBackupRequestValidator webRestoreBackupRequestValidator) {
         this.webRestoreBackupRequestValidator = webRestoreBackupRequestValidator;
-    }
-
-    @Autowired
-    public void setTasksManager(TasksManager tasksManager) {
-        this.tasksManager = tasksManager;
     }
 
     @Autowired
@@ -121,11 +113,7 @@ public class WebApiBackupController {
             processors.add(optionalProcessorType.get());
         }
 
-        BackupProperties backupProperties = backupPropertiesManager.initNewBackupProperties(
-                storageSettingsNameList, processors, databaseSettings.getName());
-
-        Integer taskId = tasksManager.initNewTask(Task.Type.CREATE_BACKUP, Task.RunType.USER, backupProperties.getId());
-        tasksStarterService.startBackupTask(taskId, backupProperties, databaseSettings);
+        tasksStarterService.startBackupTask(Task.RunType.USER, storageSettingsNameList, processors, databaseSettings);
 
         return "redirect:/dashboard";
     }
@@ -156,8 +144,7 @@ public class WebApiBackupController {
         logger.info("restoreBackup(): Starting backup restoration... Backup properties: {}. Storage: {}. Database: {}",
                 backupProperties, storageSettings, databaseSettings);
 
-        Integer taskId = tasksManager.initNewTask(Task.Type.RESTORE_BACKUP, Task.RunType.USER, backupProperties.getId());
-        tasksStarterService.startRestoreTask(taskId, backupProperties, storageSettingsName, databaseSettings);
+        tasksStarterService.startRestoreTask(Task.RunType.USER, backupProperties, storageSettingsName, databaseSettings);
 
         return "redirect:/dashboard";
     }
@@ -193,10 +180,8 @@ public class WebApiBackupController {
         BackupProperties backupProperties = backupPropertiesManager.findById(backupId).orElseThrow(() ->
                 new IllegalStateException("Can't delete backup: no such backup properties with ID " + backupId));
 
-        Integer taskId = tasksManager.initNewTask(Task.Type.DELETE_BACKUP, Task.RunType.USER, backupProperties.getId());
-
         backupPropertiesManager.deleteById(backupId);
-        tasksStarterService.startDeleteTask(taskId, backupProperties);
+        tasksStarterService.startDeleteTask(Task.RunType.USER, backupProperties);
 
         return "redirect:/dashboard";
     }

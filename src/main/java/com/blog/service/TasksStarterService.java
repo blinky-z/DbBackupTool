@@ -6,10 +6,14 @@ import com.blog.entities.task.Task;
 import com.blog.manager.*;
 import com.blog.service.processor.ProcessorType;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,6 +28,7 @@ import java.util.concurrent.Future;
  * This class provides API to start tasks: creation, restoration and deletion of backups.
  */
 @Component
+@Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
 public class TasksStarterService {
     private static final Logger logger = LoggerFactory.getLogger(TasksStarterService.class);
     private final ConcurrentHashMap<Integer, Future> futures = new ConcurrentHashMap<>();
@@ -33,6 +38,7 @@ public class TasksStarterService {
     private DatabaseBackupManager databaseBackupManager;
     private BackupProcessorManager backupProcessorManager;
     private BackupLoadManager backupLoadManager;
+    private BackupPropertiesManager backupPropertiesManager;
     private ErrorTasksManager errorTasksManager;
 
     @Autowired
@@ -61,6 +67,11 @@ public class TasksStarterService {
     }
 
     @Autowired
+    public void setBackupPropertiesManager(BackupPropertiesManager backupPropertiesManager) {
+        this.backupPropertiesManager = backupPropertiesManager;
+    }
+
+    @Autowired
     public void setErrorTasksManager(ErrorTasksManager errorTasksManager) {
         this.errorTasksManager = errorTasksManager;
     }
@@ -80,18 +91,21 @@ public class TasksStarterService {
     /**
      * Starts backup creation task.
      *
-     * @param taskId           pre-created {@link Task} entity's ID
-     * @param backupProperties pre-created backup properties
      * @param databaseSettings database settings
-     * @return {@literal Future} of started task
+     * @return the {@link Task} entity of started task
      * @see BackupPropertiesManager#initNewBackupProperties(List, List, String)
-     * @see TasksManager#initNewTask(Task.Type, Task.RunType, Integer)
      */
-    public Future startBackupTask(@NotNull Integer taskId, @NotNull BackupProperties backupProperties,
-                                  @NotNull DatabaseSettings databaseSettings) {
-        Objects.requireNonNull(taskId);
-        Objects.requireNonNull(backupProperties);
+    public Task startBackupTask(@NotNull Task.RunType runType, @NotNull List<String> storageSettingsNameList, @Nullable List<ProcessorType> processors,
+                                @NotNull DatabaseSettings databaseSettings) {
+        Objects.requireNonNull(runType);
+        Objects.requireNonNull(storageSettingsNameList);
+        Objects.requireNonNull(processors);
         Objects.requireNonNull(databaseSettings);
+
+        BackupProperties backupProperties =
+                backupPropertiesManager.initNewBackupProperties(storageSettingsNameList, processors, databaseSettings.getName());
+        Task task = tasksManager.initNewTask(Task.Type.CREATE_BACKUP, runType, backupProperties.getId());
+        Integer taskId = task.getId();
 
         Future future = tasksStarterExecutorService.submit(() -> {
             tasksManager.updateTaskState(taskId, Task.State.CREATING);
@@ -103,7 +117,6 @@ public class TasksStarterService {
                 }
 
                 tasksManager.updateTaskState(taskId, Task.State.APPLYING_PROCESSORS);
-                List<ProcessorType> processors = backupProperties.getProcessors();
                 logger.info("Applying processors on created backup. Processors: {}", processors);
 
                 try (InputStream processedBackupStream = backupProcessorManager.process(backupStream, processors)) {
@@ -136,24 +149,26 @@ public class TasksStarterService {
         });
 
         futures.put(taskId, future);
-        return future;
+        return task;
     }
 
     /**
      * Starts backup restoration task.
      *
-     * @param taskId              pre-created {@link Task} entity's ID
      * @param backupProperties    backup properties of backup saved on storage
      * @param storageSettingsName storage settings name
      * @param databaseSettings    database settings
-     * @return {@literal Future} of started task
+     * @return the {@link Task} entity of started task
      */
-    public Future startRestoreTask(@NotNull Integer taskId, @NotNull BackupProperties backupProperties, @NotNull String storageSettingsName,
-                                   @NotNull DatabaseSettings databaseSettings) {
-        Objects.requireNonNull(taskId);
+    public Task startRestoreTask(@NotNull Task.RunType runType, @NotNull BackupProperties backupProperties, @NotNull String storageSettingsName,
+                                 @NotNull DatabaseSettings databaseSettings) {
+        Objects.requireNonNull(runType);
         Objects.requireNonNull(backupProperties);
         Objects.requireNonNull(storageSettingsName);
         Objects.requireNonNull(databaseSettings);
+
+        Task task = tasksManager.initNewTask(Task.Type.RESTORE_BACKUP, runType, backupProperties.getId());
+        Integer taskId = task.getId();
 
         Future future = tasksStarterExecutorService.submit(() -> {
             tasksManager.updateTaskState(taskId, Task.State.DOWNLOADING);
@@ -198,19 +213,23 @@ public class TasksStarterService {
         });
 
         futures.put(taskId, future);
-        return future;
+        return task;
     }
 
     /**
      * Starts backup deletion task.
+     * <p>
+     * This method does not delete the related entity of backup.
      *
-     * @param taskId           pre-created {@link Task} entity's ID
      * @param backupProperties backup properties of backup saved on storage
-     * @return {@literal Future} of started task
+     * @return the {@link Task} entity of started task
      */
-    public Future startDeleteTask(@NotNull Integer taskId, @NotNull BackupProperties backupProperties) {
-        Objects.requireNonNull(taskId);
+    public Task startDeleteTask(@NotNull Task.RunType runType, @NotNull BackupProperties backupProperties) {
+        Objects.requireNonNull(runType);
         Objects.requireNonNull(backupProperties);
+
+        Task task = tasksManager.initNewTask(Task.Type.DELETE_BACKUP, runType, backupProperties.getId());
+        Integer taskId = task.getId();
 
         Future future = tasksStarterExecutorService.submit(() -> {
             try {
@@ -236,6 +255,6 @@ public class TasksStarterService {
         });
 
         futures.put(taskId, future);
-        return future;
+        return task;
     }
 }

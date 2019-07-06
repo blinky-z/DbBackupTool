@@ -12,7 +12,7 @@ import java.util.Objects;
 /**
  * Validates planned task creation request.
  *
- * @see com.blog.controllers.WebApi.WebApiBackupController#addPlannedTask(WebAddPlannedTaskRequest, BindingResult)
+ * @see com.blog.controllers.WebApi.WebApiTaskController#addPlannedTask(WebAddPlannedTaskRequest, BindingResult)
  */
 @Component
 public class WebAddPlannedTaskRequestValidator {

@@ -62,7 +62,7 @@ public class TasksManager {
      * @return ID of created task
      * @see BackupPropertiesManager#initNewBackupProperties(List, List, String)
      */
-    public Integer initNewTask(Task.Type taskType, Task.RunType runType, Integer backupPropertiesId) {
+    public Task initNewTask(Task.Type taskType, Task.RunType runType, Integer backupPropertiesId) {
         Task task = new Task.Builder()
                 .withType(taskType)
                 .withRunType(runType)
@@ -71,9 +71,7 @@ public class TasksManager {
                 .withDate(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
 
-        task = tasksRepository.save(task);
-
-        return task.getId();
+        return tasksRepository.save(task);
     }
 
     /**
@@ -141,9 +139,7 @@ public class TasksManager {
                     return;
                 }
 
-                Integer deletionTaskId = initNewTask(Task.Type.DELETE_BACKUP, Task.RunType.INTERNAL, backupPropertiesId);
-                tasksStarterService.startDeleteTask(deletionTaskId, optionalBackupProperties.get());
-
+                tasksStarterService.startDeleteTask(Task.RunType.INTERNAL, optionalBackupProperties.get());
                 backupPropertiesManager.deleteById(backupPropertiesId);
                 break;
             }

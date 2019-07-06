@@ -64,7 +64,7 @@ public class Task {
     /**
      * Identifier of {@link BackupProperties}.
      * <p>
-     * We should know backup ID to be able to handle occurred errors while executing task.
+     * We need to know backup ID to be able to handle occurred errors.
      */
     @Column(updatable = false)
     private Integer backupPropertiesId;
