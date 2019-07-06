@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 /**
@@ -163,27 +164,43 @@ public class BackupLoadManager {
 
         // run upload tasks
         List<Future> futures = new ArrayList<>();
-        final Semaphore futuresMutex = new Semaphore(1);
+        final ReentrantLock exLock = new ReentrantLock(false);
         final CountDownLatch countDownLatch = new CountDownLatch(runnables.size());
 
-        for (Runnable runnable : runnables) {
+        for (int runnableIndex = 0; runnableIndex < runnables.size(); runnableIndex++) {
+            final Runnable currentRunnable = runnables.get(runnableIndex);
+            final int currentIndex = runnableIndex;
+
             futures.add(backupLoadManagerExecutorService.submit(() -> {
                         try {
-                            runnable.run();
-                        } catch (Exception ex) {
-                            if (futuresMutex.tryAcquire()) {
+                            currentRunnable.run();
+                        } catch (Throwable ex) {
+                            logger.debug("Exception occurred while uploading backup", ex);
+                            // mutex won't be released. It is enough to get only one exception while checking result of Futures
+                            // result of all other tasks will be set to CancellationException
+                            if (exLock.tryLock()) {
+
                                 // we should set flag before canceling the task to avoid situation when context switched right after canceling
                                 // but without setting the flag
                                 uploadInterrupted.set(true);
                                 uploadTask.cancel(true);
-                                // if task is still executing, CancellationException as task result will be set
-                                futures.forEach(future_ -> future_.cancel(true));  // TODO
-                                return ex;
+
+                                // cancel all tasks
+                                // if a task is still executing, CancellationException as task result will be set
+                                // we should skip current task to not interrupt itself and to not get CancellationException instead of
+                                // ExecutionException further
+                                for (int currentFutureIndex = 0; currentFutureIndex < futures.size(); currentFutureIndex++) {
+                                    if (currentFutureIndex == currentIndex) {
+                                        continue;
+                                    }
+                                    futures.get(currentFutureIndex).cancel(true);
+                                }
+
+                                throw ex;
                             }
                         } finally {
                             countDownLatch.countDown();
                         }
-                        return null;
                     }
             ));
         }
@@ -192,11 +209,13 @@ public class BackupLoadManager {
         try {
             countDownLatch.await();
         } catch (InterruptedException e) {
-            logger.error("Error uploading backup: upload was canceled. Backup info: {}", backupProperties);
+            logger.error("Error uploading backup: uploading was canceled. Backup info: {}", backupProperties);
 
             uploadInterrupted.set(true);
             uploadTask.cancel(true);
             futures.forEach(future_ -> future_.cancel(true));
+
+            Thread.currentThread().interrupt();
             return;
         }
 
@@ -208,7 +227,6 @@ public class BackupLoadManager {
             } catch (InterruptedException e) {
                 logger.error("Error uploading backup: upload was canceled. Backup info: {}", backupProperties);
 
-                // should not happen usually, because uploading already completed, but user still can interrupt the task
                 Thread.currentThread().interrupt();
                 return;
             } catch (ExecutionException ex) {
