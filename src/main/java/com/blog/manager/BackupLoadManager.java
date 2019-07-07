@@ -93,6 +93,8 @@ public class BackupLoadManager {
                     new RuntimeException("Can't upload backup: no such storage settings with name " + storageSettingsName)));
         }
 
+        logger.info("Uploading backup to storages: {}", storageSettingsNameList);
+
         String backupName = backupProperties.getBackupName();
 
         List<Runnable> runnables = new ArrayList<>();
@@ -179,7 +181,6 @@ public class BackupLoadManager {
                             // mutex won't be released. It is enough to get only one exception while checking result of Futures
                             // result of all other tasks will be set to CancellationException
                             if (exLock.tryLock()) {
-
                                 // we should set flag before canceling the task to avoid situation when context switched right after canceling
                                 // but without setting the flag
                                 uploadInterrupted.set(true);
@@ -225,7 +226,7 @@ public class BackupLoadManager {
                 future.get();
             } catch (CancellationException ignore) {
             } catch (InterruptedException e) {
-                logger.error("Error uploading backup: upload was canceled. Backup info: {}", backupProperties);
+                logger.error("Error uploading backup: uploading was canceled. Backup info: {}", backupProperties);
 
                 Thread.currentThread().interrupt();
                 return;
@@ -334,8 +335,19 @@ public class BackupLoadManager {
         }
 
         try {
-            backupLoadManagerExecutorService.invokeAll(runnableList.stream().map(Executors::callable).collect(Collectors.toList()));
-            logger.info("Backup successfully deleted. Backup info: {}", backupProperties);
+            List<Future<Object>> futures =
+                    backupLoadManagerExecutorService.invokeAll(runnableList.stream().map(Executors::callable).collect(Collectors.toList()));
+
+            List<Throwable> exceptions = new ArrayList<>();
+            for (Future future : futures) {
+                try {
+                    future.get();
+                } catch (ExecutionException ex) {
+                    exceptions.add(ex.getCause());
+                }
+            }
+
+            logger.info("Backup deleted. Backup info: {}. Exception occurred: {}", backupProperties, exceptions);
         } catch (InterruptedException ex) {
             // unfinished tasks automatically canceled here by executor service
             Thread.currentThread().interrupt();

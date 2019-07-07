@@ -6,6 +6,7 @@ import com.blog.service.ErrorCallbackService;
 import com.dropbox.core.DbxException;
 import com.dropbox.core.DbxRequestConfig;
 import com.dropbox.core.v2.DbxClientV2;
+import com.dropbox.core.v2.files.DeleteErrorException;
 import com.dropbox.core.v2.files.ListFolderResult;
 import com.dropbox.core.v2.files.Metadata;
 import org.jetbrains.annotations.NotNull;
@@ -48,6 +49,11 @@ public class DropboxStorage implements Storage {
 
     private String getBackupFolderPathByBackupName(String backupName) {
         return "/" + backupName;
+    }
+
+    private List<Metadata> listDropboxFolder(DbxClientV2 dbxClient, String backupFolderPath) throws DbxException {
+        ListFolderResult listFolderResult = dbxClient.files().listFolder(backupFolderPath);
+        return listFolderResult.getEntries();
     }
 
     /**
@@ -127,11 +133,9 @@ public class DropboxStorage implements Storage {
 
         int filesCount;
         try {
-            ListFolderResult listFolderResult = dbxClient.files().listFolder(backupFolderPath);
-            List<Metadata> listFolderMetadata = listFolderResult.getEntries();
-            filesCount = listFolderMetadata.size();
+            filesCount = listDropboxFolder(dbxClient, backupFolderPath).size();
         } catch (DbxException ex) {
-            throw new RuntimeException("Error listing Dropbox backup folder. Backup folder: " + backupFolderPath, ex);
+            throw new RuntimeException("Error downloading backup from Dropbox: error listing backup folder. Backup folder: " + backupFolderPath, ex);
         }
 
         try {
@@ -162,6 +166,12 @@ public class DropboxStorage implements Storage {
         try {
             dbxClient.files().deleteV2(backupFolderPath);
         } catch (DbxException ex) {
+            if (ex instanceof DeleteErrorException) {
+                DeleteErrorException deleteErrorException = (DeleteErrorException) ex;
+                if (deleteErrorException.errorValue.isPathLookup() && deleteErrorException.errorValue.getPathLookupValue().isNotFound()) {
+                    return;
+                }
+            }
             throw new RuntimeException("Error deleting backup from Dropbox. Backup folder: " + backupFolderPath, ex);
         }
     }

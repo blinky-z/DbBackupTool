@@ -6,11 +6,8 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
-import java.util.Optional;
 
 public interface ErrorTasksRepository extends CrudRepository<ErrorTask, Integer> {
-    Optional<ErrorTask> findByTaskId(Integer id);
-
     /**
      * Returns first N rows that are not locked. Also sets pessimistic lock on retrieved rows in case of method is called in transaction block.
      * <p>

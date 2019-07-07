@@ -6,8 +6,10 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.util.FileSystemUtils;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,12 +27,19 @@ public class FileSystemStorage implements Storage {
         return backupFolderPath + File.separator + filename + StorageConstants.DEFAULT_FILE_EXTENSION;
     }
 
+    private String getSystemDependentPath(String path) {
+        return path.replace("/", File.separator);
+    }
+
+    private String getBackupFolderPathFromCurrentFolder(String path, String backupName) {
+        return path + File.separator + backupName;
+    }
+
     @Override
     public void uploadBackup(InputStream in, StorageSettings storageSettings, String backupName, Integer id) {
         LocalFileSystemSettings localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(() ->
                 new RuntimeException("Can't upload backup to Local File System storage: Missing Storage Settings"));
-        String backupFolderPath = localFileSystemSettings.getBackupPath().replace("/", File.separator);
-        backupFolderPath = backupFolderPath + File.separator + backupName;
+        String backupFolderPath = getBackupFolderPathFromCurrentFolder(getSystemDependentPath(localFileSystemSettings.getBackupPath()), backupName);
 
         try (
                 BufferedInputStream bufferedInputStream = new BufferedInputStream(in)
@@ -81,8 +90,7 @@ public class FileSystemStorage implements Storage {
     public InputStream downloadBackup(StorageSettings storageSettings, String backupName, Integer id) {
         LocalFileSystemSettings localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(() ->
                 new RuntimeException("Can't download backup from Local File System storage: Missing Storage Settings"));
-        String backupFolderPath = localFileSystemSettings.getBackupPath().replace("/", File.separator);
-        backupFolderPath = backupFolderPath + File.separator + backupName;
+        String backupFolderPath = getBackupFolderPathFromCurrentFolder(getSystemDependentPath(localFileSystemSettings.getBackupPath()), backupName);
 
         try {
             List<InputStream> backupFileStreamList = new ArrayList<>();
@@ -108,24 +116,13 @@ public class FileSystemStorage implements Storage {
     public void deleteBackup(StorageSettings storageSettings, String backupName, Integer id) {
         LocalFileSystemSettings localFileSystemSettings = storageSettings.getLocalFileSystemSettings().orElseThrow(() ->
                 new RuntimeException("Can't delete backup from Local File System storage: Missing Storage Settings"));
-        String backupFolderPath = localFileSystemSettings.getBackupPath().replace("/", File.separator);
-        backupFolderPath = backupFolderPath + File.separator + backupName;
+        String backupFolderPathAsString = getBackupFolderPathFromCurrentFolder(getSystemDependentPath(localFileSystemSettings.getBackupPath()), backupName);
+        Path backupFolderPath = Path.of(backupFolderPathAsString);
 
-        File backupFolder = new File(backupFolderPath);
-        long filesCount = Objects.requireNonNull(backupFolder.list(),
-                String.format("Can't delete backup: invalid path or non-existing backup folder. Path: %s", backupFolderPath)).length;
-
-        logger.info("Total files in backup folder on Local File System: {}. Backup folder: {}", filesCount, backupFolderPath);
-
-        for (long currentBackupPart = 0; currentBackupPart < filesCount; currentBackupPart++) {
-            File backupFile = new File(getCurrentFilePartAsAbsolutePath(backupFolderPath, backupName, currentBackupPart));
-            if (!backupFile.delete()) {
-                throw new RuntimeException(String.format("Error deleting backup. Backup folder: %s. Can't delete file: %s",
-                        backupFolderPath, backupFile.getName()));
-            }
-        }
-        if (!backupFolder.delete()) {
-            throw new RuntimeException(String.format("Error deleting backup. Backup folder: %s. Can't delete folder", backupFolderPath));
+        try {
+            FileSystemUtils.deleteRecursively(backupFolderPath);
+        } catch (IOException ex) {
+            throw new RuntimeException("Error deleting backup. Backup folder: " + backupFolderPathAsString, ex);
         }
     }
 }

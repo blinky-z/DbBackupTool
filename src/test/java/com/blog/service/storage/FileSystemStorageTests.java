@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import static com.blog.TestUtils.equalToSourceInputStream;
 import static com.blog.TestUtils.getRandomBytes;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class FileSystemStorageTests extends ApplicationTests {
@@ -64,6 +65,21 @@ class FileSystemStorageTests extends ApplicationTests {
 
             assertFalse(new File(localFileSystemStorageSettings.getLocalFileSystemSettings().orElseThrow(RuntimeException::new).
                     getBackupPath() + File.separator + backupName).exists());
+        }
+    }
+
+    @Test
+    void deleteBackup_deletionShouldBeIdempotent(TestInfo testInfo) throws IOException {
+        String backupName = testInfo.getDisplayName() + "_" + StorageConstants.dateFormatter.format(LocalDateTime.now());
+        byte[] source = getRandomBytes(1000000);
+
+        try (
+                ByteArrayInputStream sourceInputStream = new ByteArrayInputStream(source)
+        ) {
+            fileSystemStorage.uploadBackup(sourceInputStream, localFileSystemStorageSettings, backupName, testTaskID);
+            fileSystemStorage.deleteBackup(localFileSystemStorageSettings, backupName, testTaskID);
+
+            assertDoesNotThrow(() -> fileSystemStorage.deleteBackup(localFileSystemStorageSettings, backupName, testTaskID));
         }
     }
 }

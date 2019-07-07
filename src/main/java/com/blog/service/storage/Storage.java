@@ -17,6 +17,7 @@ import java.io.InputStream;
  * {@link com.blog.service.ErrorCallbackService} and properly release all resources.</li>
  * <li>Main thread should throw an exception directly (wrapped in {@link RuntimeException})</li>
  * </ul>
+ * <li>Also please see additional requirements in javadoc of methods</li>
  * <p>
  * <b>Handling of {@link InterruptedException} and {@link java.io.InterruptedIOException}:</b>
  * <p>
@@ -43,7 +44,7 @@ public interface Storage {
      * @param storageSettings storage settings to access storage where backup stored
      * @param backupName      backup name
      * @param id              backup uploading task ID
-     * @implSpec This method should not return until backup will be fully uploaded or exception occurs.
+     * @implSpec This method should not return until backup will be fully uploaded or exception occurred.
      */
     void uploadBackup(InputStream in, StorageSettings storageSettings, String backupName, Integer id);
 
@@ -54,7 +55,7 @@ public interface Storage {
      * @param backupName      backup name
      * @param id              backup downloading task ID
      * @return input stream, from which backup can be read
-     * @implSpec This method may return while backup is still downloading (e.g. downloading is streaming).
+     * @implSpec This method may return even if backup is still downloading (e.g. downloading is streaming).
      * <p>
      * if an interrupt occurs, you can safely return {@literal null}.
      * <p>
@@ -72,6 +73,8 @@ public interface Storage {
      * @param backupName      backup name
      * @param id              backup deletion task ID
      * @implSpec This method should not return until backup will be fully deleted or exception occurred.
+     * <p>
+     * Deletion should be idempotent.
      * <p>
      * You can ignore interrupts and delete backup fully.
      */
