@@ -14,7 +14,7 @@ import java.time.ZoneOffset;
 import java.util.Collection;
 
 @Component
-@Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
+@Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
 public class CancelTasksManager {
     private CancelTasksRepository cancelTasksRepository;
 
@@ -25,12 +25,6 @@ public class CancelTasksManager {
 
     public Iterable<CancelTask> findAll() {
         return cancelTasksRepository.findAll();
-    }
-
-    public void deleteByTaskId(@NotNull Integer taskId) {
-        cancelTasksRepository.findByTaskId(taskId).ifPresent(
-                cancelTask -> cancelTasksRepository.delete(cancelTask)
-        );
     }
 
     public boolean existsByTaskId(@NotNull Integer taskId) {

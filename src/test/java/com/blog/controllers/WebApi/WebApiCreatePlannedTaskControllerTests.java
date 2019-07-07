@@ -7,10 +7,15 @@ import com.blog.entities.database.DatabaseType;
 import com.blog.entities.storage.StorageSettings;
 import com.blog.entities.storage.StorageType;
 import com.blog.entities.task.PlannedTask;
-import com.blog.manager.*;
+import com.blog.manager.BackupPropertiesManager;
+import com.blog.manager.DatabaseSettingsManager;
+import com.blog.manager.StorageSettingsManager;
+import com.blog.repositories.BackupPropertiesRepository;
 import com.blog.repositories.PlannedTasksRepository;
 import com.blog.webUI.formTransfer.WebAddPlannedTaskRequest;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
@@ -19,14 +24,15 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.StreamSupport;
 
 import static com.blog.TestUtils.clearDatabase;
 import static com.blog.TestUtils.initDatabase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WebApiCreatePlannedTaskControllerTests extends ApplicationTests {
     @Autowired
@@ -41,21 +47,13 @@ class WebApiCreatePlannedTaskControllerTests extends ApplicationTests {
     @Autowired
     private StorageSettingsManager storageSettingsManager;
 
-    private final AtomicBoolean initialized = new AtomicBoolean(false);
     @Autowired
     private Map<StorageType, String> storageSettingsNameMap;
 
     @Autowired
-    private DatabaseSettings masterPostgresDatabaseSettings;
-
-    @Autowired
     private BackupPropertiesManager backupPropertiesManager;
 
-    @Autowired
-    private DatabaseBackupManager databaseBackupManager;
-
-    @Autowired
-    private BackupLoadManager backupLoadManager;
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
 
     @Autowired
     private WebApiClient webApiClient;
@@ -67,13 +65,11 @@ class WebApiCreatePlannedTaskControllerTests extends ApplicationTests {
     private List<StorageSettings> allStorageSettings;
 
     @Autowired
-    private PlannedTasksManager plannedTasksManager;
-
-
-    @Autowired
     private PlannedTasksRepository plannedTasksRepository;
     @Autowired
     private Map<DatabaseType, String> databaseSettingsNameMap;
+    @Autowired
+    private BackupPropertiesRepository backupPropertiesRepository;
 
     @BeforeEach
     void init() {
@@ -87,28 +83,36 @@ class WebApiCreatePlannedTaskControllerTests extends ApplicationTests {
         initDatabase(jdbcPostgresMasterTemplate);
     }
 
-    //    @Test
+    @AfterEach
+    void beforeEach() {
+        backupPropertiesRepository.deleteAll();
+        plannedTasksRepository.deleteAll();
+    }
+
+    @Test
     void givenProperRequestWithAllStoragesAndPostgresDatabase_addPlannedTask_shouldAddPlannedTaskAndExecuteInTime()
             throws InterruptedException {
         Duration interval = Duration.ofSeconds(30);
         WebAddPlannedTaskRequest webAddPlannedTaskRequest = webApiClient.buildAddPlannedTaskRequest(
                 databaseSettingsNameMap.get(DatabaseType.POSTGRES),
                 storageSettingsNameMap.values(),
-                null,
+                Collections.emptyList(),
                 interval);
 
         ResponseEntity<String> response = webApiClient.addPlannedTask(webAddPlannedTaskRequest);
         assertEquals(response.getStatusCode(), HttpStatus.FOUND);
 
-        PlannedTask plannedTask = plannedTasksRepository.findAllByOrderByIdDesc().iterator().next();
-        LocalDateTime lastTimeStarted = plannedTask.getLastStartedTime();
+        Iterable<PlannedTask> plannedTasks = plannedTasksRepository.findAllByOrderByIdDesc();
+        assertEquals(1, StreamSupport.stream(plannedTasks.spliterator(), false).count());
+        PlannedTask plannedTask = plannedTasks.iterator().next();
+        LocalDateTime initStartTime = plannedTask.getLastStartedTime();
 
         while (plannedTasksRepository.findAllByOrderByIdDesc().iterator().next()
-                .getLastStartedTime().equals(lastTimeStarted)) {
+                .getLastStartedTime().equals(initStartTime)) {
             Thread.sleep(30);
         }
 
         List<BackupProperties> backupPropertiesList = backupPropertiesManager.findAllByOrderByIdDesc();
-        assertTrue(backupPropertiesList.size() >= storageSettingsNameMap.values().size());
+        assertEquals(1, backupPropertiesList.size());
     }
 }

@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
-import java.util.Objects;
 
 /**
  * This class provides API to manage error tasks.
@@ -19,7 +18,7 @@ import java.util.Objects;
  * @see ErrorTask
  */
 @Component
-@Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
+@Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
 public class ErrorTasksManager {
     private ErrorTasksRepository errorTasksRepository;
 
@@ -43,7 +42,7 @@ public class ErrorTasksManager {
      *
      * @param taskId task ID
      */
-    public void setError(@NotNull Integer taskId) {
+    public void addErrorTask(@NotNull Integer taskId) {
         if (!errorTasksRepository.existsByTaskId(taskId)) {
             ErrorTask entity = new ErrorTask();
             entity.setTaskId(taskId);
@@ -62,16 +61,6 @@ public class ErrorTasksManager {
     }
 
     /**
-     * Mark erroneous {@link Task} as handled.
-     *
-     * @param taskId {@link Task} id
-     */
-    public void setErrorHandled(@NotNull Integer taskId) {
-        errorTasksRepository.findByTaskId(taskId).ifPresent(
-                backupTask -> backupTask.setErrorHandled(Boolean.TRUE));
-    }
-
-    /**
      * Returns all error tasks that maps to one of the task ids.
      * <p>
      * You can use this method to check which tasks from given collection are erroneous.
@@ -80,7 +69,6 @@ public class ErrorTasksManager {
      * @return error task
      */
     public Iterable<ErrorTask> findAllByTaskIdIn(@NotNull Collection<Integer> ids) {
-        Objects.requireNonNull(ids);
         return errorTasksRepository.findAllByTaskIdIn(ids);
     }
 }

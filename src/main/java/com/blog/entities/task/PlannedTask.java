@@ -142,11 +142,12 @@ public class PlannedTask {
         this.interval = interval;
     }
 
+    @Nullable
     public Integer getHandlerTaskId() {
         return handlerTaskId;
     }
 
-    public void setHandlerTaskId(Integer handlerTaskId) {
+    public void setHandlerTaskId(@Nullable Integer handlerTaskId) {
         this.handlerTaskId = handlerTaskId;
     }
 

@@ -23,7 +23,7 @@ import java.util.Optional;
  * @see PlannedTask
  */
 @Component
-@Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
+@Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
 public class PlannedTasksManager {
     private PlannedTasksRepository plannedTasksRepository;
 
@@ -70,37 +70,6 @@ public class PlannedTasksManager {
                 .build();
 
         return plannedTasksRepository.save(plannedTask);
-    }
-
-    /**
-     * Updates {@link PlannedTask.State} column of the entity with the given id.
-     *
-     * @param id    entity ID
-     * @param state new state to set
-     */
-    public void updateState(@NotNull Integer id, @NotNull PlannedTask.State state) {
-        plannedTasksRepository.findById(id).ifPresent(
-                plannedTask -> plannedTask.setState(state));
-    }
-
-    /**
-     * Sets last start time to now causing task timer to reset.
-     *
-     * @param id entity ID
-     */
-    public void updateLastStartedTimeWithNow(@NotNull Integer id) {
-        plannedTasksRepository.findById(id).ifPresent(
-                plannedBackupTask -> plannedBackupTask.setLastStartedTime(LocalDateTime.now(ZoneOffset.UTC)));
-    }
-
-    /**
-     * Attempts to delete the entity with the given id if the one exists.
-     *
-     * @param id entity ID
-     */
-    public void deleteById(@NotNull Integer id) {
-        plannedTasksRepository.findById(id).ifPresent(
-                plannedBackupTask -> plannedTasksRepository.delete(plannedBackupTask));
     }
 
     /**

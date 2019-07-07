@@ -66,7 +66,7 @@ class CancelTasksWatcher {
      * @see TasksStarterService#getFuture(Integer)
      * @see TasksManager#revertTask(Task)
      */
-    @Scheduled(fixedDelay = /*10 * */1000)
+    @Scheduled(fixedDelay = 10 * 1000)
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
     void watchTasksToCancel() {
         Iterable<CancelTask> cancelTasks = cancelTasksManager.findAll();
@@ -102,7 +102,7 @@ class CancelTasksWatcher {
                 if (canceled) {
                     try {
                         // give time to properly handle interrupt
-                        Thread.sleep(1000);
+                        Thread.sleep(10000);
                     } catch (InterruptedException e) {
                         // should not happen
                     }

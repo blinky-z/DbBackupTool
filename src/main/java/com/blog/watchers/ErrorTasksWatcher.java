@@ -64,7 +64,7 @@ class ErrorTasksWatcher {
 
                 tasksManager.revertTask(optionalTask.get());
 
-                errorTasksManager.setErrorHandled(backupTaskId);
+                errorTask.setErrorHandled(true);
             }
         }
     }

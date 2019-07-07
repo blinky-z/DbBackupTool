@@ -5,10 +5,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
-import java.util.ArrayList;
-
 public interface PlannedTasksRepository extends CrudRepository<PlannedTask, Integer> {
-    ArrayList<PlannedTask> findAllByOrderByIdDesc();
+    Iterable<PlannedTask> findAllByOrderByIdDesc();
 
     /**
      * Returns first N rows that are not locked. Also sets pessimistic lock on retrieved rows in case of method is called in transaction block.

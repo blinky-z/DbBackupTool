@@ -25,7 +25,7 @@ import java.util.Optional;
  * @see BackupProperties
  */
 @Component
-@Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
+@Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
 public class BackupPropertiesManager {
     private BackupPropertiesRepository backupPropertiesRepository;
 

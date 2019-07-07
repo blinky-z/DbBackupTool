@@ -372,6 +372,6 @@ class WebApiClient {
 
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(body, httpHeaders);
 
-        return testRestTemplate.exchange("/add-planned-task", HttpMethod.POST, entity, String.class);
+        return testRestTemplate.exchange("/planned-task", HttpMethod.POST, entity, String.class);
     }
 }

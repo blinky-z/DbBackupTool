@@ -19,7 +19,7 @@ import java.util.Optional;
  * @see DatabaseSettings
  */
 @Component
-@Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
+@Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
 public class DatabaseSettingsManager {
     private DatabaseSettingsRepository databaseSettingsRepository;
 

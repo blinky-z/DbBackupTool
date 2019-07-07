@@ -3,7 +3,10 @@ package com.blog.watchers;
 import com.blog.entities.database.DatabaseSettings;
 import com.blog.entities.task.PlannedTask;
 import com.blog.entities.task.Task;
-import com.blog.manager.*;
+import com.blog.manager.DatabaseSettingsManager;
+import com.blog.manager.ErrorTasksManager;
+import com.blog.manager.PlannedTasksManager;
+import com.blog.manager.TasksManager;
 import com.blog.service.TasksStarterService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,9 +34,7 @@ class PlannedBackupTasksWatcher {
     private ErrorTasksManager errorTasksManager;
     private PlannedTasksManager plannedTasksManager;
     private DatabaseSettingsManager databaseSettingsManager;
-    private BackupPropertiesManager backupPropertiesManager;
     private TasksStarterService tasksStarterService;
-    private CancelTasksManager cancelTasksManager;
 
     @Autowired
     public void setTasksManager(TasksManager tasksManager) {
@@ -56,18 +57,8 @@ class PlannedBackupTasksWatcher {
     }
 
     @Autowired
-    public void setBackupPropertiesManager(BackupPropertiesManager backupPropertiesManager) {
-        this.backupPropertiesManager = backupPropertiesManager;
-    }
-
-    @Autowired
     public void setTasksStarterService(TasksStarterService tasksStarterService) {
         this.tasksStarterService = tasksStarterService;
-    }
-
-    @Autowired
-    public void setCancelTasksManager(CancelTasksManager cancelTasksManager) {
-        this.cancelTasksManager = cancelTasksManager;
     }
 
     /**
@@ -93,21 +84,17 @@ class PlannedBackupTasksWatcher {
      * watcher.</li>
      * </ul>
      */
-    @Scheduled(fixedDelay = 30 * 1000)
+    @Scheduled(fixedDelay = 10 * 1000)
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
-    void watchExecutingPlannedTasks() {
+    public void watchExecutingPlannedTasks() {
         for (PlannedTask plannedTask : plannedTasksManager.findFirstNByStateAndLock(nRows, PlannedTask.State.EXECUTING)) {
-            if (plannedTask.getState() != PlannedTask.State.EXECUTING) {
-                continue;
-            }
-
             Integer plannedTaskId = plannedTask.getId();
 
             Integer handlerTaskId = plannedTask.getHandlerTaskId();
             if (handlerTaskId == null) {
                 logger.error("ILLEGAL STATE: planned task is executing, but no handler task. Planned task info: {}. Starting the planned task again...",
                         plannedTask);
-                plannedTasksManager.updateState(plannedTaskId, PlannedTask.State.WAITING);
+                plannedTask.setState(PlannedTask.State.WAITING);
                 continue;
             }
 
@@ -115,21 +102,24 @@ class PlannedBackupTasksWatcher {
             if (!optionalHandlerTask.isPresent()) {
                 logger.error("No such handler task with ID {}. Planned task info: {}. Starting the planned task again...",
                         handlerTaskId, plannedTask);
-                plannedTasksManager.updateState(plannedTaskId, PlannedTask.State.WAITING);
-                continue;
-            }
-
-            if (errorTasksManager.isError(handlerTaskId)) {
-                cancelTasksManager.addTaskToCancel(handlerTaskId);
-                plannedTasksManager.updateState(plannedTaskId, PlannedTask.State.WAITING);
-                continue;
-            }
-
-            if (optionalHandlerTask.get().getState() == Task.State.COMPLETED) {
-                // reset timer
                 plannedTask.setHandlerTaskId(null);
-                plannedTasksManager.updateLastStartedTimeWithNow(plannedTaskId);
-                plannedTasksManager.updateState(plannedTaskId, PlannedTask.State.WAITING);
+                plannedTask.setState(PlannedTask.State.WAITING);
+                continue;
+            }
+
+            // try to start task again if error occurred
+            if (errorTasksManager.isError(handlerTaskId)) {
+                plannedTask.setHandlerTaskId(null);
+                plannedTask.setState(PlannedTask.State.WAITING);
+                continue;
+            }
+
+            // reset timer if task completed
+            if (optionalHandlerTask.get().getState() == Task.State.COMPLETED) {
+                logger.debug("Resetting timer of planned task with ID {}", plannedTaskId);
+                plannedTask.setHandlerTaskId(null);
+                plannedTask.setLastStartedTime(LocalDateTime.now(ZoneOffset.UTC));
+                plannedTask.setState(PlannedTask.State.WAITING);
             }
         }
     }
@@ -155,9 +145,9 @@ class PlannedBackupTasksWatcher {
      * {@link PlannedTask.State#EXECUTING} to prevent being handled again.
      * @see #watchExecutingPlannedTasks()
      */
-    @Scheduled(fixedDelay = 60 * 1000)
+    @Scheduled(fixedDelay = 20 * 1000)
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
-    void watchPlannedTasks() {
+    public void watchPlannedTasks() {
         for (PlannedTask plannedTask : plannedTasksManager.findFirstNByStateAndLock(nRows, PlannedTask.State.WAITING)) {
             LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
             LocalDateTime nextTaskTimeFireTime = plannedTask.getLastStartedTime().plus(plannedTask.getInterval());
@@ -167,10 +157,6 @@ class PlannedBackupTasksWatcher {
             }
 
             logger.info("Starting handling of fired planned backup task... Planned backup task info: {}", plannedTask);
-
-            Integer plannedBackupTaskId = plannedTask.getId();
-
-            plannedTasksManager.updateState(plannedBackupTaskId, PlannedTask.State.EXECUTING);
 
             String databaseSettingsName = plannedTask.getDatabaseSettingsName();
             Optional<DatabaseSettings> optionalDatabaseSettings = databaseSettingsManager.findById(databaseSettingsName);
@@ -186,6 +172,7 @@ class PlannedBackupTasksWatcher {
                     Task.RunType.INTERNAL, plannedTask.getStorageSettingsNameList(), plannedTask.getProcessors(), databaseSettings).getId();
 
             plannedTask.setHandlerTaskId(handlerTaskId);
+            plannedTask.setState(PlannedTask.State.EXECUTING);
 
             logger.info("Planned backup task started. Planned Task info: {}", plannedTask);
         }

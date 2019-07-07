@@ -139,7 +139,7 @@ public class TasksStarterService {
                 logger.error("Error occurred while closing input stream of created backup", ex);
             } catch (RuntimeException ex) {
                 logger.error("Error occurred while creating backup. Backup properties: {}", backupProperties, ex);
-                errorTasksManager.setError(taskId);
+                errorTasksManager.addErrorTask(taskId);
             } catch (InterruptedException ex) {
                 tasksManager.setInterrupted(taskId);
                 logger.error("Backup creating task was interrupted. Task ID: {}", taskId);
@@ -203,7 +203,7 @@ public class TasksStarterService {
                 logger.error("Error occurred while closing input stream of downloaded backup", ex);
             } catch (RuntimeException ex) {
                 logger.info("Error occurred while restoring backup. Backup properties: {}", backupProperties, ex);
-                errorTasksManager.setError(taskId);
+                errorTasksManager.addErrorTask(taskId);
             } catch (InterruptedException ex) {
                 tasksManager.setInterrupted(taskId);
                 logger.error("Task was interrupted. Task ID: {}", taskId);
@@ -245,7 +245,7 @@ public class TasksStarterService {
                 logger.info("Deleting backup completed. Backup properties: {}", backupProperties);
             } catch (RuntimeException ex) {
                 logger.error("Error occurred while deleting backup. Backup properties: {}", backupProperties, ex);
-                errorTasksManager.setError(taskId);
+                errorTasksManager.addErrorTask(taskId);
             } catch (InterruptedException ex) {
                 tasksManager.setInterrupted(taskId);
                 logger.error("Task was interrupted. Task ID: {}", taskId);

@@ -26,7 +26,7 @@ import java.util.Optional;
  * @see Task
  */
 @Component
-@Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
+@Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
 public class TasksManager {
     private static final Logger logger = LoggerFactory.getLogger(TasksManager.class);
 

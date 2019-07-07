@@ -108,10 +108,6 @@ public class Task {
         return runType;
     }
 
-    public void setRunType(RunType runType) {
-        this.runType = runType;
-    }
-
     public State getState() {
         return state;
     }
@@ -130,10 +126,6 @@ public class Task {
 
     public Integer getBackupPropertiesId() {
         return backupPropertiesId;
-    }
-
-    public void setBackupPropertiesId(Integer backupPropertiesId) {
-        this.backupPropertiesId = backupPropertiesId;
     }
 
     public LocalDateTime getDate() {

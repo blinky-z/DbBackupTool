@@ -26,7 +26,7 @@ public class ErrorTask {
      * Has error been handled or not.
      */
     @Column(insertable = false)
-    private Boolean errorHandled;
+    private boolean errorHandled;
 
     public Integer getId() {
         return id;
@@ -44,11 +44,11 @@ public class ErrorTask {
         this.taskId = taskId;
     }
 
-    public Boolean isErrorHandled() {
+    public boolean isErrorHandled() {
         return errorHandled;
     }
 
-    public void setErrorHandled(Boolean errorHandled) {
+    public void setErrorHandled(boolean errorHandled) {
         this.errorHandled = errorHandled;
     }
 

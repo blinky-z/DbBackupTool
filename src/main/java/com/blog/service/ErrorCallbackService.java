@@ -57,7 +57,7 @@ public class ErrorCallbackService {
                 logger.error("Error canceling the Future of task with ID {}", taskId);
             } else {
                 logger.info("Task canceled. Task ID: {}", taskId);
-                errorTasksManager.setError(taskId);
+                errorTasksManager.addErrorTask(taskId);
             }
         }
     }
