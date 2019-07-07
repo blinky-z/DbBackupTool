@@ -27,13 +27,11 @@ import static com.blog.TestUtils.initDatabase;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class WebApiDeleteBackupControllerTests extends ApplicationTests {
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
     @Autowired
     private TestRestTemplate restTemplate;
-
     @Autowired
     private WebApiClient webApiClient;
-
-    private final AtomicBoolean initialized = new AtomicBoolean(false);
     @Autowired
     private Map<StorageType, String> storageSettingsNameMap;
 

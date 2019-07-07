@@ -26,7 +26,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class WebApiRestoreBackupControllerTests extends ApplicationTests {
     private static final java.util.List<String> tableNames = new ArrayList<>(Arrays.asList("comments"));
-
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
     @Autowired
     private TestRestTemplate restTemplate;
     @Autowired
@@ -37,8 +37,6 @@ class WebApiRestoreBackupControllerTests extends ApplicationTests {
     private BackupPropertiesManager backupPropertiesManager;
     @Autowired
     private WebApiClient webApiClient;
-
-    private final AtomicBoolean initialized = new AtomicBoolean(false);
     @Autowired
     private Map<StorageType, String> storageSettingsNameMap;
     @Autowired

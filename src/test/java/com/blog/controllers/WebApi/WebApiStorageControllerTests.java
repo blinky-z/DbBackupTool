@@ -24,15 +24,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 class WebApiStorageControllerTests extends ApplicationTests {
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
     @Autowired
     private TestRestTemplate restTemplate;
     @Autowired
     private StorageSettingsRepository storageSettingsRepository;
-
     @Autowired
     private WebApiClient webApiClient;
-
-    private final AtomicBoolean initialized = new AtomicBoolean(false);
 
     private static Matcher<StorageSettings> isEqualToDto(WebAddStorageRequest dto) {
         return new equalsToDto(dto);

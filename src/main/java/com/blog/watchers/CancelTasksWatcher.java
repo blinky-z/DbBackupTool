@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 /**
- * This class scans for tasks to cancel and tried to cancel them.
+ * This class scans for tasks to cancel and tries to cancel them.
  */
 @Component
 class CancelTasksWatcher {

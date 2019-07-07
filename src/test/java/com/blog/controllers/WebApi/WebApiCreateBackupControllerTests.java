@@ -29,20 +29,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class WebApiCreateBackupControllerTests extends ApplicationTests {
     private static final Integer testTaskID = 0;
-
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
     @Autowired
     private TestRestTemplate restTemplate;
-
     @Autowired
     private JdbcTemplate jdbcPostgresMasterTemplate;
-
     @Autowired
     private DatabaseSettingsManager databaseSettingsManager;
-
     @Autowired
     private StorageSettingsManager storageSettingsManager;
-
-    private final AtomicBoolean initialized = new AtomicBoolean(false);
     @Autowired
     private Map<StorageType, String> storageSettingsNameMap;
 

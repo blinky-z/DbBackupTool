@@ -19,10 +19,6 @@ public enum StorageType {
 
     private final String storageAsString;
 
-    public String getStorageAsString() {
-        return storageAsString;
-    }
-
     StorageType(String storageAsString) {
         this.storageAsString = storageAsString;
     }
@@ -34,5 +30,9 @@ public enum StorageType {
             }
         }
         return Optional.empty();
+    }
+
+    public String getStorageAsString() {
+        return storageAsString;
     }
 }

@@ -238,22 +238,6 @@ public class BackupLoadManager {
         logger.info("Backup successfully uploaded. Backup info: {}", backupProperties);
     }
 
-    private final class InterruptDetectInputStream extends InputStream {
-        private InputStream in;
-
-        InterruptDetectInputStream(InputStream in) {
-            this.in = in;
-        }
-
-        @Override
-        public int read() throws IOException {
-            if (Thread.interrupted()) {
-                throw new InterruptedIOException();
-            }
-            return in.read();
-        }
-    }
-
     /**
      * Downloads backup.
      *
@@ -358,9 +342,9 @@ public class BackupLoadManager {
      * Uploads backup to multiple storages in parallel.
      */
     private static final class BackupUploadSplitter implements AutoCloseable {
-        private BufferedInputStream source;
         List<BufferedOutputStream> outputStreamList;
         AtomicBoolean wasInterrupted;
+        private BufferedInputStream source;
 
         BackupUploadSplitter(InputStream source, List<PipedOutputStream> outputStreamList, AtomicBoolean wasInterrupted) {
             if (!(source instanceof BufferedInputStream)) {
@@ -424,6 +408,22 @@ public class BackupLoadManager {
                 throw new IOException(String.format("Error closing streams. Input stream is closed: %s. Output streams closed: [%s/%s]",
                         inputStreamIsClosed, outputStreamsClosed, outputStreamList.size()));
             }
+        }
+    }
+
+    private final class InterruptDetectInputStream extends InputStream {
+        private InputStream in;
+
+        InterruptDetectInputStream(InputStream in) {
+            this.in = in;
+        }
+
+        @Override
+        public int read() throws IOException {
+            if (Thread.interrupted()) {
+                throw new InterruptedIOException();
+            }
+            return in.read();
         }
     }
 }

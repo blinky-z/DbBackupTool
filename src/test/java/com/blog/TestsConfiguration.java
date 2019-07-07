@@ -43,12 +43,12 @@ import java.util.stream.Collectors;
 @TestConfiguration
 public class TestsConfiguration {
     private static final Logger logger = LoggerFactory.getLogger(TestsConfiguration.class);
-    @Value("${tests-dropbox-access-token}")
-    private String dropboxAccessToken;
     private static final String localFileSystemStorageSettingsName = "localFileSystemStorageSettings";
     private static final String dropboxStorageSettingsName = "dropboxStorageSettings";
     private static final String masterPostgresDatabaseSettingsName = "masterPostgresDatabaseSettings";
     private static final String slavePostgresDatabaseSettingsName = "slavePostgresDatabaseSettings";
+    @Value("${tests-dropbox-access-token}")
+    private String dropboxAccessToken;
     @Autowired
     private StorageSettingsManager storageSettingsManager;
     @Autowired

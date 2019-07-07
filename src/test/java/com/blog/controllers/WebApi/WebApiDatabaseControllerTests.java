@@ -22,16 +22,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 class WebApiDatabaseControllerTests extends ApplicationTests {
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
     @Autowired
     private TestRestTemplate restTemplate;
-
     @Autowired
     private DatabaseSettingsRepository databaseSettingsRepository;
-
     @Autowired
     private WebApiClient webApiClient;
-
-    private final AtomicBoolean initialized = new AtomicBoolean(false);
 
     private static Matcher<DatabaseSettings> isEqualToDto(WebAddDatabaseRequest dto) {
         return new equalsToDto(dto);

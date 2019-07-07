@@ -14,10 +14,6 @@ public enum DatabaseType {
 
     private final String databaseAsString;
 
-    public String getDatabaseAsString() {
-        return databaseAsString;
-    }
-
     DatabaseType(String databaseAsString) {
         this.databaseAsString = databaseAsString;
     }
@@ -29,5 +25,9 @@ public enum DatabaseType {
             }
         }
         return Optional.empty();
+    }
+
+    public String getDatabaseAsString() {
+        return databaseAsString;
     }
 }

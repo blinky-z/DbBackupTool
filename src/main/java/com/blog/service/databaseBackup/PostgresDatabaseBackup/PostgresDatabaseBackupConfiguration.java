@@ -22,20 +22,20 @@ public class PostgresDatabaseBackupConfiguration {
      */
     private String psqlToolPath;
 
-    public void setPgDumpToolPath(String pgDumpToolPath) {
-        this.pgDumpToolPath = pgDumpToolPath;
-    }
-
-    public void setPsqlToolPath(String psqlToolPath) {
-        this.psqlToolPath = psqlToolPath;
-    }
-
     public String getPgDumpToolPath() {
         return pgDumpToolPath;
     }
 
+    public void setPgDumpToolPath(String pgDumpToolPath) {
+        this.pgDumpToolPath = pgDumpToolPath;
+    }
+
     public String getPsqlToolPath() {
         return psqlToolPath;
+    }
+
+    public void setPsqlToolPath(String psqlToolPath) {
+        this.psqlToolPath = psqlToolPath;
     }
 
     @Bean(destroyMethod = "shutdown")

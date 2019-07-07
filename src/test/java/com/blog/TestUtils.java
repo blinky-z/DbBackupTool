@@ -15,10 +15,10 @@ import java.util.Objects;
 import java.util.Random;
 
 public class TestUtils {
+    private static final Random random = new Random();
+
     private TestUtils() {
     }
-
-    private static final Random random = new Random();
 
     /**
      * Initializes database with some tables.
@@ -86,6 +86,46 @@ public class TestUtils {
         return bytes;
     }
 
+    /**
+     * Hamcrest matcher for comparing tables content of two databases.
+     * <p>
+     * This matcher is not loading all table data in memory, but retrieves pages.
+     * <p>
+     * Tables must have INTEGER (serial) primary key 'id' column.
+     * <p>
+     * Example of using:
+     * <pre>
+     * import static com.blog.TestUtils.*;
+     *
+     * assertThat(slaveDatabase, equalToMasterDatabase(masterDatabase, tableNames));
+     * </pre>
+     *
+     * @param tableNames names of tables to compare
+     * @param expected   the master database
+     * @return hamcrest matcher
+     */
+    public static Matcher<JdbcTemplate> equalToMasterDatabase(JdbcTemplate expected, List<String> tableNames) {
+        return new equalsToMaster(expected, tableNames);
+    }
+
+    /**
+     * Hamcrest matcher for comparing content of two streams.
+     * <p>
+     * Example of using:
+     * <pre>
+     * import static com.blog.TestUtils.*;
+     *
+     * assertThat(actualInputStream, equalToSourceInputStream(sourceInputStream));
+     * </pre>
+     * Both passed input stream will not be available for reading anymore.
+     *
+     * @param expected expected stream content
+     * @return hamcrest matcher
+     */
+    public static Matcher<InputStream> equalToSourceInputStream(InputStream expected) {
+        return new equalsToSourceStream(expected);
+    }
+
     private static final class equalsToMaster extends TypeSafeDiagnosingMatcher<JdbcTemplate> {
         private JdbcTemplate slaveJdbcTemplate;
         private List<String> tableNames;
@@ -144,28 +184,6 @@ public class TestUtils {
         }
     }
 
-    /**
-     * Hamcrest matcher for comparing tables content of two databases.
-     * <p>
-     * This matcher is not loading all table data in memory, but retrieves pages.
-     * <p>
-     * Tables must have INTEGER (serial) primary key 'id' column.
-     * <p>
-     * Example of using:
-     * <pre>
-     * import static com.blog.TestUtils.*;
-     *
-     * assertThat(slaveDatabase, equalToMasterDatabase(masterDatabase, tableNames));
-     * </pre>
-     *
-     * @param tableNames names of tables to compare
-     * @param expected   the master database
-     * @return hamcrest matcher
-     */
-    public static Matcher<JdbcTemplate> equalToMasterDatabase(JdbcTemplate expected, List<String> tableNames) {
-        return new equalsToMaster(expected, tableNames);
-    }
-
     private static final class equalsToSourceStream extends TypeSafeMatcher<InputStream> {
         private InputStream expected;
 
@@ -186,23 +204,5 @@ public class TestUtils {
         public void describeTo(Description description) {
             description.appendText("Streams content are not equal");
         }
-    }
-
-    /**
-     * Hamcrest matcher for comparing content of two streams.
-     * <p>
-     * Example of using:
-     * <pre>
-     * import static com.blog.TestUtils.*;
-     *
-     * assertThat(actualInputStream, equalToSourceInputStream(sourceInputStream));
-     * </pre>
-     * Both passed input stream will not be available for reading anymore.
-     *
-     * @param expected expected stream content
-     * @return hamcrest matcher
-     */
-    public static Matcher<InputStream> equalToSourceInputStream(InputStream expected) {
-        return new equalsToSourceStream(expected);
     }
 }
