@@ -68,7 +68,7 @@ class CancelTasksWatcher {
      */
     @Scheduled(fixedDelay = 10 * 1000)
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
-    void watchTasksToCancel() {
+    public void watchTasksToCancel() {
         Iterable<CancelTask> cancelTasks = cancelTasksManager.findAll();
 
         Iterable<Task> tasks = tasksManager.findAllById(StreamSupport.stream(cancelTasks.spliterator(), false)
