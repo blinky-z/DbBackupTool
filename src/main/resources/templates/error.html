@@ -13,8 +13,8 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-12 text-center">
-                <span class="display-1 d-block" th:text="${errorCode}">500</span>
-                <div class="mb-4 lead" th:text="${errorMessage}">Oops! Something went wrong</div>
+                <span class="display-1 d-block" th:text="${errorCode}"></span>
+                <div class="mb-4 lead" th:text="${errorMessage} ?: 'Oops! Something went wrong'"></div>
                 <a class="btn btn-link" href="/">Back to Home</a>
             </div>
         </div>
