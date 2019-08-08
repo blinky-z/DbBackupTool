@@ -112,12 +112,12 @@ public class TasksManager {
             case APPLYING_DEPROCESSORS:
             case RESTORING:
             case DELETING: {
-                logger.info("Handling broken operation. Operation: {}. No extra actions required", state.toString());
+                logger.info("Handling broken operation. Operation: {}: No extra actions required. Task info: {}", state, task);
                 break;
             }
             case CREATING:
             case APPLYING_PROCESSORS: {
-                logger.info("Handling broken operation. Operation: {}. Delete backup properties...", state.toString());
+                logger.info("Handling broken operation. Operation: {}: Deleting backup properties... Task info: {}", state, task);
 
                 Integer backupPropertiesID = task.getBackupPropertiesId();
 
@@ -130,11 +130,11 @@ public class TasksManager {
                 break;
             }
             case UPLOADING: {
-                logger.info("Handling broken operation. Operation: {}. Deleting backup from storage...", state);
+                logger.info("Handling broken operation. Operation: {}: Deleting backup from storage... Task info: {}", state, task);
 
                 Integer backupPropertiesId = task.getBackupPropertiesId();
                 Optional<BackupProperties> optionalBackupProperties = backupPropertiesManager.findById(backupPropertiesId);
-                if (!optionalBackupProperties.isPresent()) {
+                if (optionalBackupProperties.isEmpty()) {
                     logger.error("Can't revert task: no related backup properties. Task info: {}", task);
                     return;
                 }
@@ -144,7 +144,7 @@ public class TasksManager {
                 break;
             }
             default: {
-                logger.error("Can't revert task: unknown state. Task info: {}", task);
+                logger.error("Can't revert task: invalid state. Task info: {}", task);
             }
         }
     }

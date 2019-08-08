@@ -331,7 +331,7 @@ public class BackupLoadManager {
                 }
             }
 
-            logger.info("Backup deleted. Backup info: {}. Exception occurred: {}", backupProperties, exceptions);
+            logger.info("Backup deleted. Backup info: {}. Exceptions occurred: {}", backupProperties, exceptions);
         } catch (InterruptedException ex) {
             // unfinished tasks automatically canceled here by executor service
             Thread.currentThread().interrupt();

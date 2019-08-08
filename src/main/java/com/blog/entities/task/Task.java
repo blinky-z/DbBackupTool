@@ -48,7 +48,7 @@ public class Task {
      * <p>
      * State is updated with every new step in task being executed.
      *
-     * @see Task.State
+     * @see State
      */
     @Enumerated(EnumType.STRING)
     private State state;

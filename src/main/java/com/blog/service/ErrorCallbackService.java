@@ -43,21 +43,21 @@ public class ErrorCallbackService {
      *
      * @param t      an exception
      * @param taskId task id
-     * @implNote we set error only if cancellation was successful. If it's not, then task already was interrupted by user or some other error.
+     * @implNote we set error only if cancellation was successful. If it's not, that means task was already interrupted by user or other error.
      */
     public void onError(@NotNull Throwable t, @NotNull Integer taskId) {
         logger.error("Exception caught. Task ID: {}", taskId, t);
 
         Optional<Future> optionalFuture = tasksStarterService.getFuture(taskId);
-        if (!optionalFuture.isPresent()) {
-            logger.error("Can't cancel the Future of task with ID {}: no such Future instance", taskId);
+        if (optionalFuture.isEmpty()) {
+            logger.error("Can't cancel a Future of the task with ID {}: no such Future instance", taskId);
         } else {
             boolean canceled = optionalFuture.get().cancel(true);
             if (!canceled) {
-                logger.error("Error canceling the Future of task with ID {}", taskId);
+                logger.error("Error canceling a Future of the task with ID {}", taskId);
             } else {
-                logger.info("Task canceled. Task ID: {}", taskId);
                 errorTasksManager.addErrorTask(taskId);
+                logger.info("Task canceled and error status set. Task ID: {}", taskId);
             }
         }
     }
