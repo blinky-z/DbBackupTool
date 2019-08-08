@@ -128,10 +128,8 @@ public class TasksStarterService {
                     logger.info("Uploading backup...");
 
                     backupLoadManager.uploadBackup(processedBackupStream, backupProperties, taskId);
-                    if (Thread.interrupted()) {
-                        throw new InterruptedException();
-                    }
 
+                    Thread.sleep(5000);
                     tasksManager.updateTaskState(taskId, Task.State.COMPLETED);
                     logger.info("Creating backup completed. Backup properties: {}", backupProperties);
                 }
@@ -142,7 +140,7 @@ public class TasksStarterService {
                 errorTasksManager.addErrorTask(taskId);
             } catch (InterruptedException ex) {
                 tasksManager.setInterrupted(taskId);
-                logger.error("Backup creating task was interrupted. Task ID: {}", taskId);
+                logger.error("Backup creation task was interrupted. Task ID: {}", taskId);
             } finally {
                 futures.remove(taskId);
             }
